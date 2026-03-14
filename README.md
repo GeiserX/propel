@@ -1,6 +1,21 @@
-# Propel
+<p align="center">
+  <img src="docs/images/banner.svg" alt="Propel banner" width="900"/>
+</p>
 
-Open-source energy route planner for fuel and electric vehicles. Self-hostable.
+<h1 align="center">Propel</h1>
+
+<p align="center">
+  <strong>Open-source energy route planner for fuel and electric vehicles. Self-hostable.</strong>
+</p>
+
+<p align="center">
+  <a href="https://propel.geiser.cloud"><img src="https://img.shields.io/badge/🌐_Website-propel.geiser.cloud-22c55e?style=flat-square" alt="Website"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/📜_License-GPL--3.0-blue?style=flat-square" alt="License"></a>
+  <a href="https://github.com/GeiserX/propel"><img src="https://img.shields.io/github/stars/GeiserX/propel?style=flat-square&logo=github" alt="GitHub Stars"></a>
+  <a href="https://hub.docker.com/r/drumsergio/propel"><img src="https://img.shields.io/docker/pulls/drumsergio/propel?style=flat-square&logo=docker&label=Docker%20Pulls" alt="Docker Pulls"></a>
+</p>
+
+---
 
 **No app in the world combines route planning with real-time energy prices, detour time calculation, and smart refueling recommendations. Propel does.**
 
@@ -14,7 +29,7 @@ Open-source energy route planner for fuel and electric vehicles. Self-hostable.
 - EV charging integration (planned)
 - Multi-language, multi-currency, multi-unit support
 - Self-hostable with Docker Compose
-- 100% open source (MIT)
+- 100% open source (GPL-3.0)
 
 ## Quick Start
 
@@ -23,6 +38,7 @@ git clone https://github.com/GeiserX/propel.git
 cd propel
 docker compose -f docker/docker-compose.yml up -d
 npm install
+npx prisma generate
 npm run scraper:run -- --country=ES --once
 npm run dev
 ```
@@ -55,4 +71,4 @@ See [ROADMAP.md](ROADMAP.md) for the full plan — from fuel prices to EV chargi
 
 ## License
 
-MIT
+GPL-3.0 — see [LICENSE](LICENSE)

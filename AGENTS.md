@@ -17,7 +17,7 @@
 
 - **Live URL**: https://propel.geiser.cloud
 - **Repository**: https://github.com/GeiserX/propel
-- **License**: MIT
+- **License**: GPL-3.0
 
 ### What Makes This Different
 

@@ -1,0 +1,44 @@
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  extensions = [postgis]
+}
+
+model Station {
+  id          String   @id @default(uuid()) @db.Uuid
+  externalId  String   @map("external_id")
+  country     String   @db.VarChar(2)
+  name        String
+  brand       String?
+  address     String
+  city        String
+  province    String?
+  stationType String   @default("fuel") @map("station_type") @db.VarChar(20)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  prices FuelPrice[]
+
+  @@unique([externalId, country])
+  @@map("stations")
+}
+
+model FuelPrice {
+  id         BigInt   @id @default(autoincrement())
+  stationId  String   @map("station_id") @db.Uuid
+  fuelType   String   @map("fuel_type") @db.VarChar(20)
+  price      Decimal  @db.Decimal(6, 3)
+  currency   String   @default("EUR") @db.VarChar(3)
+  reportedAt DateTime @default(now()) @map("reported_at") @db.Timestamptz
+  source     String   @db.VarChar(50)
+
+  station Station @relation(fields: [stationId], references: [id], onDelete: Cascade)
+
+  @@index([stationId, fuelType, reportedAt(sort: Desc)])
+  @@map("fuel_prices")
+}

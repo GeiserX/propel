@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: propel-db
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: propel
+      POSTGRES_PASSWORD: propel
+      POSTGRES_DB: propel
+    volumes:
+      - propel-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U propel -d propel"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  propel-pgdata:

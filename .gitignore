@@ -47,3 +47,5 @@ valhalla_tiles/
 
 # PMTiles
 *.pmtiles
+
+/src/generated/prisma
