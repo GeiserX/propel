@@ -20,7 +20,6 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=prisma /app/src/generated ./src/generated
-COPY --from=prisma /app/node_modules/.prisma ./node_modules/.prisma
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV DATABASE_URL="postgresql://mock:mock@localhost:5432/mock"
