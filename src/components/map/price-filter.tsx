@@ -2,19 +2,24 @@
 
 import { useMemo } from "react";
 import type { StationsGeoJSONCollection } from "@/types/station";
+import { PRICE_COLORS } from "./price-legend";
 
 interface PriceFilterProps {
   stations: StationsGeoJSONCollection;
   maxPrice: number | null;
   onMaxPriceChange: (price: number | null) => void;
+  /** P5/P95 percentile range from station-layer (for the color legend) */
+  legendMin: number | null;
+  legendMax: number | null;
 }
 
 export function PriceFilter({
   stations,
   maxPrice,
   onMaxPriceChange,
+  legendMin,
+  legendMax,
 }: PriceFilterProps) {
-  // Only consider stations that have a price for the selected fuel
   const { min, max, pricedCount } = useMemo(() => {
     const prices: number[] = [];
     for (const f of stations.features) {
@@ -25,13 +30,24 @@ export function PriceFilter({
     return { min: prices[0], max: prices[prices.length - 1], pricedCount: prices.length };
   }, [stations]);
 
-  if (min == null || max == null || pricedCount < 2 || max - min < 0.005) return null;
+  // Build gradient string for the color legend
+  const gradient = useMemo(() => {
+    return PRICE_COLORS.map((c, i) => {
+      const pct = (i / (PRICE_COLORS.length - 1)) * 100;
+      return `${c} ${pct.toFixed(0)}%`;
+    }).join(", ");
+  }, []);
+
+  const hasLegend = legendMin != null && legendMax != null;
+  const hasFilter = min != null && max != null && pricedCount >= 2 && max - min >= 0.005;
+
+  if (!hasLegend && !hasFilter) return null;
 
   const step = 0.001;
-  const sliderMin = Math.floor(min * 1000) / 1000;
-  const sliderMax = Math.ceil(max * 1000) / 1000;
+  const sliderMin = hasFilter ? Math.floor(min * 1000) / 1000 : 0;
+  const sliderMax = hasFilter ? Math.ceil(max * 1000) / 1000 : 1;
   const currentValue = maxPrice ?? sliderMax;
-  const isActive = maxPrice != null && maxPrice < sliderMax;
+  const isActive = hasFilter && maxPrice != null && maxPrice < sliderMax;
 
   const filteredCount = isActive
     ? stations.features.filter(
@@ -40,44 +56,63 @@ export function PriceFilter({
     : pricedCount;
 
   return (
-    <div className="absolute bottom-[76px] left-3 z-10 w-48 rounded-lg border border-black/10 bg-white/90 px-3 py-2 shadow-md backdrop-blur-sm">
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] font-semibold text-gray-600">Precio máx.</span>
-        {isActive && (
-          <button
-            onClick={() => onMaxPriceChange(null)}
-            className="text-[9px] font-medium text-emerald-600 hover:text-emerald-700"
-          >
-            Quitar
-          </button>
-        )}
-      </div>
+    <div className="absolute bottom-6 left-3 z-10 flex w-[184px] flex-col gap-2 rounded-lg border border-black/10 bg-white/90 px-3 py-2.5 shadow-md backdrop-blur-sm">
+      {/* Color legend gradient */}
+      {hasLegend && (
+        <div>
+          <div
+            className="h-2 w-full rounded-full"
+            style={{ background: `linear-gradient(to right, ${gradient})` }}
+          />
+          <div className="mt-1 flex justify-between text-[10px] font-semibold tabular-nums text-gray-600">
+            <span>{legendMin.toFixed(3)} €</span>
+            <span>{legendMax.toFixed(3)} €</span>
+          </div>
+        </div>
+      )}
 
-      <input
-        type="range"
-        min={sliderMin}
-        max={sliderMax}
-        step={step}
-        value={currentValue}
-        onChange={(e) => {
-          const v = parseFloat(e.target.value);
-          onMaxPriceChange(v >= sliderMax ? null : v);
-        }}
-        className="mt-1.5 h-1.5 w-full cursor-pointer appearance-none rounded-full bg-gray-200 accent-emerald-500 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-emerald-500 [&::-webkit-slider-thumb]:shadow-sm"
-      />
+      {/* Price filter slider */}
+      {hasFilter && (
+        <div>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-semibold text-gray-600">Precio máx.</span>
+            {isActive && (
+              <button
+                onClick={() => onMaxPriceChange(null)}
+                className="text-[9px] font-medium text-emerald-600 hover:text-emerald-700"
+              >
+                Quitar
+              </button>
+            )}
+          </div>
 
-      <div className="mt-1 flex items-center justify-between">
-        <span className="text-[10px] tabular-nums text-gray-400">{sliderMin.toFixed(3)} €</span>
-        <span className={`text-[11px] font-bold tabular-nums ${isActive ? "text-emerald-600" : "text-gray-500"}`}>
-          {currentValue.toFixed(3)} €
-        </span>
-        <span className="text-[10px] tabular-nums text-gray-400">{sliderMax.toFixed(3)} €</span>
-      </div>
+          <input
+            type="range"
+            min={sliderMin}
+            max={sliderMax}
+            step={step}
+            value={currentValue}
+            onChange={(e) => {
+              const v = parseFloat(e.target.value);
+              onMaxPriceChange(v >= sliderMax ? null : v);
+            }}
+            className="mt-1 h-1.5 w-full cursor-pointer appearance-none rounded-full bg-gray-200 accent-emerald-500 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-emerald-500 [&::-webkit-slider-thumb]:shadow-sm"
+          />
 
-      {isActive && (
-        <p className="mt-1 text-center text-[9px] text-gray-400">
-          {filteredCount} de {pricedCount} con precio
-        </p>
+          <div className="mt-0.5 flex items-center justify-between">
+            <span className="text-[10px] tabular-nums text-gray-400">{sliderMin.toFixed(3)} €</span>
+            <span className={`text-[11px] font-bold tabular-nums ${isActive ? "text-emerald-600" : "text-gray-500"}`}>
+              {currentValue.toFixed(3)} €
+            </span>
+            <span className="text-[10px] tabular-nums text-gray-400">{sliderMax.toFixed(3)} €</span>
+          </div>
+
+          {isActive && (
+            <p className="mt-0.5 text-center text-[9px] text-gray-400">
+              {filteredCount} de {pricedCount} con precio
+            </p>
+          )}
+        </div>
       )}
     </div>
   );

@@ -6,15 +6,16 @@ import type { MapLayerMouseEvent } from "react-map-gl/maplibre";
 import type { GeoJSONSource, ExpressionSpecification } from "maplibre-gl";
 import type { StationsGeoJSONCollection } from "@/types/station";
 import { StationPopup } from "./station-popup";
-import { PriceLegend, PRICE_COLORS } from "./price-legend";
+import { PRICE_COLORS } from "./price-legend";
 
 const INTERACTIVE_LAYERS = ["clusters", "unclustered-point"] as const;
 
 interface StationLayerProps {
   stations: StationsGeoJSONCollection;
+  onPriceRange?: (min: number | null, max: number | null) => void;
 }
 
-export function StationLayer({ stations }: StationLayerProps) {
+export function StationLayer({ stations, onPriceRange }: StationLayerProps) {
   const { current: mapRef } = useMap();
   const [selectedStationId, setSelectedStationId] = useState<string | null>(null);
 
@@ -44,6 +45,11 @@ export function StationLayer({ stations }: StationLayerProps) {
     }
     return { min: p5, max: p95 };
   }, [stations]);
+
+  // Report percentile range to parent for the unified price panel
+  useEffect(() => {
+    onPriceRange?.(min, max);
+  }, [min, max, onPriceRange]);
 
   // Build dynamic color interpolation expression using percentile range
   const circleColor = useMemo((): ExpressionSpecification => {
@@ -199,8 +205,6 @@ export function StationLayer({ stations }: StationLayerProps) {
           }}
         />
       </Source>
-
-      <PriceLegend min={min} max={max} />
 
       {popup && (
         <StationPopup station={popup} onClose={handleClosePopup} />

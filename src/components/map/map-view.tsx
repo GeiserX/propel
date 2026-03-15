@@ -32,6 +32,11 @@ export function MapView({ selectedFuel, center, zoom }: MapViewProps) {
 
   const [stations, setStations] = useState<StationsGeoJSONCollection>(EMPTY_COLLECTION);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
+  const [legendRange, setLegendRange] = useState<{ min: number | null; max: number | null }>({ min: null, max: null });
+
+  const handlePriceRange = useCallback((min: number | null, max: number | null) => {
+    setLegendRange({ min, max });
+  }, []);
 
   const filteredStations: StationsGeoJSONCollection = maxPrice != null
     ? {
@@ -134,9 +139,15 @@ export function MapView({ selectedFuel, center, zoom }: MapViewProps) {
       attributionControl={{ compact: true }}
       style={{ width: "100%", height: "100%" }}
     >
-      <StationLayer stations={filteredStations} />
+      <StationLayer stations={filteredStations} onPriceRange={handlePriceRange} />
       <GeolocateButton onGeolocate={handleGeolocate} />
-      <PriceFilter stations={stations} maxPrice={maxPrice} onMaxPriceChange={setMaxPrice} />
+      <PriceFilter
+        stations={stations}
+        maxPrice={maxPrice}
+        onMaxPriceChange={setMaxPrice}
+        legendMin={legendRange.min}
+        legendMax={legendRange.max}
+      />
     </Map>
   );
 }
