@@ -24,27 +24,33 @@ export function StationLayer({ stations }: StationLayerProps) {
   }, [selectedStationId, stations]);
 
   // Compute min/max price from visible stations
+  // Compute P5/P95 percentile range for meaningful color spread
   const { min, max } = useMemo(() => {
-    let lo = Infinity;
-    let hi = -Infinity;
+    const prices: number[] = [];
     for (const f of stations.features) {
       const p = f.properties.price;
-      if (p != null) {
-        if (p < lo) lo = p;
-        if (p > hi) hi = p;
-      }
+      if (p != null) prices.push(p);
     }
-    if (lo === Infinity) return { min: null, max: null };
-    return { min: lo, max: hi };
+    if (prices.length === 0) return { min: null, max: null };
+
+    prices.sort((a, b) => a - b);
+    const p5 = prices[Math.floor(prices.length * 0.05)];
+    const p95 = prices[Math.ceil(prices.length * 0.95) - 1];
+
+    // If percentile range is too tight (< 0.02€), widen it slightly
+    if (p95 - p5 < 0.02) {
+      const mid = (p5 + p95) / 2;
+      return { min: mid - 0.01, max: mid + 0.01 };
+    }
+    return { min: p5, max: p95 };
   }, [stations]);
 
-  // Build dynamic color interpolation expression based on visible price range
+  // Build dynamic color interpolation expression using percentile range
   const circleColor = useMemo((): ExpressionSpecification => {
-    if (min == null || max == null || min === max) {
-      return ["case", ["!", ["has", "price"]], "#9ca3af", PRICE_COLORS[0]] as ExpressionSpecification;
+    if (min == null || max == null) {
+      return ["case", ["!", ["has", "price"]], "#9ca3af", PRICE_COLORS[3]] as ExpressionSpecification;
     }
 
-    // Spread color stops evenly across the actual price range
     const stops: (string | number)[] = [];
     for (let i = 0; i < PRICE_COLORS.length; i++) {
       const price = min + (i / (PRICE_COLORS.length - 1)) * (max - min);
