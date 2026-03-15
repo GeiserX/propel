@@ -1,28 +1,59 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { PhotonResult } from "@/lib/photon";
+
+export interface AutocompleteRef {
+  geocode: (query: string) => Promise<PhotonResult | null>;
+}
 
 interface AutocompleteInputProps {
   placeholder: string;
   value: string;
   onChange: (value: string) => void;
   onSelect: (result: PhotonResult) => void;
+  onClearCoordinates?: () => void;
   mapCenter?: [number, number]; // [lon, lat] for geo-biased results
 }
 
-export function AutocompleteInput({
+export const AutocompleteInput = forwardRef<AutocompleteRef, AutocompleteInputProps>(function AutocompleteInput({
   placeholder,
   value,
   onChange,
   onSelect,
+  onClearCoordinates,
   mapCenter,
-}: AutocompleteInputProps) {
+}, ref) {
   const [results, setResults] = useState<PhotonResult[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const doGeocode = useCallback(
+    async (query: string): Promise<PhotonResult[]> => {
+      const params = new URLSearchParams({ q: query });
+      if (mapCenter) {
+        params.set("lon", String(mapCenter[0]));
+        params.set("lat", String(mapCenter[1]));
+      }
+      try {
+        const res = await fetch(`/api/geocode?${params}`);
+        if (!res.ok) return [];
+        return await res.json();
+      } catch {
+        return [];
+      }
+    },
+    [mapCenter],
+  );
+
+  useImperativeHandle(ref, () => ({
+    geocode: async (query: string) => {
+      const results = await doGeocode(query);
+      return results[0] ?? null;
+    },
+  }), [doGeocode]);
 
   const fetchResults = useCallback(
     async (query: string) => {
@@ -31,35 +62,24 @@ export function AutocompleteInput({
         return;
       }
 
-      const params = new URLSearchParams({ q: query });
-      if (mapCenter) {
-        params.set("lon", String(mapCenter[0]));
-        params.set("lat", String(mapCenter[1]));
-      }
-
-      try {
-        const res = await fetch(`/api/geocode?${params}`);
-        if (!res.ok) return;
-        const data: PhotonResult[] = await res.json();
-        setResults(data);
-        setIsOpen(data.length > 0);
-        setActiveIndex(-1);
-      } catch {
-        // ignore
-      }
+      const data = await doGeocode(query);
+      setResults(data);
+      setIsOpen(data.length > 0);
+      setActiveIndex(-1);
     },
-    [mapCenter],
+    [doGeocode],
   );
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const val = e.target.value;
       onChange(val);
+      onClearCoordinates?.();
 
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => fetchResults(val), 300);
     },
-    [onChange, fetchResults],
+    [onChange, onClearCoordinates, fetchResults],
   );
 
   const handleSelect = useCallback(
@@ -145,7 +165,7 @@ export function AutocompleteInput({
       )}
     </div>
   );
-}
+});
 
 function formatResult(r: PhotonResult): string {
   const parts = [r.name];

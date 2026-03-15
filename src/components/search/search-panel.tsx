@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { PhotonResult } from "@/lib/photon";
-import { AutocompleteInput } from "./autocomplete-input";
+import { AutocompleteInput, type AutocompleteRef } from "./autocomplete-input";
 
 interface Location {
   label: string;
@@ -29,6 +29,8 @@ export function SearchPanel({
   const [destText, setDestText] = useState("");
   const [origin, setOrigin] = useState<Location | null>(null);
   const [destination, setDestination] = useState<Location | null>(null);
+  const originRef = useRef<AutocompleteRef>(null);
+  const destRef = useRef<AutocompleteRef>(null);
 
   const handleOriginSelect = useCallback((result: PhotonResult) => {
     setOrigin({ label: result.name, coordinates: result.coordinates });
@@ -38,10 +40,31 @@ export function SearchPanel({
     setDestination({ label: result.name, coordinates: result.coordinates });
   }, []);
 
-  const handleRoute = useCallback(() => {
-    if (!origin || !destination) return;
-    onRoute(origin.coordinates, destination.coordinates);
-  }, [origin, destination, onRoute]);
+  const handleRoute = useCallback(async () => {
+    let o = origin;
+    let d = destination;
+
+    // Geocode text if no autocomplete selection was made
+    if (!o && originText.trim()) {
+      const result = await originRef.current?.geocode(originText.trim());
+      if (result) {
+        o = { label: result.name, coordinates: result.coordinates };
+        setOrigin(o);
+        setOriginText(formatResult(result));
+      }
+    }
+    if (!d && destText.trim()) {
+      const result = await destRef.current?.geocode(destText.trim());
+      if (result) {
+        d = { label: result.name, coordinates: result.coordinates };
+        setDestination(d);
+        setDestText(formatResult(result));
+      }
+    }
+
+    if (!o || !d) return;
+    onRoute(o.coordinates, d.coordinates);
+  }, [origin, destination, originText, destText, onRoute]);
 
   const handleSwap = useCallback(() => {
     setOriginText(destText);
@@ -109,17 +132,21 @@ export function SearchPanel({
         {/* Input fields */}
         <div className="flex flex-1 flex-col gap-2">
           <AutocompleteInput
+            ref={originRef}
             placeholder="Origen"
             value={originText}
             onChange={setOriginText}
             onSelect={handleOriginSelect}
+            onClearCoordinates={() => setOrigin(null)}
             mapCenter={mapCenter}
           />
           <AutocompleteInput
+            ref={destRef}
             placeholder="Destino"
             value={destText}
             onChange={setDestText}
             onSelect={handleDestSelect}
+            onClearCoordinates={() => setDestination(null)}
             mapCenter={mapCenter}
           />
         </div>
@@ -129,7 +156,7 @@ export function SearchPanel({
       <div className="flex items-center gap-2 border-t border-gray-100 px-3 py-2">
         <button
           onClick={handleRoute}
-          disabled={!origin || !destination || isLoading}
+          disabled={(!origin && !originText.trim()) || (!destination && !destText.trim()) || isLoading}
           className="flex-1 rounded-md bg-emerald-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isLoading ? "Calculando..." : "Calcular ruta"}
@@ -159,6 +186,12 @@ export function SearchPanel({
       )}
     </div>
   );
+}
+
+function formatResult(r: PhotonResult): string {
+  const parts = [r.name];
+  if (r.city && r.city !== r.name) parts.push(r.city);
+  return parts.join(", ");
 }
 
 function formatDistance(km: number): string {
