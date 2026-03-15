@@ -32,18 +32,13 @@ export function MapView({ selectedFuel, center, zoom }: MapViewProps) {
 
   const [stations, setStations] = useState<StationsGeoJSONCollection>(EMPTY_COLLECTION);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
-  const [filterEnabled, setFilterEnabled] = useState(false);
 
-  const filteredStations: StationsGeoJSONCollection = filterEnabled
+  const filteredStations: StationsGeoJSONCollection = maxPrice != null
     ? {
         type: "FeatureCollection",
-        features: stations.features.filter((f) => {
-          // When filter is active, hide stations without a price for this fuel
-          if (f.properties.price == null) return false;
-          // If slider is set, apply max price
-          if (maxPrice != null) return f.properties.price <= maxPrice;
-          return true;
-        }),
+        features: stations.features.filter(
+          (f) => f.properties.price != null && f.properties.price <= maxPrice,
+        ),
       }
     : stations;
 
@@ -111,7 +106,6 @@ export function MapView({ selectedFuel, center, zoom }: MapViewProps) {
   // Reset price filter when fuel type changes
   useEffect(() => {
     setMaxPrice(null);
-    setFilterEnabled(false);
   }, [selectedFuel]);
 
   useEffect(() => {
@@ -142,16 +136,7 @@ export function MapView({ selectedFuel, center, zoom }: MapViewProps) {
     >
       <StationLayer stations={filteredStations} />
       <GeolocateButton onGeolocate={handleGeolocate} />
-      <PriceFilter
-        stations={stations}
-        maxPrice={maxPrice}
-        enabled={filterEnabled}
-        onMaxPriceChange={(p) => {
-          setMaxPrice(p);
-          if (p != null && !filterEnabled) setFilterEnabled(true);
-        }}
-        onEnabledChange={setFilterEnabled}
-      />
+      <PriceFilter stations={stations} maxPrice={maxPrice} onMaxPriceChange={setMaxPrice} />
     </Map>
   );
 }
