@@ -15,6 +15,8 @@
   <a href="https://hub.docker.com/r/drumsergio/propel"><img src="https://img.shields.io/docker/pulls/drumsergio/propel?style=flat-square&logo=docker&label=Docker%20Pulls" alt="Docker Pulls"></a>
 </p>
 
+<br>
+
 ---
 
 **No app in the world combines route planning with real-time energy prices, detour time calculation, and smart refueling recommendations. Propel does.**
