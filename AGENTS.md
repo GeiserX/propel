@@ -322,6 +322,7 @@ propel/
 - Local `docker buildx --platform linux/amd64` is only for emergency hotfixes
 - GitHub Actions handles: lint, typecheck, Docker build+push, releases, CodeQL
 - Docker Hub secrets (`DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`) are configured in GitHub repo settings
+- **Deployment flow**: commit → push → **wait for GitHub Actions Docker Publish workflow to finish** → then `docker pull` and redeploy on watchtower. Never pull before the workflow completes
 - **Never restart Caddy** — always use `caddy reload` (Unraid FUSE causes stale file handles on restart)
 
 ### Git Workflow
