@@ -135,8 +135,8 @@ export function StationLayer({ stations, onPriceRange }: StationLayerProps) {
         type="geojson"
         data={stations}
         cluster={true}
-        clusterMaxZoom={9}
-        clusterRadius={45}
+        clusterMaxZoom={12}
+        clusterRadius={50}
       >
         {/* Cluster circles */}
         <Layer
