@@ -12,39 +12,45 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 
 ### 0.1 — Project Scaffolding
 - [x] Repository setup (GitHub, AGENTS.md, README)
-- [ ] Next.js 15 + App Router + TypeScript strict
-- [ ] Tailwind CSS + shadcn/ui setup
-- [ ] MapLibre GL JS + react-map-gl integration
-- [ ] OpenFreeMap as tile provider (Liberty style)
-- [ ] Basic responsive layout (map fills viewport)
-- [ ] Docker Compose for local dev (PostGIS only for now)
+- [x] Next.js 15 + App Router + TypeScript strict
+- [x] Tailwind CSS + shadcn/ui setup
+- [x] MapLibre GL JS + react-map-gl integration
+- [x] OpenFreeMap as tile provider (Liberty style)
+- [x] Basic responsive layout (map fills viewport)
+- [x] Docker Compose for production (PostGIS + app via Portainer GitOps)
 
 ### 0.2 — Database + Spain Scraper
-- [ ] PostGIS schema via Prisma (stations, fuel_prices tables)
-- [ ] GiST spatial index on station geometry
-- [ ] Spain MITECO scraper (`src/scrapers/spain.ts`)
+- [x] PostGIS schema via Prisma (stations, fuel_prices tables)
+- [x] GiST spatial index on station geometry
+- [x] Spain MITECO scraper (`src/scrapers/spain.ts`)
   - Fetch all ~12,000 stations + prices from `EstacionesTerrestres/`
-  - Map Spanish fuel types to EU harmonized codes (E5, E10, B7, etc.)
+  - Map 15 Spanish fuel types to EU harmonized codes (E5, E10, E5_98, B7, B7_PREMIUM, B_AGRICULTURAL, HVO, LPG, CNG, LNG, H2, ADBLUE, etc.)
   - Store with proper lat/lon geometry
-- [ ] Scraper CLI: `npm run scraper:run -- --country=ES --once`
+- [x] Scraper CLI: `npx tsx src/scrapers/cli.ts --country=ES --once`
 - [ ] Seed script for development
 
 ### 0.3 — Map View (Default Page)
-- [ ] Map centered on Spain on first load
-- [ ] Station markers from PostGIS via bbox API: `GET /api/stations?bbox=...&fuel=B7`
-- [ ] MapLibre GeoJSON source with `cluster: true` (GPU clustering)
-- [ ] Color-coded markers: green (cheapest 20%), yellow (mid), red (expensive)
-- [ ] Click marker → popup with: station name, brand, address, all fuel prices
-- [ ] Fuel type selector dropdown (B7, E5, E10, E5_98, LPG, CNG)
-- [ ] Price filter: max price slider or numeric input
+- [x] Map centered on configurable country on first load (env vars: `PROPEL_DEFAULT_COUNTRY`)
+- [x] Station markers from PostGIS via bbox API: `GET /api/stations?bbox=...&fuel=B7`
+- [x] MapLibre GeoJSON source with `cluster: true` (GPU clustering, clusterMaxZoom=9, clusterRadius=45)
+- [x] Color-coded markers: P5/P95 percentile-based 7-color rainbow gradient (green→red→purple) with dynamic price legend
+- [x] Click marker → popup with: brand (bold heading), address + city, large price, fuel type + relative time ("Actualizado hace Xh")
+- [x] Fuel type selector dropdown (15 types, grouped: Diésel, Gasolina, Gas, Hidrógeno, Otros)
+- [x] Price filter: max price slider (bottom-right, real-time filtering, shows station count)
+
+### 0.3b — Navbar & Stats (bonus, not in original plan)
+- [x] Dark navbar (#0c111b, 44px) with Propel logo (emerald-to-cyan gradient bolt + wordmark)
+- [x] Stats dropdown: station/price totals, per-country breakdown with flags, last update timestamps
+- [x] "Made with ♥ by Sergio Fernández" footer + GitHub Sponsors button
+- [x] GitHub Actions CI/CD: lint, typecheck, Docker build+push to Docker Hub (`drumsergio/propel`)
 
 ### 0.4 — Geolocation + Nearby
-- [ ] Browser geolocation API (with consent prompt)
-- [ ] "Center on me" button
-- [ ] Auto-zoom to user area if geolocation granted
-- [ ] Fallback: IP-based country center (Spain center: 40.4, -3.7)
+- [x] Browser geolocation API (with consent prompt)
+- [x] "Center on me" button (top-right, flies to location at zoom 12)
+- [x] Auto-zoom to user area if geolocation granted
+- [x] Fallback: env-var-based country center (configurable via `PROPEL_DEFAULT_COUNTRY`)
 
-**Deliverable**: A working map at `localhost:3000` showing all Spanish fuel stations with real prices, filterable by fuel type and price.
+**Deliverable**: A working map at `propel.geiser.cloud` showing all ~12,000 Spanish fuel stations with real prices for 15 fuel types, P5/P95 color scale, clustered map, dark navbar with stats.
 
 ---
 

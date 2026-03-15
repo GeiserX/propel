@@ -114,7 +114,7 @@ The closest analog is **A Better Route Planner (ABRP)** for EVs — Propel does 
 ```
 propel.geiser.cloud (Caddy reverse proxy on watchtower)
     |
-    +-- Next.js App (SSR + API routes)         [Port 3100, ~512MB RAM]
+    +-- Next.js App (SSR + API routes)         [Port 3200, ~512MB RAM]
     |       |
     |       +-- PostGIS (stations + prices)    [Port 5433, ~2-4GB RAM]
     |       |
@@ -310,7 +310,7 @@ propel/
 
 | Service | Image | RAM | Port |
 |---|---|---|---|
-| app | `drumsergio/propel:x.y.z` | 512 MB | 3100 |
+| app | `drumsergio/propel:x.y.z` | 512 MB | 3200 |
 | db | `postgis/postgis:16-3.4` | 2-4 GB | 5433 |
 | valhalla | `ghcr.io/gis-ops/docker-valhalla` | 2-4 GB | 8002 |
 | photon | `komoot/photon` | ~1 GB | 2322 |

@@ -7,6 +7,8 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 import type { FuelType, StationsGeoJSONCollection } from "@/types/station";
 import { StationLayer } from "./station-layer";
+import { GeolocateButton } from "./geolocate-button";
+import { PriceFilter } from "./price-filter";
 
 const OPENFREEMAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 const DEBOUNCE_MS = 300;
@@ -29,6 +31,16 @@ export function MapView({ selectedFuel, center, zoom }: MapViewProps) {
   const abortRef = useRef<AbortController | null>(null);
 
   const [stations, setStations] = useState<StationsGeoJSONCollection>(EMPTY_COLLECTION);
+  const [maxPrice, setMaxPrice] = useState<number | null>(null);
+
+  const filteredStations: StationsGeoJSONCollection = maxPrice != null
+    ? {
+        type: "FeatureCollection",
+        features: stations.features.filter(
+          (f) => f.properties.price == null || f.properties.price <= maxPrice,
+        ),
+      }
+    : stations;
 
   const fetchStations = useCallback(
     async (fuel: FuelType) => {
@@ -91,11 +103,20 @@ export function MapView({ selectedFuel, center, zoom }: MapViewProps) {
     fetchStations(selectedFuel);
   }, [fetchStations, selectedFuel]);
 
+  // Reset price filter when fuel type changes
+  useEffect(() => {
+    setMaxPrice(null);
+  }, [selectedFuel]);
+
   useEffect(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       if (abortRef.current) abortRef.current.abort();
     };
+  }, []);
+
+  const handleGeolocate = useCallback((lon: number, lat: number) => {
+    mapRef.current?.flyTo({ center: [lon, lat], zoom: 12, duration: 1500 });
   }, []);
 
   return (
@@ -113,7 +134,9 @@ export function MapView({ selectedFuel, center, zoom }: MapViewProps) {
       attributionControl={{ compact: true }}
       style={{ width: "100%", height: "100%" }}
     >
-      <StationLayer stations={stations} />
+      <StationLayer stations={filteredStations} />
+      <GeolocateButton onGeolocate={handleGeolocate} />
+      <PriceFilter stations={stations} maxPrice={maxPrice} onMaxPriceChange={setMaxPrice} />
     </Map>
   );
 }
