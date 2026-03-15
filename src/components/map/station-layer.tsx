@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Source, Layer, useMap } from "react-map-gl/maplibre";
 import type { MapLayerMouseEvent } from "react-map-gl/maplibre";
-import type { GeoJSONSource } from "maplibre-gl";
-import type { StationsGeoJSONCollection, StationGeoJSON } from "@/types/station";
+import type { GeoJSONSource, ExpressionSpecification } from "maplibre-gl";
+import type { StationsGeoJSONCollection } from "@/types/station";
 import { StationPopup } from "./station-popup";
+import { PriceLegend, PRICE_COLORS } from "./price-legend";
 
 const INTERACTIVE_LAYERS = ["clusters", "unclustered-point"] as const;
 
@@ -15,14 +16,54 @@ interface StationLayerProps {
 
 export function StationLayer({ stations }: StationLayerProps) {
   const { current: mapRef } = useMap();
-  const [popup, setPopup] = useState<StationGeoJSON | null>(null);
+  const [selectedStationId, setSelectedStationId] = useState<string | null>(null);
+
+  const popup = useMemo(() => {
+    if (!selectedStationId) return null;
+    return stations.features.find((f) => f.properties.id === selectedStationId) ?? null;
+  }, [selectedStationId, stations]);
+
+  // Compute min/max price from visible stations
+  const { min, max } = useMemo(() => {
+    let lo = Infinity;
+    let hi = -Infinity;
+    for (const f of stations.features) {
+      const p = f.properties.price;
+      if (p != null) {
+        if (p < lo) lo = p;
+        if (p > hi) hi = p;
+      }
+    }
+    if (lo === Infinity) return { min: null, max: null };
+    return { min: lo, max: hi };
+  }, [stations]);
+
+  // Build dynamic color interpolation expression based on visible price range
+  const circleColor = useMemo((): ExpressionSpecification => {
+    if (min == null || max == null || min === max) {
+      return ["case", ["!", ["has", "price"]], "#9ca3af", PRICE_COLORS[0]] as ExpressionSpecification;
+    }
+
+    // Spread color stops evenly across the actual price range
+    const stops: (string | number)[] = [];
+    for (let i = 0; i < PRICE_COLORS.length; i++) {
+      const price = min + (i / (PRICE_COLORS.length - 1)) * (max - min);
+      stops.push(price, PRICE_COLORS[i]);
+    }
+
+    return [
+      "case",
+      ["!", ["has", "price"]],
+      "#9ca3af",
+      ["interpolate", ["linear"], ["get", "price"], ...stops],
+    ] as ExpressionSpecification;
+  }, [min, max]);
 
   const handleClick = useCallback(
     (e: MapLayerMouseEvent) => {
       if (!e.features || e.features.length === 0 || !mapRef) return;
       const feature = e.features[0];
 
-      // Handle cluster click: zoom into it
       if (feature.properties?.cluster) {
         const source = mapRef.getSource("stations") as GeoJSONSource | undefined;
         if (!source) return;
@@ -37,31 +78,12 @@ export function StationLayer({ stations }: StationLayerProps) {
         return;
       }
 
-      // Handle unclustered point click: show popup
-      const geometry = feature.geometry as GeoJSON.Point;
       const props = feature.properties as Record<string, unknown>;
-      setPopup({
-        type: "Feature",
-        geometry: {
-          type: "Point",
-          coordinates: [geometry.coordinates[0], geometry.coordinates[1]],
-        },
-        properties: {
-          id: String(props.id ?? ""),
-          name: String(props.name ?? ""),
-          brand: props.brand ? String(props.brand) : null,
-          address: String(props.address ?? ""),
-          city: String(props.city ?? ""),
-          price: props.price != null ? Number(props.price) : null,
-          fuelType: String(props.fuelType ?? ""),
-          currency: String(props.currency ?? ""),
-        },
-      });
+      setSelectedStationId(String(props.id ?? ""));
     },
     [mapRef],
   );
 
-  // Register click handlers on the interactive layers via the map instance
   useEffect(() => {
     if (!mapRef) return;
     const map = mapRef.getMap();
@@ -74,13 +96,8 @@ export function StationLayer({ stations }: StationLayerProps) {
       map.on("click", layerId, handler);
     }
 
-    // Pointer cursor on hover over interactive layers
-    const setCursor = () => {
-      map.getCanvas().style.cursor = "pointer";
-    };
-    const resetCursor = () => {
-      map.getCanvas().style.cursor = "";
-    };
+    const setCursor = () => { map.getCanvas().style.cursor = "pointer"; };
+    const resetCursor = () => { map.getCanvas().style.cursor = ""; };
     for (const layerId of INTERACTIVE_LAYERS) {
       map.on("mouseenter", layerId, setCursor);
       map.on("mouseleave", layerId, resetCursor);
@@ -96,7 +113,7 @@ export function StationLayer({ stations }: StationLayerProps) {
   }, [mapRef, handleClick]);
 
   const handleClosePopup = useCallback(() => {
-    setPopup(null);
+    setSelectedStationId(null);
   }, []);
 
   return (
@@ -106,8 +123,8 @@ export function StationLayer({ stations }: StationLayerProps) {
         type="geojson"
         data={stations}
         cluster={true}
-        clusterMaxZoom={14}
-        clusterRadius={50}
+        clusterMaxZoom={9}
+        clusterRadius={45}
       >
         {/* Cluster circles */}
         <Layer
@@ -118,23 +135,28 @@ export function StationLayer({ stations }: StationLayerProps) {
             "circle-color": [
               "step",
               ["get", "point_count"],
-              "#60a5fa", // blue-400 for small clusters
-              20,
-              "#3b82f6", // blue-500 for medium
-              100,
-              "#2563eb", // blue-600 for large
+              "#60a5fa",
+              50,
+              "#3b82f6",
+              200,
+              "#2563eb",
+              500,
+              "#1d4ed8",
             ],
             "circle-radius": [
               "step",
               ["get", "point_count"],
-              18,
-              20,
-              24,
-              100,
+              16,
+              50,
+              22,
+              200,
               30,
+              500,
+              38,
             ],
             "circle-stroke-width": 2,
             "circle-stroke-color": "#ffffff",
+            "circle-opacity": 0.85,
           }}
         />
 
@@ -148,57 +170,31 @@ export function StationLayer({ stations }: StationLayerProps) {
             "text-font": ["Noto Sans Regular"],
             "text-size": 12,
           }}
-          paint={{
-            "text-color": "#ffffff",
-          }}
+          paint={{ "text-color": "#ffffff" }}
         />
 
-        {/* Unclustered station points, color-coded by price */}
+        {/* Unclustered station points — dynamic color scale */}
         <Layer
           id="unclustered-point"
           type="circle"
           filter={["!", ["has", "point_count"]]}
           paint={{
-            "circle-color": [
-              "case",
-              // Null/missing price: gray
-              ["!", ["has", "price"]],
-              "#9ca3af",
-              ["==", ["typeof", ["get", "price"]], "string"],
-              "#9ca3af",
-              // Price-based color: green (cheap) -> yellow (mid) -> red (expensive)
-              [
-                "interpolate",
-                ["linear"],
-                ["get", "price"],
-                0.8,
-                "#22c55e", // green-500: cheapest
-                1.2,
-                "#22c55e", // green-500: still cheap
-                1.5,
-                "#eab308", // yellow-500: mid-range
-                1.8,
-                "#ef4444", // red-500: expensive
-                2.5,
-                "#ef4444", // red-500: very expensive
-              ],
-            ],
+            "circle-color": circleColor,
             "circle-radius": [
               "interpolate",
               ["linear"],
               ["zoom"],
-              6,
-              4,
-              10,
-              6,
-              14,
-              8,
+              6, 4,
+              10, 6,
+              14, 8,
             ],
             "circle-stroke-width": 1.5,
             "circle-stroke-color": "#ffffff",
           }}
         />
       </Source>
+
+      <PriceLegend min={min} max={max} />
 
       {popup && (
         <StationPopup station={popup} onClose={handleClosePopup} />

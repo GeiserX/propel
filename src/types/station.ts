@@ -2,14 +2,20 @@ export type StationType = "fuel" | "ev_charger" | "both";
 
 export type FuelType =
   | "E5"
+  | "E5_PREMIUM"
   | "E10"
   | "E5_98"
+  | "E98_E10"
   | "B7"
   | "B7_PREMIUM"
   | "B10"
+  | "B_AGRICULTURAL"
+  | "HVO"
   | "LPG"
   | "CNG"
-  | "H2";
+  | "LNG"
+  | "H2"
+  | "ADBLUE";
 
 export interface Station {
   id: string;
@@ -53,7 +59,8 @@ export interface StationGeoJSON {
     brand: string | null;
     address: string;
     city: string;
-    price: number | null;
+    price?: number | null;
+    reportedAt?: string | null;
     fuelType: string;
     currency: string;
   };

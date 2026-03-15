@@ -187,6 +187,28 @@ Internal canonical IDs — display localized names per country/language:
 | CNG | Compressed natural gas | GNC | GNV | CNG/Erdgas | Metano | CNG |
 | H2 | Hydrogen | Hidrogeno | Hydrogene | Wasserstoff | Idrogeno | Hydrogen |
 
+### Environment Variables
+
+| Variable | Description | Default |
+|---|---|---|
+| `DATABASE_URL` | PostGIS connection string | Required |
+| `PROPEL_DEFAULT_COUNTRY` | ISO code for initial map view | `ES` |
+| `PROPEL_ENABLED_COUNTRIES` | Comma-separated ISO codes to enable (e.g. `ES,FR,DE`) | All countries with scrapers |
+| `PROPEL_DEFAULT_FUEL` | Override default fuel type | Per-country default |
+
+These env vars allow self-hosters to scope the app to their country/region. For example, a French self-hoster can set `PROPEL_DEFAULT_COUNTRY=FR` and `PROPEL_ENABLED_COUNTRIES=FR` to show only France.
+
+### Design Decisions
+
+- **No timezone-based country detection** — use env vars for country config, not client TZ
+- **Navbar is dark** (`#0c111b`) — minimal height (44px), Propel logo on left, fuel selector on right
+- **Logo**: Emerald-to-cyan gradient rounded square with lightning bolt cutout. "Propel" wordmark in bold white
+- **Stats dropdown** next to logo (separated by divider) — shows station/price totals, per-country breakdown with flags, last update timestamp. Footer: "Made with ♥ by Sergio Fernández" + GitHub Sponsors button (same pattern as Telegram-Archive)
+- **Fuel selector** has optgroup categories (Diésel, Gasolina, Gas, Hidrógeno, Otros) with category icon
+- **Station popup layout** (top to bottom): brand name (bold, primary heading) → address + city (small gray) → price card (large 22px price + EUR/L, fuel type label + "· Actualizado hace Xh" below). "Sin precio para [fuel]" if no data. Brand comes from MITECO "Rótulo" field; `name` = brand + city (internal, not shown in popup)
+- **Map clustering**: No API limit on station count (12K is fine for MapLibre). Cluster radius 80px. Larger circles for denser clusters (16px→38px scaling at 50/200/500 thresholds). Blue color deepens with density
+- **Map default center/zoom** comes from server config (env vars), not hardcoded
+
 ---
 
 ## Core Features & Algorithms
@@ -293,6 +315,14 @@ propel/
 | valhalla | `ghcr.io/gis-ops/docker-valhalla` | 2-4 GB | 8002 |
 | photon | `komoot/photon` | ~1 GB | 2322 |
 | scraper | `drumsergio/propel-scraper:x.y.z` | 256 MB | — |
+
+### CI/CD
+
+- **Never build Docker images locally for deployment** — always let GitHub Actions runners build and push (they're amd64, matching production)
+- Local `docker buildx --platform linux/amd64` is only for emergency hotfixes
+- GitHub Actions handles: lint, typecheck, Docker build+push, releases, CodeQL
+- Docker Hub secrets (`DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`) are configured in GitHub repo settings
+- **Never restart Caddy** — always use `caddy reload` (Unraid FUSE causes stale file handles on restart)
 
 ### Git Workflow
 

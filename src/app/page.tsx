@@ -1,9 +1,14 @@
-import { MapView } from "@/components/map/map-view";
+import { getConfig } from "@/lib/config";
+import { HomeClient } from "@/components/home-client";
 
 export default function Home() {
+  const config = getConfig();
+
   return (
-    <main className="relative h-screen w-screen overflow-hidden">
-      <MapView />
-    </main>
+    <HomeClient
+      defaultFuel={config.defaultFuel}
+      center={config.center}
+      zoom={config.zoom}
+    />
   );
 }

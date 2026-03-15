@@ -5,14 +5,20 @@ import type { StationsGeoJSONCollection, StationGeoJSON } from "@/types/station"
 
 const VALID_FUEL_TYPES = [
   "E5",
+  "E5_PREMIUM",
   "E10",
   "E5_98",
+  "E98_E10",
   "B7",
   "B7_PREMIUM",
   "B10",
+  "B_AGRICULTURAL",
+  "HVO",
   "LPG",
   "CNG",
+  "LNG",
   "H2",
+  "ADBLUE",
 ] as const;
 
 const querySchema = z.object({
@@ -46,6 +52,7 @@ interface StationRow {
   latitude: number;
   price: number | null;
   currency: string;
+  reported_at: Date | null;
 }
 
 export async function GET(request: NextRequest) {
@@ -81,21 +88,21 @@ export async function GET(request: NextRequest) {
         ST_X(s.geom) AS longitude,
         ST_Y(s.geom) AS latitude,
         fp.price::float AS price,
-        COALESCE(fp.currency, 'EUR') AS currency
+        COALESCE(fp.currency, 'EUR') AS currency,
+        fp.reported_at
       FROM stations s
       LEFT JOIN LATERAL (
-        SELECT price, currency
+        SELECT price, currency, reported_at
         FROM fuel_prices
         WHERE station_id = s.id
           AND fuel_type = $5
-        ORDER BY reported_at DESC
+        ORDER BY reported_at DESC NULLS LAST
         LIMIT 1
       ) fp ON true
       WHERE ST_Within(
         s.geom,
         ST_MakeEnvelope($1, $2, $3, $4, 4326)
       )
-      LIMIT 2000
       `,
       minLon,
       minLat,
@@ -116,9 +123,10 @@ export async function GET(request: NextRequest) {
         brand: row.brand,
         address: row.address,
         city: row.city,
-        price: row.price,
         fuelType: fuel,
         currency: row.currency,
+        ...(row.price != null ? { price: row.price } : {}),
+        ...(row.reported_at ? { reportedAt: new Date(row.reported_at).toISOString() } : {}),
       },
     }));
 

@@ -17,16 +17,26 @@ const MITECO_URL =
  * Only the types we care about — the API has many more niche fields.
  */
 const FUEL_FIELD_MAP: ReadonlyMap<string, FuelType> = new Map([
+  // Diesel
   ["Precio Gasoleo A", "B7"],
   ["Precio Gasoleo Premium", "B7_PREMIUM"],
+  ["Precio Gasoleo B", "B_AGRICULTURAL"],
+  ["Precio Diésel Renovable", "HVO"],
+  // Gasoline
   ["Precio Gasolina 95 E5", "E5"],
+  ["Precio Gasolina 95 E5 Premium", "E5_PREMIUM"],
   ["Precio Gasolina 95 E10", "E10"],
   ["Precio Gasolina 98 E5", "E5_98"],
+  ["Precio Gasolina 98 E10", "E98_E10"],
+  // Gas
+  ["Precio Gases licuados del petróleo", "LPG"],
   ["Precio Gas Licuado del Petróleo", "LPG"],
-  // Alternate key used in some API responses
-  ["Precio GLP", "LPG"],
   ["Precio Gas Natural Comprimido", "CNG"],
+  ["Precio Gas Natural Licuado", "LNG"],
+  // Hydrogen
   ["Precio Hidrogeno", "H2"],
+  // Other
+  ["Precio Adblue", "ADBLUE"],
 ]);
 
 /** Shape of a single element in `ListaEESSPrecio` from the MITECO API. */
@@ -44,12 +54,18 @@ interface MitecoStation {
   // Price fields — all strings with comma decimal sep, or empty
   "Precio Gasoleo A": string;
   "Precio Gasoleo Premium": string;
+  "Precio Gasoleo B": string;
+  "Precio Diésel Renovable": string;
   "Precio Gasolina 95 E5": string;
+  "Precio Gasolina 95 E5 Premium": string;
   "Precio Gasolina 95 E10": string;
   "Precio Gasolina 98 E5": string;
-  "Precio Gas Licuado del Petróleo": string;
+  "Precio Gasolina 98 E10": string;
+  "Precio Gases licuados del petróleo": string;
   "Precio Gas Natural Comprimido": string;
+  "Precio Gas Natural Licuado": string;
   "Precio Hidrogeno": string;
+  "Precio Adblue": string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
@@ -154,12 +170,16 @@ export class SpainScraper extends BaseScraper {
 
       const externalId = raw.IDEESS.trim();
 
+      const brand = raw["Rótulo"]?.trim() || null;
+      const address = raw["Dirección"]?.trim() || "";
+      const city = raw.Municipio?.trim() || "";
+
       stations.push({
         externalId,
-        name: cleanName(raw["Rótulo"]),
-        brand: raw["Rótulo"]?.trim() || null,
-        address: raw["Dirección"]?.trim() || "",
-        city: raw.Municipio?.trim() || "",
+        name: brand ? `${cleanName(brand)} ${city}` : address,
+        brand: brand ? cleanName(brand) : null,
+        address,
+        city,
         province: raw.Provincia?.trim() || null,
         latitude: lat,
         longitude: lon,

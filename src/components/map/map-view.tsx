@@ -6,26 +6,28 @@ import type { MapRef, ViewStateChangeEvent } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import type { FuelType, StationsGeoJSONCollection } from "@/types/station";
-import { FuelSelector } from "./fuel-selector";
 import { StationLayer } from "./station-layer";
 
 const OPENFREEMAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
-const DEFAULT_CENTER = { longitude: -3.7, latitude: 40.4 };
-const DEFAULT_ZOOM = 6;
 const DEBOUNCE_MS = 300;
-const MIN_ZOOM_FOR_FETCH = 7;
+const MIN_ZOOM_FOR_FETCH = 5;
 
 const EMPTY_COLLECTION: StationsGeoJSONCollection = {
   type: "FeatureCollection",
   features: [],
 };
 
-export function MapView() {
+interface MapViewProps {
+  selectedFuel: FuelType;
+  center: [number, number];
+  zoom: number;
+}
+
+export function MapView({ selectedFuel, center, zoom }: MapViewProps) {
   const mapRef = useRef<MapRef | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  const [selectedFuel, setSelectedFuel] = useState<FuelType>("B7");
   const [stations, setStations] = useState<StationsGeoJSONCollection>(EMPTY_COLLECTION);
 
   const fetchStations = useCallback(
@@ -33,8 +35,8 @@ export function MapView() {
       const map = mapRef.current;
       if (!map) return;
 
-      const zoom = map.getZoom();
-      if (zoom < MIN_ZOOM_FOR_FETCH) {
+      const z = map.getZoom();
+      if (z < MIN_ZOOM_FOR_FETCH) {
         setStations(EMPTY_COLLECTION);
         return;
       }
@@ -49,10 +51,7 @@ export function MapView() {
         bounds.getNorth(),
       ].join(",");
 
-      // Cancel any in-flight request
-      if (abortRef.current) {
-        abortRef.current.abort();
-      }
+      if (abortRef.current) abortRef.current.abort();
       const controller = new AbortController();
       abortRef.current = controller;
 
@@ -72,38 +71,26 @@ export function MapView() {
 
   const debouncedFetch = useCallback(
     (fuel: FuelType) => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-      debounceRef.current = setTimeout(() => {
-        fetchStations(fuel);
-      }, DEBOUNCE_MS);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => fetchStations(fuel), DEBOUNCE_MS);
     },
     [fetchStations],
   );
 
   const handleMoveEnd = useCallback(
-    (_e: ViewStateChangeEvent) => {
-      debouncedFetch(selectedFuel);
-    },
+    (_e: ViewStateChangeEvent) => debouncedFetch(selectedFuel),
     [debouncedFetch, selectedFuel],
   );
 
-  const handleFuelChange = useCallback(
-    (fuel: FuelType) => {
-      setSelectedFuel(fuel);
-      fetchStations(fuel);
-    },
-    [fetchStations],
-  );
+  const handleLoad = useCallback(() => {
+    fetchStations(selectedFuel);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchStations]);
 
-  // Fetch on initial load once the map is ready
   useEffect(() => {
     fetchStations(selectedFuel);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchStations, selectedFuel]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -112,26 +99,21 @@ export function MapView() {
   }, []);
 
   return (
-    <div className="relative h-full w-full">
-      <Map
-        ref={mapRef}
-        initialViewState={{
-          longitude: DEFAULT_CENTER.longitude,
-          latitude: DEFAULT_CENTER.latitude,
-          zoom: DEFAULT_ZOOM,
-        }}
-        mapStyle={OPENFREEMAP_STYLE}
-        onMoveEnd={handleMoveEnd}
-        interactiveLayerIds={["clusters", "unclustered-point"]}
-        attributionControl={{ compact: true }}
-        style={{ width: "100%", height: "100%" }}
-      >
-        <FuelSelector
-          selectedFuel={selectedFuel}
-          onFuelChange={handleFuelChange}
-        />
-        <StationLayer stations={stations} />
-      </Map>
-    </div>
+    <Map
+      ref={mapRef}
+      initialViewState={{
+        longitude: center[0],
+        latitude: center[1],
+        zoom,
+      }}
+      mapStyle={OPENFREEMAP_STYLE}
+      onLoad={handleLoad}
+      onMoveEnd={handleMoveEnd}
+      interactiveLayerIds={["clusters", "unclustered-point"]}
+      attributionControl={{ compact: true }}
+      style={{ width: "100%", height: "100%" }}
+    >
+      <StationLayer stations={stations} />
+    </Map>
   );
 }
