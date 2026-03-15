@@ -59,32 +59,32 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 **Goal**: Plan a route A→B and see fuel stations along it.
 
 ### 1.1 — Valhalla Integration
-- [ ] Docker Compose: add Valhalla service with Spain-only tiles (~1.3GB PBF, ~1-2GB RAM)
-- [ ] Valhalla API client (`src/lib/valhalla.ts`)
-- [ ] Route endpoint: `POST /api/route` (origin, destination, optional waypoints)
-- [ ] Returns: polyline (GeoJSON), distance, duration, legs
+- [x] Docker Compose: add Valhalla service with Spain-only tiles (~1.3GB PBF, ~1-2GB RAM)
+- [x] Valhalla API client (`src/lib/valhalla.ts`)
+- [x] Route endpoint: `POST /api/route` (origin, destination, optional waypoints)
+- [x] Returns: polyline (GeoJSON), distance, duration, legs
 
 ### 1.2 — Search / Geocoding
-- [ ] Photon geocoding client (`src/lib/photon.ts`)
-- [ ] Route search component: origin + destination inputs with typeahead autocomplete
-- [ ] Debounced Photon requests (300ms)
-- [ ] Geo-biased results (user location passed as lat/lon)
+- [x] Photon geocoding client (`src/lib/photon.ts`)
+- [x] Route search component: origin + destination inputs with typeahead autocomplete
+- [x] Debounced Photon requests (300ms)
+- [x] Geo-biased results (user location passed as lat/lon)
 - [ ] "Add waypoint" button (up to 5 intermediate stops)
-- [ ] Swap origin/destination button
+- [x] Swap origin/destination button
 
 ### 1.3 — Route Display
-- [ ] Draw route polyline on map (MapLibre `addLayer` type `line`)
-- [ ] Blue route line with outline for visibility
-- [ ] Auto-fit map bounds to show full route
-- [ ] Route info panel: total distance, total duration, number of legs
+- [x] Draw route polyline on map (MapLibre `addLayer` type `line`)
+- [x] Blue route line with outline for visibility
+- [x] Auto-fit map bounds to show full route
+- [x] Route info panel: total distance, total duration, number of legs
 - [ ] Alternative routes via Valhalla `alternates` parameter (show as grey lines)
 
 ### 1.4 — Stations Along Route
-- [ ] Corridor query using Turf.js `buffer()`:
-  - Buffer the route polyline by 5km (configurable)
-  - Convert to PostGIS polygon
-  - `SELECT * FROM stations WHERE ST_Within(geom, corridor_polygon)`
-- [ ] Show corridor stations on map with fuel prices
+- [x] Corridor query using PostGIS `ST_DWithin`:
+  - Uses PostGIS geography-aware `ST_DWithin` with 5km default corridor
+  - Route geometry passed as WKT LineString to PostGIS
+  - `SELECT * FROM stations WHERE ST_DWithin(geom::geography, route::geography, 5000)`
+- [x] Show corridor stations on map with fuel prices
 - [ ] Station list panel: sorted by position along route (not distance from user)
 - [ ] Highlight stations that are directly on the route vs requiring detour
 
