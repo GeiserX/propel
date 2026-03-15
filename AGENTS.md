@@ -85,11 +85,11 @@ The closest analog is **A Better Route Planner (ABRP)** for EVs — Propel does 
 ### Infrastructure
 | Component | Details |
 |---|---|
-| PostGIS 16 | Spatial database for stations + prices (`postgis/postgis:16-3.4`) |
-| Valhalla | Self-hosted routing engine with isochrone support (`ghcr.io/gis-ops/docker-valhalla`) |
+| PostGIS 17 | Spatial database for stations + prices (`postgis/postgis:17-3.4`) |
+| Valhalla 3.5.1 | Self-hosted routing engine (`ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1`). Spain tiles built from Geofabrik PBF. Enhance stage needs ~12GB RAM peak. |
 | Protomaps PMTiles | Self-hosted vector map tiles on NVMe |
 | OpenFreeMap | Primary tile provider (free, no API key, no rate limits) |
-| Photon | Geocoding / address autocomplete (self-hostable) |
+| Photon 1.0.1 | Geocoding / address autocomplete. Runs on `eclipse-temurin:21-jre` with official JAR. Uses OpenSearch backend (NOT old Elasticsearch). Data imported from GraphHopper JSONL planet dump with `-country-codes es` filter. |
 | Caddy | Reverse proxy (existing on watchtower) |
 | Docker | Multi-stage builds, images on Docker Hub |
 | Portainer | Container management with GitOps |
@@ -127,7 +127,9 @@ propel.geiser.cloud (Caddy reverse proxy on watchtower)
     +-- Photon (geocoding)                     [Port 2322, ~1GB RAM]
 ```
 
-**Total: ~6-10GB RAM, ~80GB disk** — fits on watchtower alongside existing workloads.
+**Steady-state: ~4-5GB RAM, ~10GB disk (Spain only).**
+**First-time build: needs ~16GB RAM peak** (Valhalla enhance), then drops to steady-state. Run Valhalla and Photon builds sequentially to avoid memory pressure.
+**Disk breakdown**: PBF ~1.4GB, Valhalla tiles ~2GB, Photon data ~3GB, PostGIS ~1GB, app ~50MB.
 
 ### Database Schema (PostGIS)
 
@@ -210,6 +212,25 @@ These env vars allow self-hosters to scope the app to their country/region. For 
 - **Map default center/zoom** comes from server config (env vars), not hardcoded
 
 ---
+
+## Phase 1: Route Planning (Implemented)
+
+### Components
+- **`src/lib/photon.ts`** — Photon geocoding client. Calls `/api` with query, language, optional geo-bias.
+- **`src/lib/valhalla.ts`** — Valhalla routing client. Calls `POST /route` with locations + costing. Includes precision-6 polyline decoder.
+- **`src/app/api/geocode/route.ts`** — `GET /api/geocode?q=Madrid&lat=40.4&lon=-3.7` — Zod validated, proxies to Photon.
+- **`src/app/api/route/route.ts`** — `POST /api/route` with `{ origin, destination, waypoints? }` — calls Valhalla.
+- **`src/app/api/route-stations/route.ts`** — `POST /api/route-stations` with `{ geometry, fuel, corridorKm? }` — finds stations within N km of route using `ST_DWithin` on PostGIS geography.
+- **`src/components/search/search-panel.tsx`** — Left-side collapsible panel (Google Maps style). Origin + destination inputs, swap, "Calcular ruta" button. Auto-geocodes typed text on submit if no autocomplete selection was made.
+- **`src/components/search/autocomplete-input.tsx`** — Reusable autocomplete with 300ms debounce, keyboard nav, geo-biased results. Exposes `geocode()` method via `forwardRef`.
+- **`src/components/map/route-layer.tsx`** — MapLibre route visualization: white outline (7px) + blue fill (4px, `#3b82f6`).
+- **`src/components/map/map-view.tsx`** — Uses `forwardRef` to expose MapRef. Switches between bbox station fetch and corridor station fetch based on active route.
+
+### Infrastructure
+- **Valhalla**: Spain PBF from Geofabrik, tile build + enhance on first start. Image: `ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1`. Needs 16GB RAM limit (enhance peaks at ~12GB). Do NOT run simultaneously with Photon import — causes OOM.
+- **Photon**: No official Docker image. Uses `eclipse-temurin:21-jre` with custom entrypoint that downloads Photon 1.0.1 JAR + JSONL planet dump (4.7GB), imports with `-country-codes es -languages es,en`. Must bind to `0.0.0.0` (`-listen-ip 0.0.0.0`), default is localhost-only.
+- **Old `lehrenfried/photon` image is INCOMPATIBLE** — uses Elasticsearch 5.5.0 from 2020. Photon 1.0.x uses OpenSearch.
+- **Old Spain extract** (`photon-db-es-*.tar.bz2`) is Elasticsearch format — incompatible with Photon 1.0.x.
 
 ## Core Features & Algorithms
 
@@ -308,13 +329,13 @@ propel/
 
 ### Docker Compose Services
 
-| Service | Image | RAM | Port |
-|---|---|---|---|
-| app | `drumsergio/propel:x.y.z` | 512 MB | 3200 |
-| db | `postgis/postgis:16-3.4` | 2-4 GB | 5433 |
-| valhalla | `ghcr.io/gis-ops/docker-valhalla` | 2-4 GB | 8002 |
-| photon | `komoot/photon` | ~1 GB | 2322 |
-| scraper | `drumsergio/propel-scraper:x.y.z` | 256 MB | — |
+| Service | Image | RAM | Port | Notes |
+|---|---|---|---|---|
+| app | `drumsergio/propel:x.y.z` | 512 MB | 3200 | Next.js app |
+| db | `postgis/postgis:17-3.4` | 2 GB | 5432 | PostGIS spatial DB |
+| valhalla | `ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1` | 16 GB (build), 512 MB (serve) | 8002 | First start builds tiles from PBF (~20min). Enhance stage peaks at ~12GB. After build, steady-state ~512MB. |
+| photon | `eclipse-temurin:21-jre` | 4 GB (import), 1 GB (serve) | 2322 | First start downloads Photon 1.0.1 JAR + JSONL planet dump (4.7GB), imports Spain-only data (~30min). After import, steady-state ~1GB. |
+| scraper | `drumsergio/propel-scraper:x.y.z` | 256 MB | — | Cron-based |
 
 ### CI/CD
 
@@ -357,5 +378,7 @@ Before completing a task, verify:
 - [ ] Fuel types use EU harmonized codes
 
 ---
+
+*Generated by [LynxPrompt](https://lynxprompt.com)*
 
 *Last updated: March 2026*
