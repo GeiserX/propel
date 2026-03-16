@@ -86,7 +86,7 @@ The world's first open-source energy route planner that works for ALL vehicle ty
   - `SELECT * FROM stations WHERE ST_DWithin(geom::geography, route::geography, 5000)`
 - [x] Show corridor stations on map with fuel prices (all routes, deduplicated)
 - [x] Station list panel: sorted by position along route (routeFraction via ST_LineLocatePoint)
-- [ ] Highlight stations that are directly on the route vs requiring detour
+- [x] Highlight stations that are directly on the route vs requiring detour (detour badge in list)
 
 **Deliverable**: Plan a route Madrid→Barcelona, see all fuel stations within 5km of the route with prices.
 
@@ -97,34 +97,18 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 **Goal**: The killer features no competitor has.
 
 ### 2.1 — Detour Calculation
-- [ ] For each station along route, calculate exact detour time:
-  ```
-  detour = time(prev_waypoint → station) + time(station → next_waypoint)
-           - time(prev_waypoint → next_waypoint)
-  ```
-- [ ] Use Valhalla matrix API (many-to-many in single call)
-- [ ] Display detour time badge on each station marker (+2 min, +5 min, etc.)
-- [ ] `POST /api/detour` endpoint
+- [x] For each corridor station, estimate detour time via `ST_Distance` (round trip, 1.3x road factor, 40 km/h)
+- [ ] Upgrade to Valhalla matrix API for top-N candidates (more accurate, future)
+- [x] Display detour time in station list panel (+N min badge)
+- [x] Detour data computed inline in `/api/route-stations` (no separate endpoint needed)
 
 ### 2.2 — "Cheapest Within N Minutes Detour" Mode
-- [ ] Detour slider in route panel (1-15 min, default 5)
-- [ ] Algorithm:
-  1. Get route polyline
-  2. `turf.buffer(route, corridorKm)` — km derived from detour time
-  3. PostGIS spatial query: stations in corridor for selected fuel type
-  4. Valhalla matrix: compute detour for each candidate
-  5. Filter by max detour
-  6. Rank by price ascending
-  7. Return top 5
-- [ ] "Best deal" badge on the cheapest-with-acceptable-detour station
-- [ ] Show savings comparison: "Save 4.20 EUR vs route average, +3 min detour"
+- [x] Detour slider in station list panel (0-15 min)
+- [x] Filters both map markers and station list simultaneously
+- [x] "MEJOR" (best deal) badge on cheapest station within current detour filter
+- [ ] Show savings comparison: "Save X EUR vs route average, +N min detour"
 
-### 2.3 — "Best Station in Area" Mode
-- [ ] User taps/draws on a section of the route
-- [ ] Or selects a city name from the route's passing-through cities
-- [ ] Query stations in that geographic box
-- [ ] Rank by price, show detour from route
-- [ ] Useful for: "I want to refuel somewhere near Lyon"
+### ~~2.3 — "Best Station in Area" Mode~~ (skipped)
 
 ### 2.4 — "Smart Refuel by Range" Mode
 - [ ] User inputs: remaining range (km) and tank capacity (liters)
