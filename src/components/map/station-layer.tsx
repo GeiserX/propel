@@ -3,12 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Source, Layer, useMap } from "react-map-gl/maplibre";
 import type { MapLayerMouseEvent } from "react-map-gl/maplibre";
-import type { GeoJSONSource, ExpressionSpecification } from "maplibre-gl";
+import type { ExpressionSpecification } from "maplibre-gl";
 import type { StationsGeoJSONCollection } from "@/types/station";
 import { StationPopup } from "./station-popup";
 import { PRICE_COLORS } from "./price-legend";
 
-const INTERACTIVE_LAYERS = ["clusters", "unclustered-point"] as const;
+const INTERACTIVE_LAYERS = [/* "clusters", */ "unclustered-point"] as const;
 
 interface StationLayerProps {
   stations: StationsGeoJSONCollection;
@@ -76,20 +76,7 @@ export function StationLayer({ stations, onPriceRange }: StationLayerProps) {
       if (!e.features || e.features.length === 0 || !mapRef) return;
       const feature = e.features[0];
 
-      if (feature.properties?.cluster) {
-        const source = mapRef.getSource("stations") as GeoJSONSource | undefined;
-        if (!source) return;
-        const clusterId = feature.properties.cluster_id as number;
-        source.getClusterExpansionZoom(clusterId).then((zoom) => {
-          const geometry = feature.geometry as GeoJSON.Point;
-          mapRef.easeTo({
-            center: [geometry.coordinates[0], geometry.coordinates[1]],
-            zoom: zoom + 1,
-          });
-        });
-        return;
-      }
-
+      // Clustering disabled — click always opens station popup
       const props = feature.properties as Record<string, unknown>;
       setSelectedStationId(String(props.id ?? ""));
     },
@@ -134,62 +121,14 @@ export function StationLayer({ stations, onPriceRange }: StationLayerProps) {
         id="stations"
         type="geojson"
         data={stations}
-        cluster={true}
+        /* cluster={true}
         clusterMaxZoom={12}
-        clusterRadius={50}
+        clusterRadius={50} */
       >
-        {/* Cluster circles */}
-        <Layer
-          id="clusters"
-          type="circle"
-          filter={["has", "point_count"]}
-          paint={{
-            "circle-color": [
-              "step",
-              ["get", "point_count"],
-              "#60a5fa",
-              50,
-              "#3b82f6",
-              200,
-              "#2563eb",
-              500,
-              "#1d4ed8",
-            ],
-            "circle-radius": [
-              "step",
-              ["get", "point_count"],
-              16,
-              50,
-              22,
-              200,
-              30,
-              500,
-              38,
-            ],
-            "circle-stroke-width": 2,
-            "circle-stroke-color": "#ffffff",
-            "circle-opacity": 0.85,
-          }}
-        />
-
-        {/* Cluster count labels */}
-        <Layer
-          id="cluster-count"
-          type="symbol"
-          filter={["has", "point_count"]}
-          layout={{
-            "text-field": ["get", "point_count_abbreviated"],
-            "text-font": ["Noto Sans Regular"],
-            "text-size": 12,
-          }}
-          paint={{ "text-color": "#ffffff" }}
-        />
-
-        {/* Unclustered station points — dynamic color scale */}
+        {/* Clustering disabled — all individual station points */}
         <Layer
           id="unclustered-point"
           type="circle"
-          filter={["!", ["has", "point_count"]]}
           paint={{
             "circle-color": circleColor,
             "circle-radius": [
