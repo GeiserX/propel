@@ -138,6 +138,16 @@ export function SearchPanel({
 
   const showDest = phase === "destination" || phase === "route";
 
+  // After slide-in finishes, allow overflow so the autocomplete dropdown isn't clipped
+  const [destVisible, setDestVisible] = useState(false);
+  useEffect(() => {
+    if (showDest) {
+      const t = setTimeout(() => setDestVisible(true), 300);
+      return () => clearTimeout(t);
+    }
+    setDestVisible(false);
+  }, [showDest]);
+
   return (
     <div className="absolute left-3 top-3 z-10 w-[340px]">
       <div className="rounded-xl border border-black/[0.08] bg-white/95 shadow-lg backdrop-blur-sm">
@@ -186,9 +196,9 @@ export function SearchPanel({
 
         {/* Destination — slides in within the same card */}
         <div
-          className={`overflow-hidden transition-all duration-300 ease-out ${
+          className={`transition-all duration-300 ease-out ${
             showDest ? "max-h-24 opacity-100" : "max-h-0 opacity-0"
-          }`}
+          } ${destVisible ? "overflow-visible" : "overflow-hidden"}`}
         >
           {/* Connector: dashed line (left gutter) + horizontal divider */}
           <div className="flex h-3">
@@ -203,7 +213,7 @@ export function SearchPanel({
           {/* Destination row */}
           <div className="flex items-center">
             <div className="flex w-10 shrink-0 items-center justify-center">
-              <div className="h-2.5 w-2.5 rounded-sm bg-gray-700" />
+              <div className="h-2.5 w-2.5 rounded-full bg-gray-400" />
             </div>
             <AutocompleteInput
               ref={destRef}
