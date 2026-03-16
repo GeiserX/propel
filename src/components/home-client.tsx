@@ -11,6 +11,7 @@ interface Props {
   defaultFuel: string;
   center: [number, number];
   zoom: number;
+  clusterStations: boolean;
 }
 
 interface RouteData {
@@ -20,7 +21,7 @@ interface RouteData {
   bbox: [number, number, number, number];
 }
 
-export function HomeClient({ defaultFuel, center, zoom }: Props) {
+export function HomeClient({ defaultFuel, center, zoom, clusterStations }: Props) {
   const [selectedFuel, setSelectedFuel] = useState<FuelType>(defaultFuel as FuelType);
   const [routeData, setRouteData] = useState<RouteData | null>(null);
   const [isRouteLoading, setIsRouteLoading] = useState(false);
@@ -75,6 +76,7 @@ export function HomeClient({ defaultFuel, center, zoom }: Props) {
           selectedFuel={selectedFuel}
           center={center}
           zoom={zoom}
+          clusterStations={clusterStations}
           routeGeometry={routeData?.geometry ?? null}
           onMapMove={handleMapMove}
         />

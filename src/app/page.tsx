@@ -9,6 +9,7 @@ export default function Home() {
       defaultFuel={config.defaultFuel}
       center={config.center}
       zoom={config.zoom}
+      clusterStations={config.clusterStations}
     />
   );
 }

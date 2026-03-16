@@ -30,6 +30,7 @@ export function getConfig() {
     ? enabledRaw.split(",").map((c) => c.trim().toUpperCase()).filter((c) => c in COUNTRIES)
     : Object.keys(COUNTRIES);
   const defaultFuelOverride = process.env.PROPEL_DEFAULT_FUEL || null;
+  const clusterStations = (process.env.PROPEL_CLUSTER_STATIONS ?? "true").toLowerCase() === "true";
 
   const country = COUNTRIES[defaultCountry] ?? COUNTRIES.ES;
   const defaultFuel = defaultFuelOverride ?? country.defaultFuel;
@@ -40,5 +41,6 @@ export function getConfig() {
     defaultFuel,
     center: country.center,
     zoom: country.zoom,
+    clusterStations,
   };
 }
