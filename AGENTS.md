@@ -103,7 +103,8 @@ The closest analog is **A Better Route Planner (ABRP)** for EVs — Propel does 
 | Italy | MIMIT CSV (pipe-delimited) | Daily | ~23,600 | None | ✅ Implemented |
 | Austria | E-Control API (per-district) | Real-time | ~930 | None | ✅ Implemented |
 | Germany | Tankerkoenig v4 API | Real-time | ~14,700 | Free API key | ✅ Code ready, needs key |
-| UK | CMA per-retailer JSON feeds | Varies | ~8,000 | None | Not started |
+| UK | CMA Open Data (14 retailer JSON endpoints) | Near real-time | ~8,000 | None | Not started |
+| Slovenia | goriva.si REST API | Real-time | TBD | None | Not started |
 
 ---
 
