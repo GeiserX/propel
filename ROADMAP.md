@@ -303,25 +303,34 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 
 ## Phase 7: Global Expansion
 
-### 7.1 — More European Countries
+### 7.1 — More European Countries (Researched)
 
-**Tier 1 — Free government APIs (no auth, similar to existing scrapers):**
-- [ ] Belgium — SPF Economie official API (`economie.fgov.be`), all stations + daily prices
-- [ ] Ireland — CCPC fuel survey data, monthly averages (limited real-time)
-- [ ] Luxembourg — Official price data (government-regulated max prices)
-- [ ] Greece — Ministry of Development fuel price portal (`fuelprices.gr`)
-- [ ] Croatia — MINGOR API (`mingor.gov.hr`), daily prices
-- [ ] Slovenia — Government-regulated prices, published by Petrol/MOL
+**Tier 1 — Station-level data, open APIs:**
+- [ ] UK — CMA Open Data Scheme: 14 retailer JSON endpoints (Asda, BP, Esso, Tesco, Shell, etc.), no auth, Open Government Licence v3.0. Shell is HTML not JSON. A unified "Fuel Finder" scheme expected 2026.
+- [ ] Slovenia — goriva.si REST API: `GET /api/v1/search/?position={lat},{lon}&radius={r}`. No auth, full network, real-time. Government-regulated prices.
+- [ ] Netherlands — DirectLease TankService API (NL+BE, ~800 stations, requires computed checksum header) or ANWB API (undocumented, may need key). CBS OData for national averages only.
+- [ ] Greece — data.gov.gr `mindev_fuel_prices` API (free key, regional averages). Station-level via FuelGR/Deixto.gr (reverse-engineered Android app API, fragile).
+- [ ] Romania — Peco-Online Parse API (reverse-engineered, requires hardcoded Parse keys from app decompilation). Not government.
 
-**Tier 2 — Free with API key or registration:**
-- [ ] Netherlands — community data, no official API (explore OpenDataSoft Netherlands)
-- [ ] Poland — UOKiK data or e-petrol.pl (scraping, no API)
-- [ ] Czech Republic — no official API, explore PHM.cz community data
-- [ ] Hungary — government-regulated prices (fixed since 2022, limited variation)
+**Tier 2 — Government data, national/regional averages only (no station-level):**
+- [ ] Belgium — Statbel beSTAT: government-regulated max prices only (Belgium doesn't mandate station-level reporting). DirectLease covers some stations.
+- [ ] Luxembourg — STATEC via data.public.lu: CC0, max prices only (government-regulated).
+- [ ] Czech Republic — CZSO: weekly/monthly average consumer fuel prices, CSV/JSON, CC BY 4.0.
+- [ ] Finland — Statistics Finland PxWeb API: monthly national averages since 1988.
 
-**Tier 3 — Requires research / scraping:**
-- [ ] Switzerland (not EU, but relevant for cross-border routing)
-- [ ] Nordics (Norway, Sweden, Denmark, Finland) — various sources, complex
+**Tier 3 — No usable open data found:**
+- [ ] Ireland — no government fuel price API or open data
+- [ ] Croatia — regulated max prices in Official Gazette PDFs only
+- [ ] Poland — no government station-level data; e-petrol.pl is paywalled
+- [ ] Bulgaria — no government API found
+- [ ] Hungary — government-regulated fixed prices (595 Ft/l E95, 615 Ft/l diesel)
+- [ ] Sweden — no API; bensinpriser.nu is crowdsourced, no public API
+- [ ] Norway — not EU (EEA); DrivstoffAppen.no (1M+ users) API not public
+- [ ] Denmark — no API; would need per-retailer scraping (Circle K, Q8, Shell, etc.)
+
+**Cross-country fallbacks:**
+- EU Weekly Oil Bulletin — all 27 EU states, national averages, weekly XLSX downloads from `energy.ec.europa.eu`
+- fuel-prices.eu — CC BY 4.0 REST API aggregating Weekly Oil Bulletin data, country averages only
 
 ### 7.2 — Outside Europe
 - [ ] USA — no single official API, explore:
