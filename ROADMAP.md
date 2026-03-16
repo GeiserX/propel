@@ -59,7 +59,7 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 **Goal**: Plan a route A→B and see fuel stations along it.
 
 ### 1.1 — Valhalla Integration
-- [x] Docker Compose: add Valhalla service with Spain-only tiles (~1.3GB PBF, ~1-2GB RAM)
+- [x] Docker Compose: add Valhalla service (5-country tiles: ES, FR, PT, IT, AT)
 - [x] Valhalla API client (`src/lib/valhalla.ts`)
 - [x] Route endpoint: `POST /api/route` (origin, destination, optional waypoints)
 - [x] Returns: polyline (GeoJSON), distance, duration, legs
@@ -134,42 +134,48 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 
 ## Phase 3: Multi-Country Expansion
 
-**Goal**: Cover 7 European countries with ~65,000 stations.
+**Goal**: Cover 5+ European countries with ~50,000 stations.
 
 ### 3.1 — Scraper Framework
-- [ ] Abstract base scraper with shared logic (upsert, dedup, error handling)
+- [x] Abstract base scraper with shared logic (upsert, dedup, error handling) — `BaseScraper` class
+- [x] Scraper CLI: `npx tsx src/scrapers/cli.ts --country=all`
+- [x] Automatic scraping via `instrumentation.ts` (configurable interval via `PROPEL_SCRAPE_INTERVAL_HOURS`)
+- [x] Per-country enable/disable via `PROPEL_ENABLED_COUNTRIES` env var
 - [ ] Scraper health monitoring (last successful run, station count, error rate)
-- [ ] Scraper Docker image with cron scheduler
 
 ### 3.2 — Country Scrapers
-- [ ] France scraper (Opendatasoft API, ~9,800 stations, every 30 min)
-- [ ] Germany scraper (Tankerkoenig, ~14,000 stations, every 5 min, API key)
-- [ ] Austria scraper (E-Control, real-time, every 15 min)
-- [ ] Italy scraper (MIMIT CSV, ~22,000 stations, daily)
+- [x] France scraper (`data.economie.gouv.fr` OpenDataSoft API, ~9,800 stations)
+- [x] Portugal scraper (DGEG API, ~3,200 stations, paginated per fuel type)
+- [x] Italy scraper (MIMIT CSV, ~23,600 stations, pipe-delimited)
+- [x] Austria scraper (E-Control API, ~930 stations, queried per district for max coverage)
+- [ ] Germany scraper (Tankerkoenig API, ~14,000 stations — needs API key)
 - [ ] UK scraper (CMA 14 retailer feeds, every 4 hours)
-- [ ] Portugal scraper (DGEG API, daily, non-commercial disclaimer)
 
-### 3.3 — Valhalla Europe Tiles
-- [ ] Build Europe tiles on Hetzner CCX33 (~3 EUR one-time)
-- [ ] Transfer to watchtower NVMe
-- [ ] Update Docker Compose to mount Europe tiles
+### 3.3 — Valhalla Multi-Country Tiles
+- [x] Valhalla configured with 5-country PBFs (ES, FR, PT, IT, AT)
+- [x] Docker Compose updated with multi-country tile_urls
+- [ ] Automated monthly tile rebuild (cron or triggered by Geofabrik update)
 
 ### 3.4 — Internationalization
-- [ ] next-intl v4 setup with App Router
-- [ ] Locale files: `es`, `en`, `fr`, `de`, `it`, `pt`, `nl`, `pl`
-- [ ] Localized URL pathnames: `/es/gasolineras`, `/de/tankstellen`, `/fr/stations-service`
+- [x] Lightweight i18n system (`src/lib/i18n.tsx`) — React context + localStorage
+- [x] 6 locales: es, en, fr, de, it, pt
+- [x] Language selector in navbar
+- [x] Translated: search panel, station list, badges, detour slider
 - [ ] Auto-detect locale from browser `Accept-Language` header
 - [ ] Currency formatting per locale (EUR, GBP, PLN)
-- [ ] Unit switching: km/miles, liters/gallons
 - [ ] Fuel type names localized per country
 
-### 3.5 — Cross-Border Routing
-- [ ] Routes spanning multiple countries (e.g., Madrid → Paris)
+### 3.5 — Photon Multi-Country Geocoding
+- [x] Photon configured to import ES, FR, PT, IT, AT from planet dump
+- [x] Serves all 6 languages (es, en, fr, de, it, pt)
+- [x] Cross-border routing works (e.g., Madrid → Paris)
+
+### 3.6 — Cross-Border Features (future)
 - [ ] Show price differences at borders ("Diesel is 15c/L cheaper in Spain")
 - [ ] Currency conversion for comparison (always show in user's preferred currency)
 - [ ] Border-crossing fuel strategy recommendations
 
-**Deliverable**: Full European coverage, 7 countries, 65K+ stations, 8 languages.
+**Deliverable**: 5 countries, ~50K stations, 6 languages, cross-border routing.
 
 ---
 
