@@ -15,10 +15,11 @@ export function RouteLayer({ geometry }: RouteLayerProps) {
 
   return (
     <Source id="route" type="geojson" data={geojson}>
-      {/* Route outline (white border for visibility) */}
+      {/* Route outline (white border for visibility) — rendered below stations */}
       <Layer
         id="route-outline"
         type="line"
+        beforeId="unclustered-point"
         paint={{
           "line-color": "#ffffff",
           "line-width": 7,
@@ -29,10 +30,11 @@ export function RouteLayer({ geometry }: RouteLayerProps) {
           "line-join": "round",
         }}
       />
-      {/* Route fill (blue) */}
+      {/* Route fill (blue) — rendered below stations */}
       <Layer
         id="route-fill"
         type="line"
+        beforeId="unclustered-point"
         paint={{
           "line-color": "#3b82f6",
           "line-width": 4,
