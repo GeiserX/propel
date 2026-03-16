@@ -6,11 +6,11 @@ import type { FuelType } from "../types/station";
 // ---------------------------------------------------------------------------
 // Dataset: prix-des-carburants-en-france-flux-instantane-v2
 // ~9,800 stations, updated every 10 minutes, Licence Ouverte v2.0
-// API: paginated records endpoint, max 100 per page
+// Uses the bulk export endpoint (single request for all records).
 // ---------------------------------------------------------------------------
 
-const BASE_URL =
-  "https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/prix-des-carburants-en-france-flux-instantane-v2/records";
+const EXPORT_URL =
+  "https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/prix-des-carburants-en-france-flux-instantane-v2/exports/json?select=id,adresse,ville,departement,cp,geom,gazole_prix,sp95_prix,e10_prix,sp98_prix,e85_prix,gplc_prix";
 
 const FUEL_FIELD_MAP: ReadonlyMap<string, FuelType> = new Map([
   ["gazole_prix", "B7"],
@@ -41,58 +41,47 @@ export class FranceScraper extends BaseScraper {
   readonly source = "economie_gouv";
 
   async fetch(): Promise<{ stations: RawStation[]; prices: RawFuelPrice[] }> {
+    const res = await fetch(EXPORT_URL, {
+      headers: { Accept: "application/json", "User-Agent": "Propel/1.0" },
+      signal: AbortSignal.timeout(120_000),
+    });
+
+    if (!res.ok) throw new Error(`France API HTTP ${res.status}`);
+    const records: FranceRecord[] = await res.json();
+
     const stations: RawStation[] = [];
     const prices: RawFuelPrice[] = [];
-    let offset = 0;
-    const limit = 100;
-    let total = Infinity;
 
-    while (offset < total) {
-      const url = `${BASE_URL}?limit=${limit}&offset=${offset}&select=id,adresse,ville,departement,cp,geom,gazole_prix,sp95_prix,e10_prix,sp98_prix,e85_prix,gplc_prix`;
-      const res = await fetch(url, {
-        headers: { Accept: "application/json", "User-Agent": "Propel/1.0" },
-        signal: AbortSignal.timeout(30_000),
+    for (const r of records) {
+      if (!r.geom) continue;
+      const { lon, lat } = r.geom;
+      if (lat < 41 || lat > 52 || lon < -6 || lon > 10) continue;
+
+      const externalId = String(r.id);
+      const city = r.ville?.trim() || "";
+      const address = r.adresse?.trim() || "";
+
+      stations.push({
+        externalId,
+        name: city ? `${city} — ${address}` : address,
+        brand: null,
+        address,
+        city,
+        province: r.departement?.trim() || null,
+        latitude: lat,
+        longitude: lon,
+        stationType: "fuel",
       });
 
-      if (!res.ok) throw new Error(`France API HTTP ${res.status}`);
-
-      const data: { total_count: number; results: FranceRecord[] } = await res.json();
-      total = data.total_count;
-
-      for (const r of data.results) {
-        if (!r.geom) continue;
-        const { lon, lat } = r.geom;
-        if (lat < 41 || lat > 52 || lon < -6 || lon > 10) continue;
-
-        const externalId = String(r.id);
-        const city = r.ville?.trim() || "";
-        const address = r.adresse?.trim() || "";
-
-        stations.push({
-          externalId,
-          name: city ? `${city} — ${address}` : address,
-          brand: null,
-          address,
-          city,
-          province: r.departement?.trim() || null,
-          latitude: lat,
-          longitude: lon,
-          stationType: "fuel",
-        });
-
-        for (const [field, fuelType] of FUEL_FIELD_MAP) {
-          const price = r[field as keyof FranceRecord] as number | null;
-          if (price != null && price > 0) {
-            prices.push({ stationExternalId: externalId, fuelType, price, currency: "EUR" });
-          }
+      for (const [field, fuelType] of FUEL_FIELD_MAP) {
+        const price = r[field as keyof FranceRecord] as number | null;
+        if (price != null && price > 0) {
+          prices.push({ stationExternalId: externalId, fuelType, price, currency: "EUR" });
         }
       }
-
-      offset += limit;
-      if (data.results.length === 0) break;
     }
 
-    console.log(`[${this.source}] Paginated ${Math.ceil(offset / limit)} pages, ${total} total records`);
+    console.log(`[${this.source}] Fetched ${records.length} records via bulk export`);
     return { stations, prices };
   }
 }

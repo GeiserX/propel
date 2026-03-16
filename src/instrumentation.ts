@@ -18,6 +18,7 @@ export async function register() {
   const { PortugalScraper } = await import("./scrapers/portugal");
   const { ItalyScraper } = await import("./scrapers/italy");
   const { AustriaScraper } = await import("./scrapers/austria");
+  const { GermanyScraper } = await import("./scrapers/germany");
 
   // Map of country code -> scraper factory
   const scrapers: Record<string, () => BaseScraper> = {
@@ -26,6 +27,7 @@ export async function register() {
     PT: () => new PortugalScraper(),
     IT: () => new ItalyScraper(),
     AT: () => new AustriaScraper(),
+    DE: () => new GermanyScraper(),
   };
 
   // Determine which countries to scrape from config
