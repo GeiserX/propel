@@ -89,7 +89,7 @@ The closest analog is **A Better Route Planner (ABRP)** for EVs — Propel does 
 | Valhalla 3.5.1 | Self-hosted routing engine (`ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1`). Multi-country tiles (ES+FR+PT+IT+AT) built from 5 Geofabrik PBFs (~9.3GB total). Enhance stage needs ~12GB RAM peak. |
 | Protomaps PMTiles | Self-hosted vector map tiles on NVMe |
 | OpenFreeMap | Primary tile provider (free, no API key, no rate limits) |
-| Photon 1.0.1 | Geocoding / address autocomplete. Runs on `eclipse-temurin:21-jre` with official JAR. Uses OpenSearch backend (NOT old Elasticsearch). Data imported from GraphHopper **planet dump** (`photon-dump-planet-1.0-latest.jsonl.zst`, ~25GB compressed) filtered with `-country-codes es,fr,pt,it,at -languages es,en,fr,de,it,pt`. |
+| Photon 1.0.1 | Geocoding / address autocomplete. Runs on `eclipse-temurin:21-jre` with official JAR. Uses OpenSearch backend (NOT old Elasticsearch). Data imported from **per-country JSONL dumps** (~2.9GB total for 5 countries, ~37M docs). |
 | Caddy | Reverse proxy (existing on watchtower) |
 | Docker | Multi-stage builds, images on Docker Hub |
 | Portainer | Container management with GitOps |
@@ -130,7 +130,7 @@ propel.geiser.cloud (Caddy reverse proxy on watchtower)
 
 **Steady-state: ~6-8GB RAM, ~40GB disk (5 countries: ES+FR+PT+IT+AT).**
 **First-time build: needs ~16GB RAM peak** (Valhalla enhance), then drops to steady-state. Run Valhalla and Photon builds sequentially to avoid memory pressure.
-**Disk breakdown**: PBFs ~9.3GB, Valhalla tiles ~6-8GB, Photon data ~15GB (planet dump filtered), PostGIS ~2GB (~50K stations), app ~50MB.
+**Disk breakdown**: PBFs ~9.3GB, Valhalla tiles ~6-8GB, Photon data ~8-10GB (37M docs indexed), PostGIS ~2GB (~50K stations), app ~50MB.
 
 ### Database Schema (PostGIS)
 
@@ -244,8 +244,8 @@ These env vars allow self-hosters to scope the app to their country/region. For 
 
 ### Infrastructure
 - **Valhalla**: 5-country PBFs (ES+FR+PT+IT+AT) from Geofabrik, tile build on first start. Image: `ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1`. Needs 16GB RAM limit (enhance peaks at ~12GB). Downloads ~9.3GB of PBFs, build takes ~60-90 min. Do NOT run simultaneously with Photon import — causes OOM. To add a country: add its PBF URL to `tile_urls`, delete tiles, restart.
-- **Photon**: No official Docker image. Uses `eclipse-temurin:21-jre` with custom entrypoint that downloads Photon 1.0.1 JAR + planet dump (~25GB compressed from `download1.graphhopper.com/public/photon-dump-planet-1.0-latest.jsonl.zst`), imports filtered by `-country-codes es,fr,pt,it,at -languages es,en,fr,de,it,pt`. Must bind to `0.0.0.0` (`-listen-ip 0.0.0.0`). To add a country: add its code to `-country-codes`, delete `photon_data/`, restart.
-- **Photon notes**: (1) Old `lehrenfried/photon` image is incompatible (Elasticsearch 5.5.0 vs OpenSearch). (2) Old `photon-db-es-*.tar.bz2` extracts are Elasticsearch format — incompatible with 1.0.x. (3) Country-specific dumps at `download1.graphhopper.com/public/europe/{country}/` are smaller alternatives if only one country is needed.
+- **Photon**: No official Docker image. Uses `eclipse-temurin:21-jre` with custom entrypoint that downloads Photon 1.0.1 JAR + per-country JSONL dumps from `download1.graphhopper.com/public/europe/{country}/photon-dump-{country}-1.0-latest.jsonl.zst`. Downloads 5 dumps (~2.9GB total: ES 469MB, FR 1.4GB, PT 107MB, IT 548MB, AT 308MB), concatenates (first file keeps header, rest skip line 1), imports as one file. ~37M docs, ~89 min import. Must bind to `0.0.0.0` (`-listen-ip 0.0.0.0`). To add a country: add its dump URL to the DUMPS list, delete `.import_done` + `photon_data/`, restart.
+- **CRITICAL Photon notes**: (1) **Do NOT use planet dump with `-country-codes` flag** — Photon 1.0.1 crashes with NPE on entries lacking `country_code`. (2) **Do NOT use `grep`/`awk` to filter planet dump** — the JSONL header line must be preserved and gets stripped by naive filtering. (3) **Country-specific dumps are the reliable approach** — they avoid both issues. (4) France is listed as `france-monacco` (sic) on the download server. (5) Docker Compose `$$` escaping required for shell variables in the command block. (6) Old `lehrenfried/photon` image is incompatible (Elasticsearch 5.5.0 vs OpenSearch).
 
 ## Core Features & Algorithms
 
@@ -349,7 +349,7 @@ propel/
 | app | `drumsergio/propel:x.y.z` | 512 MB | 3200 | Next.js app |
 | db | `postgis/postgis:17-3.4` | 2 GB | 5432 | PostGIS spatial DB |
 | valhalla | `ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1` | 16 GB (build), 512 MB (serve) | 8002 | First start builds tiles from PBF (~20min). Enhance stage peaks at ~12GB. After build, steady-state ~512MB. |
-| photon | `eclipse-temurin:21-jre` | 4 GB (import), 1 GB (serve) | 2322 | First start downloads Photon 1.0.1 JAR + planet dump (~25GB compressed). Imports with `-country-codes es,fr,pt,it,at`. Steady-state ~1GB. |
+| photon | `eclipse-temurin:21-jre` | 4 GB (import), 1-2 GB (serve) | 2322 | First start downloads Photon 1.0.1 JAR + 5 country dumps (~2.9GB). Concatenates and imports ~37M docs in ~89 min. Steady-state ~1-2GB. |
 | scraper | Built into the app via `instrumentation.ts` | — | — | Runs on startup + `PROPEL_SCRAPE_INTERVAL_HOURS` interval. No separate container needed. |
 
 ### CI/CD
