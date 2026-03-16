@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import Map from "react-map-gl/maplibre";
 import type { MapRef, ViewStateChangeEvent } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -36,7 +36,15 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  useImperativeHandle(ref, () => mapRef.current!, []);
+  // Merge refs so both internal mapRef and parent ref stay in sync
+  const mergedRef = useCallback(
+    (instance: MapRef | null) => {
+      mapRef.current = instance;
+      if (typeof ref === "function") ref(instance);
+      else if (ref) (ref as React.MutableRefObject<MapRef | null>).current = instance;
+    },
+    [ref],
+  );
 
   const [stations, setStations] = useState<StationsGeoJSONCollection>(EMPTY_COLLECTION);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
@@ -212,7 +220,7 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
 
   return (
     <Map
-      ref={mapRef}
+      ref={mergedRef}
       initialViewState={{
         longitude: center[0],
         latitude: center[1],
