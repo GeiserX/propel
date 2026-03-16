@@ -78,7 +78,7 @@ export function Navbar({ selectedFuel, onFuelChange }: NavbarProps) {
         <select
           value={selectedFuel}
           onChange={(e) => onFuelChange(e.target.value as FuelType)}
-          className="h-7 cursor-pointer appearance-none rounded border border-white/[0.08] bg-white/[0.06] py-0 pr-6 pl-2 text-[13px] font-medium text-gray-200 transition-all hover:border-white/15 hover:bg-white/10 focus:border-emerald-400/40 focus:bg-white/10 focus:ring-1 focus:ring-emerald-400/20 focus:outline-none"
+          className="h-7 cursor-pointer appearance-none rounded border border-white/[0.08] bg-[#0c111b] py-0 pr-6 pl-2 text-[13px] font-medium text-gray-200 transition-all hover:border-white/15 hover:bg-white/10 focus:border-emerald-400/40 focus:bg-white/10 focus:ring-1 focus:ring-emerald-400/20 focus:outline-none [&_option]:bg-[#0c111b] [&_option]:text-gray-200 [&_optgroup]:bg-[#0c111b] [&_optgroup]:text-gray-400"
           style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
             backgroundRepeat: "no-repeat",

@@ -24,12 +24,13 @@ interface MapViewProps {
   selectedFuel: FuelType;
   center: [number, number];
   zoom: number;
+  clusterStations: boolean;
   routeGeometry: GeoJSON.LineString | null;
   onMapMove?: (center: [number, number]) => void;
 }
 
 export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
-  { selectedFuel, center, zoom, routeGeometry, onMapMove },
+  { selectedFuel, center, zoom, clusterStations, routeGeometry, onMapMove },
   ref,
 ) {
   const mapRef = useRef<MapRef | null>(null);
@@ -184,12 +185,12 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
       mapStyle={OPENFREEMAP_STYLE}
       onLoad={handleLoad}
       onMoveEnd={handleMoveEnd}
-      interactiveLayerIds={["clusters", "unclustered-point"]}
+      interactiveLayerIds={clusterStations ? ["clusters", "unclustered-point"] : ["unclustered-point"]}
       attributionControl={{ compact: true }}
       style={{ width: "100%", height: "100%" }}
     >
       {routeGeometry && <RouteLayer geometry={routeGeometry} />}
-      <StationLayer stations={filteredStations} onPriceRange={handlePriceRange} />
+      <StationLayer stations={filteredStations} onPriceRange={handlePriceRange} cluster={clusterStations} />
       <GeolocateButton onGeolocate={handleGeolocate} />
       <PriceFilter
         stations={stations}

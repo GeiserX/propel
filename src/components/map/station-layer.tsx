@@ -8,14 +8,17 @@ import type { StationsGeoJSONCollection } from "@/types/station";
 import { StationPopup } from "./station-popup";
 import { PRICE_COLORS } from "./price-legend";
 
-const INTERACTIVE_LAYERS = ["clusters", "unclustered-point"] as const;
+const CLUSTER_LAYERS = ["clusters", "unclustered-point"] as const;
+const NO_CLUSTER_LAYERS = ["unclustered-point"] as const;
 
 interface StationLayerProps {
   stations: StationsGeoJSONCollection;
   onPriceRange?: (min: number | null, max: number | null) => void;
+  cluster?: boolean;
 }
 
-export function StationLayer({ stations, onPriceRange }: StationLayerProps) {
+export function StationLayer({ stations, onPriceRange, cluster = true }: StationLayerProps) {
+  const interactiveLayers = cluster ? CLUSTER_LAYERS : NO_CLUSTER_LAYERS;
   const { current: mapRef } = useMap();
   const [selectedStationId, setSelectedStationId] = useState<string | null>(null);
 
@@ -104,19 +107,19 @@ export function StationLayer({ stations, onPriceRange }: StationLayerProps) {
       handleClick(e as MapLayerMouseEvent);
     };
 
-    for (const layerId of INTERACTIVE_LAYERS) {
+    for (const layerId of interactiveLayers) {
       map.on("click", layerId, handler);
     }
 
     const setCursor = () => { map.getCanvas().style.cursor = "pointer"; };
     const resetCursor = () => { map.getCanvas().style.cursor = ""; };
-    for (const layerId of INTERACTIVE_LAYERS) {
+    for (const layerId of interactiveLayers) {
       map.on("mouseenter", layerId, setCursor);
       map.on("mouseleave", layerId, resetCursor);
     }
 
     return () => {
-      for (const layerId of INTERACTIVE_LAYERS) {
+      for (const layerId of interactiveLayers) {
         map.off("click", layerId, handler);
         map.off("mouseenter", layerId, setCursor);
         map.off("mouseleave", layerId, resetCursor);
@@ -134,57 +137,59 @@ export function StationLayer({ stations, onPriceRange }: StationLayerProps) {
         id="stations"
         type="geojson"
         data={stations}
-        cluster={true}
-        clusterMaxZoom={7}
-        clusterRadius={40}
+        {...(cluster ? { cluster: true, clusterMaxZoom: 7, clusterRadius: 40 } : {})}
       >
-        <Layer
-          id="clusters"
-          type="circle"
-          filter={["has", "point_count"]}
-          paint={{
-            "circle-color": [
-              "step",
-              ["get", "point_count"],
-              "#60a5fa",
-              50,
-              "#3b82f6",
-              200,
-              "#2563eb",
-              500,
-              "#1d4ed8",
-            ],
-            "circle-radius": [
-              "step",
-              ["get", "point_count"],
-              16,
-              50,
-              22,
-              200,
-              30,
-              500,
-              38,
-            ],
-            "circle-stroke-width": 2,
-            "circle-stroke-color": "#ffffff",
-            "circle-opacity": 0.85,
-          }}
-        />
-        <Layer
-          id="cluster-count"
-          type="symbol"
-          filter={["has", "point_count"]}
-          layout={{
-            "text-field": ["get", "point_count_abbreviated"],
-            "text-font": ["Noto Sans Regular"],
-            "text-size": 12,
-          }}
-          paint={{ "text-color": "#ffffff" }}
-        />
+        {cluster && (
+          <>
+            <Layer
+              id="clusters"
+              type="circle"
+              filter={["has", "point_count"]}
+              paint={{
+                "circle-color": [
+                  "step",
+                  ["get", "point_count"],
+                  "#60a5fa",
+                  50,
+                  "#3b82f6",
+                  200,
+                  "#2563eb",
+                  500,
+                  "#1d4ed8",
+                ],
+                "circle-radius": [
+                  "step",
+                  ["get", "point_count"],
+                  16,
+                  50,
+                  22,
+                  200,
+                  30,
+                  500,
+                  38,
+                ],
+                "circle-stroke-width": 2,
+                "circle-stroke-color": "#ffffff",
+                "circle-opacity": 0.85,
+              }}
+            />
+            <Layer
+              id="cluster-count"
+              type="symbol"
+              filter={["has", "point_count"]}
+              layout={{
+                "text-field": ["get", "point_count_abbreviated"],
+                "text-font": ["Noto Sans Regular"],
+                "text-size": 12,
+              }}
+              paint={{ "text-color": "#ffffff" }}
+            />
+          </>
+        )}
         <Layer
           id="unclustered-point"
           type="circle"
-          filter={["!", ["has", "point_count"]]}
+          {...(cluster ? { filter: ["!", ["has", "point_count"]] } : {})}
           paint={{
             "circle-color": circleColor,
             "circle-radius": [
