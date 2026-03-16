@@ -165,28 +165,17 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
       return;
     }
 
-    // Check permission state to avoid wasted fetches
+    // Always fetch stations at current view immediately
+    fetchStations(selectedFuel);
+
+    // Then geolocate — flyTo will trigger handleMoveEnd which re-fetches
     if (navigator.permissions?.query) {
       navigator.permissions.query({ name: "geolocation" }).then((result) => {
-        if (result.state === "granted") {
-          // Already allowed — go straight to geolocation, no default fetch
-          geolocate();
-        } else if (result.state === "denied") {
-          // Already denied — just fetch at default view
-          fetchStations(selectedFuel);
-        } else {
-          // Prompt — fetch default view now, also ask (re-fetch if accepted)
-          fetchStations(selectedFuel);
+        if (result.state !== "denied") {
           geolocate();
         }
-      }).catch(() => {
-        // Permissions API not supported — fetch + ask
-        fetchStations(selectedFuel);
-        geolocate();
-      });
+      }).catch(() => geolocate());
     } else {
-      // No Permissions API — fetch + ask
-      fetchStations(selectedFuel);
       geolocate();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
