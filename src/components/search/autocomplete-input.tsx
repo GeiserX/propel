@@ -110,9 +110,10 @@ export const AutocompleteInput = forwardRef<AutocompleteRef, AutocompleteInputPr
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === "Enter") {
-        if (isOpen && activeIndex >= 0) {
+        if (isOpen && results.length > 0) {
           e.preventDefault();
-          handleSelect(results[activeIndex]);
+          const idx = activeIndex >= 0 ? activeIndex : 0;
+          handleSelect(results[idx]);
         } else {
           e.preventDefault();
           setIsOpen(false);
