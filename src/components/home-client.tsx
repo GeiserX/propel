@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { FuelType, StationsGeoJSONCollection } from "@/types/station";
 import type { MapRef } from "react-map-gl/maplibre";
 import type { Route } from "@/components/map/route-layer";
@@ -28,6 +28,11 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations }: Props
   const mapRef = useRef<MapRef | null>(null);
 
   const [mapCenter, setMapCenter] = useState<[number, number]>(center);
+  const [selectedStationId, setSelectedStationId] = useState<string | null>(null);
+  const [maxPrice, setMaxPrice] = useState<number | null>(null);
+
+  // Reset price filter when fuel type changes
+  useEffect(() => { setMaxPrice(null); }, [selectedFuel]);
 
   const handleMapMove = useCallback((newCenter: [number, number]) => {
     setMapCenter(newCenter);
@@ -90,8 +95,9 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations }: Props
     setPrimaryStations({ type: "FeatureCollection", features: [] });
   }, []);
 
-  const handleFlyTo = useCallback((coords: [number, number]) => {
-    mapRef.current?.flyTo({ center: coords, zoom: 12, duration: 1500 });
+  const handleFlyTo = useCallback((coords: [number, number], stationId?: string) => {
+    mapRef.current?.flyTo({ center: coords, zoom: 14, duration: 1500 });
+    if (stationId) setSelectedStationId(stationId);
   }, []);
 
   const handlePrimaryStationsChange = useCallback((stations: StationsGeoJSONCollection) => {
@@ -110,6 +116,10 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations }: Props
           clusterStations={clusterStations}
           routes={routeState?.routes ?? null}
           primaryRouteIndex={routeState?.primaryIndex ?? 0}
+          selectedStationId={selectedStationId}
+          onSelectStation={setSelectedStationId}
+          maxPrice={maxPrice}
+          onMaxPriceChange={setMaxPrice}
           onMapMove={handleMapMove}
           onSelectRoute={handleSelectRoute}
           onPrimaryStationsChange={handlePrimaryStationsChange}
@@ -124,6 +134,7 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations }: Props
           primaryRouteIndex={routeState?.primaryIndex ?? 0}
           isLoading={isRouteLoading}
           primaryStations={primaryStations}
+          maxPrice={maxPrice}
         />
       </div>
     </main>

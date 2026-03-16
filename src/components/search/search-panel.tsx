@@ -13,7 +13,7 @@ const MAX_WAYPOINTS = 5;
 
 interface SearchPanelProps {
   mapCenter: [number, number];
-  onFlyTo: (coords: [number, number]) => void;
+  onFlyTo: (coords: [number, number], stationId?: string) => void;
   onRoute: (origin: [number, number], destination: [number, number], waypoints?: [number, number][]) => void;
   onClearRoute: () => void;
   onSelectRoute?: (index: number) => void;
@@ -21,6 +21,7 @@ interface SearchPanelProps {
   primaryRouteIndex: number;
   isLoading: boolean;
   primaryStations?: StationsGeoJSONCollection;
+  maxPrice?: number | null;
 }
 
 interface Location {
@@ -46,6 +47,7 @@ export function SearchPanel({
   primaryRouteIndex,
   isLoading,
   primaryStations,
+  maxPrice,
 }: SearchPanelProps) {
   const [phase, setPhase] = useState<Phase>("search");
   const [originText, setOriginText] = useState("");
@@ -246,7 +248,8 @@ export function SearchPanel({
 
   // Station list: sorted by routeFraction, only those with price
   const stationList = primaryStations?.features
-    .filter((f) => f.properties.routeFraction != null && f.properties.price != null)
+    .filter((f) => f.properties.routeFraction != null && f.properties.price != null
+      && (maxPrice == null || f.properties.price! <= maxPrice))
     .sort((a, b) => (a.properties.routeFraction ?? 0) - (b.properties.routeFraction ?? 0))
     ?? [];
 
@@ -475,7 +478,7 @@ export function SearchPanel({
               return (
                 <button
                   key={station.properties.id}
-                  onClick={() => onFlyTo(station.geometry.coordinates)}
+                  onClick={() => onFlyTo(station.geometry.coordinates, station.properties.id)}
                   className="flex w-full items-center justify-between border-b border-gray-50 px-4 py-2 text-left hover:bg-gray-50 last:border-b-0"
                 >
                   <div className="min-w-0 flex-1">
