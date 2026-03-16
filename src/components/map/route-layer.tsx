@@ -42,7 +42,7 @@ export function RouteLayer({ routes, primaryIndex, onSelectRoute, beforeLayerId 
       }
     }
     if (stops.length === 0) return "#9ca3af" as unknown as ExpressionSpecification;
-    return ["match", ["get", "routeIndex"], ...stops, "#9ca3af"] as ExpressionSpecification;
+    return ["match", ["get", "routeIndex"], ...stops, "#9ca3af"] as unknown as ExpressionSpecification;
   }, [routes.length, primaryIndex]);
 
   // Click handler: clicking an alternative route makes it primary
