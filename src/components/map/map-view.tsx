@@ -1,11 +1,12 @@
 "use client";
 
-import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Map from "react-map-gl/maplibre";
 import type { MapRef, ViewStateChangeEvent } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import type { FuelType, StationsGeoJSONCollection } from "@/types/station";
+import type { FuelType, StationsGeoJSONCollection, StationGeoJSON } from "@/types/station";
+import type { Route } from "./route-layer";
 import { StationLayer } from "./station-layer";
 import { GeolocateButton } from "./geolocate-button";
 import { PriceFilter } from "./price-filter";
@@ -24,19 +25,26 @@ interface MapViewProps {
   center: [number, number];
   zoom: number;
   clusterStations: boolean;
-  routeGeometry: GeoJSON.LineString | null;
+  routes: Route[] | null;
+  primaryRouteIndex: number;
   onMapMove?: (center: [number, number]) => void;
+  onSelectRoute?: (index: number) => void;
+  onPrimaryStationsChange?: (stations: StationsGeoJSONCollection) => void;
 }
 
 export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
-  { selectedFuel, center, zoom, clusterStations, routeGeometry, onMapMove },
+  { selectedFuel, center, zoom, clusterStations, routes, primaryRouteIndex, onMapMove, onSelectRoute, onPrimaryStationsChange },
   ref,
 ) {
   const mapRef = useRef<MapRef | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  const [stations, setStations] = useState<StationsGeoJSONCollection>(EMPTY_COLLECTION);
+  // Per-route corridor stations (with routeFraction)
+  const [corridorPerRoute, setCorridorPerRoute] = useState<StationsGeoJSONCollection[]>([]);
+  // Bbox stations (no route active)
+  const [bboxStations, setBboxStations] = useState<StationsGeoJSONCollection>(EMPTY_COLLECTION);
+
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [legendRange, setLegendRange] = useState<{ min: number | null; max: number | null }>({ min: null, max: null });
 
@@ -44,33 +52,68 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
     setLegendRange({ min, max });
   }, []);
 
+  // Merge all route corridor stations (deduplicated) for map display
+  const mergedCorridorStations: StationsGeoJSONCollection = useMemo(() => {
+    if (corridorPerRoute.length === 0) return EMPTY_COLLECTION;
+    const seen = new Set<string>();
+    const features: StationGeoJSON[] = [];
+    for (const collection of corridorPerRoute) {
+      for (const f of collection.features) {
+        if (!seen.has(f.properties.id)) {
+          seen.add(f.properties.id);
+          features.push(f);
+        }
+      }
+    }
+    return { type: "FeatureCollection", features };
+  }, [corridorPerRoute]);
+
+  // Choose which stations to display: corridor when routes active, bbox otherwise
+  const displayStations = routes ? mergedCorridorStations : bboxStations;
+
   const filteredStations: StationsGeoJSONCollection = maxPrice != null
     ? {
         type: "FeatureCollection",
-        features: stations.features.filter(
+        features: displayStations.features.filter(
           (f) => f.properties.price != null && f.properties.price <= maxPrice,
         ),
       }
-    : stations;
+    : displayStations;
 
-  // Fetch corridor stations when route is active
-  const fetchRouteStations = useCallback(
-    async (fuel: FuelType, geometry: GeoJSON.LineString) => {
+  // Report primary corridor stations to parent for station list
+  useEffect(() => {
+    if (!routes) {
+      onPrimaryStationsChange?.(EMPTY_COLLECTION);
+      return;
+    }
+    const primary = corridorPerRoute[primaryRouteIndex];
+    if (primary) {
+      onPrimaryStationsChange?.(primary);
+    }
+  }, [corridorPerRoute, primaryRouteIndex, routes, onPrimaryStationsChange]);
+
+  // Fetch corridor stations for ALL routes in parallel
+  const fetchAllRouteStations = useCallback(
+    async (fuel: FuelType, routeList: Route[]) => {
       if (abortRef.current) abortRef.current.abort();
       const controller = new AbortController();
       abortRef.current = controller;
 
       try {
-        const res = await fetch("/api/route-stations", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ geometry, fuel }),
-          signal: controller.signal,
-        });
-        if (!res.ok) return;
-        const data: StationsGeoJSONCollection = await res.json();
-        console.log(`[map] Route corridor: ${data.features.length} stations for ${fuel}`);
-        setStations(data);
+        const results = await Promise.all(
+          routeList.map((r) =>
+            fetch("/api/route-stations", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ geometry: r.geometry, fuel }),
+              signal: controller.signal,
+            }).then((res) => (res.ok ? res.json() as Promise<StationsGeoJSONCollection> : EMPTY_COLLECTION)),
+          ),
+        );
+        const total = results.reduce((sum, r) => sum + r.features.length, 0);
+        const unique = new Set(results.flatMap((r) => r.features.map((f) => f.properties.id))).size;
+        console.log(`[map] Route corridors: ${results.map((r) => r.features.length).join("+")} = ${total} stations (${unique} unique) for ${fuel}`);
+        setCorridorPerRoute(results);
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") return;
         console.error("[map] Failed to fetch route stations:", err);
@@ -107,7 +150,7 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
         if (!res.ok) return;
         const data: StationsGeoJSONCollection = await res.json();
         console.log(`[map] Bbox fetch: ${data.features.length} stations for ${fuel}`);
-        setStations(data);
+        setBboxStations(data);
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") return;
         console.error("[map] Failed to fetch stations:", err);
@@ -126,22 +169,19 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
 
   const handleMoveEnd = useCallback(
     (_e: ViewStateChangeEvent) => {
-      // Only fetch bbox stations when no route is active
-      if (!routeGeometry) {
+      if (!routes) {
         debouncedFetch(selectedFuel);
       }
-      // Report center for geo-biased autocomplete
       const map = mapRef.current;
       if (map) {
         const c = map.getCenter();
         onMapMove?.([c.lng, c.lat]);
       }
     },
-    [debouncedFetch, selectedFuel, routeGeometry, onMapMove],
+    [debouncedFetch, selectedFuel, routes, onMapMove],
   );
 
   const handleLoad = useCallback(() => {
-    // Expose map ref to parent now that it's ready
     if (typeof ref === "function") ref(mapRef.current);
     else if (ref) (ref as React.MutableRefObject<MapRef | null>).current = mapRef.current;
 
@@ -153,9 +193,8 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
             zoom: 12,
             duration: 1500,
           });
-          // flyTo triggers moveEnd which fetches stations at the new location
         },
-        () => fetchStations(selectedFuel), // denied → fetch at default view
+        () => fetchStations(selectedFuel),
         { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 },
       );
     };
@@ -165,10 +204,8 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
       return;
     }
 
-    // Always fetch stations at current view immediately
     fetchStations(selectedFuel);
 
-    // Then geolocate — flyTo will trigger handleMoveEnd which re-fetches
     if (navigator.permissions?.query) {
       navigator.permissions.query({ name: "geolocation" }).then((result) => {
         if (result.state !== "denied") {
@@ -181,16 +218,16 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchStations, ref]);
 
-  // When route is active, fetch corridor stations; otherwise bbox stations
+  // When routes change, fetch corridor stations; when cleared, fetch bbox
   useEffect(() => {
-    if (routeGeometry) {
-      fetchRouteStations(selectedFuel, routeGeometry);
+    if (routes && routes.length > 0) {
+      fetchAllRouteStations(selectedFuel, routes);
     } else {
+      setCorridorPerRoute([]);
       fetchStations(selectedFuel);
     }
-  }, [fetchStations, fetchRouteStations, selectedFuel, routeGeometry]);
+  }, [fetchStations, fetchAllRouteStations, selectedFuel, routes]);
 
-  // Reset price filter when fuel type changes
   useEffect(() => {
     setMaxPrice(null);
   }, [selectedFuel]);
@@ -205,6 +242,8 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
   const handleGeolocate = useCallback((lon: number, lat: number) => {
     mapRef.current?.flyTo({ center: [lon, lat], zoom: 12, duration: 1500 });
   }, []);
+
+  const stationBeforeId = clusterStations ? "clusters" : "unclustered-point";
 
   return (
     <Map
@@ -221,11 +260,18 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
       attributionControl={{ compact: true }}
       style={{ width: "100%", height: "100%" }}
     >
-      {routeGeometry && <RouteLayer geometry={routeGeometry} beforeLayerId={clusterStations ? "clusters" : "unclustered-point"} />}
+      {routes && routes.length > 0 && (
+        <RouteLayer
+          routes={routes}
+          primaryIndex={primaryRouteIndex}
+          onSelectRoute={onSelectRoute}
+          beforeLayerId={stationBeforeId}
+        />
+      )}
       <StationLayer stations={filteredStations} onPriceRange={handlePriceRange} cluster={clusterStations} />
       <GeolocateButton onGeolocate={handleGeolocate} />
       <PriceFilter
-        stations={stations}
+        stations={displayStations}
         maxPrice={maxPrice}
         onMaxPriceChange={setMaxPrice}
         legendMin={legendRange.min}

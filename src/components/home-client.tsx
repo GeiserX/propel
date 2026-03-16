@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import type { FuelType } from "@/types/station";
+import type { FuelType, StationsGeoJSONCollection } from "@/types/station";
 import type { MapRef } from "react-map-gl/maplibre";
+import type { Route } from "@/components/map/route-layer";
 import { Navbar } from "@/components/nav/navbar";
 import { MapView } from "@/components/map/map-view";
 import { SearchPanel } from "@/components/search/search-panel";
@@ -14,17 +15,16 @@ interface Props {
   clusterStations: boolean;
 }
 
-interface RouteData {
-  geometry: GeoJSON.LineString;
-  distance: number;
-  duration: number;
-  bbox: [number, number, number, number];
+interface RouteState {
+  routes: Route[];
+  primaryIndex: number;
 }
 
 export function HomeClient({ defaultFuel, center, zoom, clusterStations }: Props) {
   const [selectedFuel, setSelectedFuel] = useState<FuelType>(defaultFuel as FuelType);
-  const [routeData, setRouteData] = useState<RouteData | null>(null);
+  const [routeState, setRouteState] = useState<RouteState | null>(null);
   const [isRouteLoading, setIsRouteLoading] = useState(false);
+  const [primaryStations, setPrimaryStations] = useState<StationsGeoJSONCollection>({ type: "FeatureCollection", features: [] });
   const mapRef = useRef<MapRef | null>(null);
 
   const [mapCenter, setMapCenter] = useState<[number, number]>(center);
@@ -34,23 +34,26 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations }: Props
   }, []);
 
   const handleRoute = useCallback(
-    async (origin: [number, number], destination: [number, number]) => {
+    async (origin: [number, number], destination: [number, number], waypoints?: [number, number][]) => {
       setIsRouteLoading(true);
       try {
         const res = await fetch("/api/route", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ origin, destination }),
+          body: JSON.stringify({ origin, destination, waypoints }),
         });
         if (!res.ok) return;
-        const data: RouteData = await res.json();
-        setRouteData(data);
+        const data: { routes: Route[] } = await res.json();
+        if (data.routes.length === 0) return;
 
-        // Fit map to route bounds
+        setRouteState({ routes: data.routes, primaryIndex: 0 });
+
+        // Fit map to primary route bounds
+        const primary = data.routes[0];
         mapRef.current?.fitBounds(
           [
-            [data.bbox[0], data.bbox[1]],
-            [data.bbox[2], data.bbox[3]],
+            [primary.bbox[0], primary.bbox[1]],
+            [primary.bbox[2], primary.bbox[3]],
           ],
           { padding: 60, duration: 1000 },
         );
@@ -63,12 +66,36 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations }: Props
     [],
   );
 
+  const handleSelectRoute = useCallback((index: number) => {
+    setRouteState((prev) => {
+      if (!prev) return prev;
+      const route = prev.routes[index];
+      if (!route) return prev;
+
+      // Fit map to newly selected route
+      mapRef.current?.fitBounds(
+        [
+          [route.bbox[0], route.bbox[1]],
+          [route.bbox[2], route.bbox[3]],
+        ],
+        { padding: 60, duration: 800 },
+      );
+
+      return { ...prev, primaryIndex: index };
+    });
+  }, []);
+
   const handleClearRoute = useCallback(() => {
-    setRouteData(null);
+    setRouteState(null);
+    setPrimaryStations({ type: "FeatureCollection", features: [] });
   }, []);
 
   const handleFlyTo = useCallback((coords: [number, number]) => {
     mapRef.current?.flyTo({ center: coords, zoom: 12, duration: 1500 });
+  }, []);
+
+  const handlePrimaryStationsChange = useCallback((stations: StationsGeoJSONCollection) => {
+    setPrimaryStations(stations);
   }, []);
 
   return (
@@ -81,16 +108,22 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations }: Props
           center={center}
           zoom={zoom}
           clusterStations={clusterStations}
-          routeGeometry={routeData?.geometry ?? null}
+          routes={routeState?.routes ?? null}
+          primaryRouteIndex={routeState?.primaryIndex ?? 0}
           onMapMove={handleMapMove}
+          onSelectRoute={handleSelectRoute}
+          onPrimaryStationsChange={handlePrimaryStationsChange}
         />
         <SearchPanel
           mapCenter={mapCenter}
           onFlyTo={handleFlyTo}
           onRoute={handleRoute}
           onClearRoute={handleClearRoute}
-          routeInfo={routeData ? { distance: routeData.distance, duration: routeData.duration } : null}
+          onSelectRoute={handleSelectRoute}
+          routes={routeState?.routes ?? null}
+          primaryRouteIndex={routeState?.primaryIndex ?? 0}
           isLoading={isRouteLoading}
+          primaryStations={primaryStations}
         />
       </div>
     </main>
