@@ -5,6 +5,7 @@ import type { PhotonResult } from "@/lib/photon";
 import type { Route } from "@/components/map/route-layer";
 import type { StationsGeoJSONCollection } from "@/types/station";
 import { AutocompleteInput, type AutocompleteRef } from "./autocomplete-input";
+import { useI18n } from "@/lib/i18n";
 
 type Phase = "search" | "destination" | "route";
 
@@ -53,6 +54,7 @@ export function SearchPanel({
   maxDetour,
   onMaxDetourChange,
 }: SearchPanelProps) {
+  const { t } = useI18n();
   const [phase, setPhase] = useState<Phase>("search");
   const [originText, setOriginText] = useState("");
   const [destText, setDestText] = useState("");
@@ -305,7 +307,7 @@ export function SearchPanel({
           </div>
           <AutocompleteInput
             ref={originRef}
-            placeholder="Buscar lugar..."
+            placeholder={t("search.placeholder")}
             value={originText}
             onChange={handleOriginChange}
             onSelect={handleOriginSelect}
@@ -415,7 +417,7 @@ export function SearchPanel({
             </div>
             <AutocompleteInput
               ref={destRef}
-              placeholder="Destino..."
+              placeholder={`${t("search.destination")}...`}
               value={destText}
               onChange={handleDestChange}
               onSelect={handleDestSelect}
@@ -453,7 +455,7 @@ export function SearchPanel({
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
-                Añadir parada
+                {t("search.addWaypoint")}
               </button>
             </div>
           )}
@@ -502,15 +504,15 @@ export function SearchPanel({
         <div className="mt-2 rounded-xl border border-black/[0.08] bg-white/95 shadow-lg backdrop-blur-sm">
           <div className="border-b border-gray-100 px-4 py-2">
             <span className="text-xs font-medium text-gray-500">
-              Estaciones en ruta ({stationList.length})
+              {t("stations.title")} ({stationList.length})
             </span>
           </div>
           {/* Detour slider */}
           <div className="border-b border-gray-100 px-4 py-2">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] text-gray-500">Desvío máximo</span>
+              <span className="text-[11px] text-gray-500">{t("stations.detourMax")}</span>
               <span className="text-[11px] font-medium text-gray-700">
-                {maxDetour == null ? "Sin límite" : `${maxDetour} min`}
+                {maxDetour == null ? t("stations.noLimit") : `${maxDetour} min`}
               </span>
             </div>
             <input
@@ -529,7 +531,7 @@ export function SearchPanel({
           <div className="max-h-[240px] overflow-y-auto">
             {stationList.length === 0 ? (
               <div className="px-4 py-4 text-center text-xs text-gray-400">
-                No hay estaciones con este filtro
+                {t("stations.empty")}
               </div>
             ) : stationList.map((station) => {
               const km = primaryRoute
@@ -553,13 +555,13 @@ export function SearchPanel({
                         <span className="text-xs font-semibold text-gray-700">{station.properties.brand}</span>
                       )}
                       {isCheapest && (
-                        <span className="rounded bg-emerald-500 px-1 py-0.5 text-[9px] font-bold leading-none text-white">MÁS BARATA</span>
+                        <span className="rounded bg-emerald-500 px-1 py-0.5 text-[9px] font-bold leading-none text-white">{t("stations.cheapest")}</span>
                       )}
                       {isShortest && (
-                        <span className="rounded bg-blue-500 px-1 py-0.5 text-[9px] font-bold leading-none text-white">MÁS CERCA</span>
+                        <span className="rounded bg-blue-500 px-1 py-0.5 text-[9px] font-bold leading-none text-white">{t("stations.leastDetour")}</span>
                       )}
                       {isBalanced && (
-                        <span className="rounded bg-amber-500 px-1 py-0.5 text-[9px] font-bold leading-none text-white">EQUILIBRADA</span>
+                        <span className="rounded bg-amber-500 px-1 py-0.5 text-[9px] font-bold leading-none text-white">{t("stations.balanced")}</span>
                       )}
                     </div>
                     <p className="truncate text-xs text-gray-500">{station.properties.name}</p>
