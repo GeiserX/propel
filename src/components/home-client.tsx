@@ -67,6 +67,10 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations }: Props
     setRouteData(null);
   }, []);
 
+  const handleFlyTo = useCallback((coords: [number, number]) => {
+    mapRef.current?.flyTo({ center: coords, zoom: 12, duration: 1500 });
+  }, []);
+
   return (
     <main className="flex h-screen w-screen flex-col overflow-hidden">
       <Navbar selectedFuel={selectedFuel} onFuelChange={setSelectedFuel} />
@@ -82,6 +86,7 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations }: Props
         />
         <SearchPanel
           mapCenter={mapCenter}
+          onFlyTo={handleFlyTo}
           onRoute={handleRoute}
           onClearRoute={handleClearRoute}
           routeInfo={routeData ? { distance: routeData.distance, duration: routeData.duration } : null}
