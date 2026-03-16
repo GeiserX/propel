@@ -250,18 +250,43 @@ export function SearchPanel({
     setDestVisible(false);
   }, [showDest]);
 
-  // Station list: sorted by routeFraction, filtered by price and detour
-  const stationList = primaryStations?.features
-    .filter((f) => f.properties.routeFraction != null && f.properties.price != null
-      && (maxPrice == null || f.properties.price! <= maxPrice)
-      && (maxDetour == null || (f.properties.detourMin ?? 0) <= maxDetour))
-    .sort((a, b) => (a.properties.routeFraction ?? 0) - (b.properties.routeFraction ?? 0))
+  // All stations with price (unfiltered — used to decide if card should show)
+  const allStationsWithPrice = primaryStations?.features
+    .filter((f) => f.properties.routeFraction != null && f.properties.price != null)
     ?? [];
 
-  // Best deal: cheapest station in current filtered list
-  const bestDealId = stationList.length > 0
+  // Station list: sorted by routeFraction, filtered by price and detour
+  const stationList = allStationsWithPrice
+    .filter((f) => (maxPrice == null || f.properties.price! <= maxPrice)
+      && (maxDetour == null || (f.properties.detourMin ?? 0) <= maxDetour))
+    .sort((a, b) => (a.properties.routeFraction ?? 0) - (b.properties.routeFraction ?? 0));
+
+  // Badges: cheapest, shortest detour, balanced (only when 2+ stations)
+  const cheapestId = stationList.length > 0
     ? stationList.reduce((best, s) => (s.properties.price! < best.properties.price! ? s : best)).properties.id
     : null;
+  const shortestDetourId = stationList.length > 0
+    ? stationList.reduce((best, s) => ((s.properties.detourMin ?? 0) < (best.properties.detourMin ?? 0) ? s : best)).properties.id
+    : null;
+  // Balanced: normalize price (0-1) and detour (0-1) within list, pick lowest combined score
+  const balancedId = stationList.length >= 3 ? (() => {
+    const prices = stationList.map((s) => s.properties.price!);
+    const detours = stationList.map((s) => s.properties.detourMin ?? 0);
+    const minP = Math.min(...prices), maxP = Math.max(...prices);
+    const minD = Math.min(...detours), maxD = Math.max(...detours);
+    const rangeP = maxP - minP || 1;
+    const rangeD = maxD - minD || 1;
+    let bestScore = Infinity;
+    let bestId = stationList[0].properties.id;
+    for (const s of stationList) {
+      const normP = (s.properties.price! - minP) / rangeP;
+      const normD = ((s.properties.detourMin ?? 0) - minD) / rangeD;
+      const score = normP * 0.6 + normD * 0.4;
+      if (score < bestScore) { bestScore = score; bestId = s.properties.id; }
+    }
+    // Only show if different from cheapest and shortest
+    return (bestId !== cheapestId && bestId !== shortestDetourId) ? bestId : null;
+  })() : null;
 
   return (
     <div className="absolute left-3 top-3 z-10 w-[340px]">
@@ -473,7 +498,7 @@ export function SearchPanel({
       )}
 
       {/* Station list along route */}
-      {phase === "route" && stationList.length > 0 && (
+      {phase === "route" && allStationsWithPrice.length > 0 && (
         <div className="mt-2 rounded-xl border border-black/[0.08] bg-white/95 shadow-lg backdrop-blur-sm">
           <div className="border-b border-gray-100 px-4 py-2">
             <span className="text-xs font-medium text-gray-500">
@@ -502,25 +527,39 @@ export function SearchPanel({
             />
           </div>
           <div className="max-h-[240px] overflow-y-auto">
-            {stationList.map((station) => {
+            {stationList.length === 0 ? (
+              <div className="px-4 py-4 text-center text-xs text-gray-400">
+                No hay estaciones con este filtro
+              </div>
+            ) : stationList.map((station) => {
               const km = primaryRoute
                 ? (station.properties.routeFraction ?? 0) * primaryRoute.distance
                 : 0;
               const detour = station.properties.detourMin ?? 0;
-              const isBest = station.properties.id === bestDealId;
+              const sid = station.properties.id;
+              const isCheapest = sid === cheapestId;
+              const isShortest = sid === shortestDetourId;
+              const isBalanced = sid === balancedId;
+              const highlight = isCheapest ? "bg-emerald-50" : isShortest ? "bg-blue-50" : isBalanced ? "bg-amber-50" : "";
               return (
                 <button
-                  key={station.properties.id}
-                  onClick={() => onFlyTo(station.geometry.coordinates, station.properties.id)}
-                  className={`flex w-full items-center justify-between border-b border-gray-50 px-4 py-2 text-left last:border-b-0 ${isBest ? "bg-emerald-50" : "hover:bg-gray-50"}`}
+                  key={sid}
+                  onClick={() => onFlyTo(station.geometry.coordinates, sid)}
+                  className={`flex w-full items-center justify-between border-b border-gray-50 px-4 py-2 text-left last:border-b-0 ${highlight || "hover:bg-gray-50"}`}
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1">
                       {station.properties.brand && (
                         <span className="text-xs font-semibold text-gray-700">{station.properties.brand}</span>
                       )}
-                      {isBest && (
-                        <span className="rounded bg-emerald-500 px-1 py-0.5 text-[9px] font-bold leading-none text-white">MEJOR</span>
+                      {isCheapest && (
+                        <span className="rounded bg-emerald-500 px-1 py-0.5 text-[9px] font-bold leading-none text-white">MÁS BARATA</span>
+                      )}
+                      {isShortest && (
+                        <span className="rounded bg-blue-500 px-1 py-0.5 text-[9px] font-bold leading-none text-white">MÁS CERCA</span>
+                      )}
+                      {isBalanced && (
+                        <span className="rounded bg-amber-500 px-1 py-0.5 text-[9px] font-bold leading-none text-white">EQUILIBRADA</span>
                       )}
                     </div>
                     <p className="truncate text-xs text-gray-500">{station.properties.name}</p>
