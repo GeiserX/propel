@@ -89,7 +89,7 @@ The closest analog is **A Better Route Planner (ABRP)** for EVs — Propel does 
 | Valhalla 3.5.1 | Self-hosted routing engine (`ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1`). Spain tiles built from Geofabrik PBF. Enhance stage needs ~12GB RAM peak. |
 | Protomaps PMTiles | Self-hosted vector map tiles on NVMe |
 | OpenFreeMap | Primary tile provider (free, no API key, no rate limits) |
-| Photon 1.0.1 | Geocoding / address autocomplete. Runs on `eclipse-temurin:21-jre` with official JAR. Uses OpenSearch backend (NOT old Elasticsearch). Data imported from GraphHopper JSONL planet dump with `-country-codes es` filter. |
+| Photon 1.0.1 | Geocoding / address autocomplete. Runs on `eclipse-temurin:21-jre` with official JAR. Uses OpenSearch backend (NOT old Elasticsearch). Data imported from GraphHopper **country-specific** JSONL dump (`photon-dump-spain-release-*.jsonl.zst`, ~490MB). **Do NOT use the planet dump** — `photon-dump-planet-1.0-latest` is periodically truncated/broken, and Photon 1.0.1 has a bug where `-country-codes` crashes with NPE on entries lacking a `country_code` field. Country-specific dumps at `download1.graphhopper.com/public/europe/spain/` avoid both issues. |
 | Caddy | Reverse proxy (existing on watchtower) |
 | Docker | Multi-stage builds, images on Docker Hub |
 | Portainer | Container management with GitOps |
@@ -228,9 +228,8 @@ These env vars allow self-hosters to scope the app to their country/region. For 
 
 ### Infrastructure
 - **Valhalla**: Spain PBF from Geofabrik, tile build + enhance on first start. Image: `ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1`. Needs 16GB RAM limit (enhance peaks at ~12GB). Do NOT run simultaneously with Photon import — causes OOM.
-- **Photon**: No official Docker image. Uses `eclipse-temurin:21-jre` with custom entrypoint that downloads Photon 1.0.1 JAR + JSONL planet dump (4.7GB), imports with `-country-codes es -languages es,en`. Must bind to `0.0.0.0` (`-listen-ip 0.0.0.0`), default is localhost-only.
-- **Old `lehrenfried/photon` image is INCOMPATIBLE** — uses Elasticsearch 5.5.0 from 2020. Photon 1.0.x uses OpenSearch.
-- **Old Spain extract** (`photon-db-es-*.tar.bz2`) is Elasticsearch format — incompatible with Photon 1.0.x.
+- **Photon**: No official Docker image. Uses `eclipse-temurin:21-jre` with custom entrypoint that downloads Photon 1.0.1 JAR + Spain JSONL dump (~490MB from `download1.graphhopper.com/public/europe/spain/`), imports via stdin pipe. Must bind to `0.0.0.0` (`-listen-ip 0.0.0.0`), default is localhost-only. Spain dump imports 5.6M documents in ~12 min.
+- **CRITICAL Photon dump notes**: (1) Do NOT use the planet dump (`photon-dump-planet-1.0-latest`) — it's periodically truncated/broken. (2) Photon 1.0.1 has a bug: `-country-codes` flag crashes with NPE on entries without a `country_code` field. Use country-specific dumps which avoid this. (3) Old `lehrenfried/photon` image is incompatible (Elasticsearch 5.5.0 vs OpenSearch). (4) Old `photon-db-es-*.tar.bz2` extracts are Elasticsearch format — incompatible with 1.0.x.
 
 ## Core Features & Algorithms
 

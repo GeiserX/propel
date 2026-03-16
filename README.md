@@ -87,7 +87,7 @@ npm run scraper:run -- --country=ES --once
 | Service | First start | Subsequent starts |
 |---|---|---|
 | **Valhalla** | Downloads Spain OSM PBF from Geofabrik (~1.4 GB), builds routing tiles with 20 threads. Enhance stage peaks at ~12 GB RAM. | Loads pre-built tiles instantly (~500 MB RAM) |
-| **Photon** | Downloads Photon 1.0.1 JAR (~92 MB) + JSONL planet dump from GraphHopper (~4.7 GB). Imports Spain-only data with `-country-codes es`. | Starts OpenSearch with existing index (~1 GB RAM) |
+| **Photon** | Downloads Photon 1.0.1 JAR (~92 MB) + Spain geocoding dump (~490 MB). Imports ~5.6M documents (~12 min). | Starts OpenSearch with existing index (~1 GB RAM) |
 | **PostGIS** | Creates database schema | Ready immediately |
 | **App** | Ready immediately | Ready immediately |
 
