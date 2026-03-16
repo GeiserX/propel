@@ -184,7 +184,7 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
       mapStyle={OPENFREEMAP_STYLE}
       onLoad={handleLoad}
       onMoveEnd={handleMoveEnd}
-      interactiveLayerIds={["unclustered-point"]}
+      interactiveLayerIds={["clusters", "unclustered-point"]}
       attributionControl={{ compact: true }}
       style={{ width: "100%", height: "100%" }}
     >
