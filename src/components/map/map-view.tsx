@@ -27,13 +27,17 @@ interface MapViewProps {
   clusterStations: boolean;
   routes: Route[] | null;
   primaryRouteIndex: number;
+  selectedStationId?: string | null;
+  onSelectStation?: (id: string | null) => void;
+  maxPrice: number | null;
+  onMaxPriceChange: (price: number | null) => void;
   onMapMove?: (center: [number, number]) => void;
   onSelectRoute?: (index: number) => void;
   onPrimaryStationsChange?: (stations: StationsGeoJSONCollection) => void;
 }
 
 export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
-  { selectedFuel, center, zoom, clusterStations, routes, primaryRouteIndex, onMapMove, onSelectRoute, onPrimaryStationsChange },
+  { selectedFuel, center, zoom, clusterStations, routes, primaryRouteIndex, selectedStationId, onSelectStation, maxPrice, onMaxPriceChange, onMapMove, onSelectRoute, onPrimaryStationsChange },
   ref,
 ) {
   const mapRef = useRef<MapRef | null>(null);
@@ -45,7 +49,6 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
   // Bbox stations (no route active)
   const [bboxStations, setBboxStations] = useState<StationsGeoJSONCollection>(EMPTY_COLLECTION);
 
-  const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [legendRange, setLegendRange] = useState<{ min: number | null; max: number | null }>({ min: null, max: null });
 
   const handlePriceRange = useCallback((min: number | null, max: number | null) => {
@@ -229,10 +232,6 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
   }, [fetchStations, fetchAllRouteStations, selectedFuel, routes]);
 
   useEffect(() => {
-    setMaxPrice(null);
-  }, [selectedFuel]);
-
-  useEffect(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       if (abortRef.current) abortRef.current.abort();
@@ -268,12 +267,12 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
           beforeLayerId={stationBeforeId}
         />
       )}
-      <StationLayer stations={filteredStations} onPriceRange={handlePriceRange} cluster={clusterStations} />
+      <StationLayer stations={filteredStations} onPriceRange={handlePriceRange} cluster={clusterStations} selectedStationId={selectedStationId} onSelectStation={onSelectStation} />
       <GeolocateButton onGeolocate={handleGeolocate} />
       <PriceFilter
         stations={displayStations}
         maxPrice={maxPrice}
-        onMaxPriceChange={setMaxPrice}
+        onMaxPriceChange={onMaxPriceChange}
         legendMin={legendRange.min}
         legendMax={legendRange.max}
       />

@@ -15,12 +15,18 @@ interface StationLayerProps {
   stations: StationsGeoJSONCollection;
   onPriceRange?: (min: number | null, max: number | null) => void;
   cluster?: boolean;
+  selectedStationId?: string | null;
+  onSelectStation?: (id: string | null) => void;
 }
 
-export function StationLayer({ stations, onPriceRange, cluster = true }: StationLayerProps) {
+export function StationLayer({ stations, onPriceRange, cluster = true, selectedStationId: externalId, onSelectStation }: StationLayerProps) {
   const interactiveLayers = cluster ? CLUSTER_LAYERS : NO_CLUSTER_LAYERS;
   const { current: mapRef } = useMap();
-  const [selectedStationId, setSelectedStationId] = useState<string | null>(null);
+  const [internalId, setInternalId] = useState<string | null>(null);
+
+  // Use external ID if provided, otherwise fall back to internal
+  const selectedStationId = externalId !== undefined ? externalId : internalId;
+  const setSelectedStationId = onSelectStation ?? setInternalId;
 
   const popup = useMemo(() => {
     if (!selectedStationId) return null;
