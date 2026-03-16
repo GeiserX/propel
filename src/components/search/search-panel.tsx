@@ -24,7 +24,7 @@ export function SearchPanel({
   routeInfo,
   isLoading,
 }: SearchPanelProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const [originText, setOriginText] = useState("");
   const [destText, setDestText] = useState("");
   const [origin, setOrigin] = useState<Location | null>(null);
