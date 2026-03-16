@@ -12,8 +12,7 @@ import { PriceFilter } from "./price-filter";
 import { RouteLayer } from "./route-layer";
 
 const OPENFREEMAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
-const DEBOUNCE_MS = 300;
-const MIN_ZOOM_FOR_FETCH = 5;
+const DEBOUNCE_MS = 100;
 
 const EMPTY_COLLECTION: StationsGeoJSONCollection = {
   type: "FeatureCollection",
@@ -85,12 +84,6 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
     async (fuel: FuelType) => {
       const map = mapRef.current;
       if (!map) return;
-
-      const z = map.getZoom();
-      if (z < MIN_ZOOM_FOR_FETCH) {
-        setStations(EMPTY_COLLECTION);
-        return;
-      }
 
       const bounds = map.getBounds();
       if (!bounds) return;
