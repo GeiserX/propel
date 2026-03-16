@@ -138,11 +138,7 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
   );
 
   const handleLoad = useCallback(() => {
-    // Always fetch stations at default view immediately
-    fetchStations(selectedFuel);
-
-    // Also auto-geolocate — if allowed, flyTo triggers moveEnd which re-fetches
-    if (navigator.geolocation) {
+    const geolocate = () => {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           mapRef.current?.flyTo({
@@ -150,10 +146,41 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
             zoom: 12,
             duration: 1500,
           });
+          // flyTo triggers moveEnd which fetches stations at the new location
         },
-        () => {}, // silently ignore denial
+        () => fetchStations(selectedFuel), // denied → fetch at default view
         { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 },
       );
+    };
+
+    if (!navigator.geolocation) {
+      fetchStations(selectedFuel);
+      return;
+    }
+
+    // Check permission state to avoid wasted fetches
+    if (navigator.permissions?.query) {
+      navigator.permissions.query({ name: "geolocation" }).then((result) => {
+        if (result.state === "granted") {
+          // Already allowed — go straight to geolocation, no default fetch
+          geolocate();
+        } else if (result.state === "denied") {
+          // Already denied — just fetch at default view
+          fetchStations(selectedFuel);
+        } else {
+          // Prompt — fetch default view now, also ask (re-fetch if accepted)
+          fetchStations(selectedFuel);
+          geolocate();
+        }
+      }).catch(() => {
+        // Permissions API not supported — fetch + ask
+        fetchStations(selectedFuel);
+        geolocate();
+      });
+    } else {
+      // No Permissions API — fetch + ask
+      fetchStations(selectedFuel);
+      geolocate();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchStations]);
