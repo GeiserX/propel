@@ -36,16 +36,6 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Merge refs so both internal mapRef and parent ref stay in sync
-  const mergedRef = useCallback(
-    (instance: MapRef | null) => {
-      mapRef.current = instance;
-      if (typeof ref === "function") ref(instance);
-      else if (ref) (ref as React.MutableRefObject<MapRef | null>).current = instance;
-    },
-    [ref],
-  );
-
   const [stations, setStations] = useState<StationsGeoJSONCollection>(EMPTY_COLLECTION);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [legendRange, setLegendRange] = useState<{ min: number | null; max: number | null }>({ min: null, max: null });
@@ -63,10 +53,39 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
       }
     : stations;
 
+  // Fetch corridor stations when route is active
+  const fetchRouteStations = useCallback(
+    async (fuel: FuelType, geometry: GeoJSON.LineString) => {
+      if (abortRef.current) abortRef.current.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      try {
+        const res = await fetch("/api/route-stations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ geometry, fuel }),
+          signal: controller.signal,
+        });
+        if (!res.ok) return;
+        const data: StationsGeoJSONCollection = await res.json();
+        console.log(`[map] Route corridor: ${data.features.length} stations for ${fuel}`);
+        setStations(data);
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        console.error("[map] Failed to fetch route stations:", err);
+      }
+    },
+    [],
+  );
+
   const fetchStations = useCallback(
     async (fuel: FuelType) => {
       const map = mapRef.current;
-      if (!map) return;
+      if (!map) {
+        console.warn("[map] fetchStations: map ref not ready");
+        return;
+      }
 
       const bounds = map.getBounds();
       if (!bounds) return;
@@ -87,10 +106,11 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
         const res = await fetch(url, { signal: controller.signal });
         if (!res.ok) return;
         const data: StationsGeoJSONCollection = await res.json();
+        console.log(`[map] Bbox fetch: ${data.features.length} stations for ${fuel}`);
         setStations(data);
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") return;
-        console.error("Failed to fetch stations:", err);
+        console.error("[map] Failed to fetch stations:", err);
       }
     },
     [],
@@ -106,7 +126,10 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
 
   const handleMoveEnd = useCallback(
     (_e: ViewStateChangeEvent) => {
-      debouncedFetch(selectedFuel);
+      // Only fetch bbox stations when no route is active
+      if (!routeGeometry) {
+        debouncedFetch(selectedFuel);
+      }
       // Report center for geo-biased autocomplete
       const map = mapRef.current;
       if (map) {
@@ -114,10 +137,14 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
         onMapMove?.([c.lng, c.lat]);
       }
     },
-    [debouncedFetch, selectedFuel, onMapMove],
+    [debouncedFetch, selectedFuel, routeGeometry, onMapMove],
   );
 
   const handleLoad = useCallback(() => {
+    // Expose map ref to parent now that it's ready
+    if (typeof ref === "function") ref(mapRef.current);
+    else if (ref) (ref as React.MutableRefObject<MapRef | null>).current = mapRef.current;
+
     const geolocate = () => {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -163,12 +190,16 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
       geolocate();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchStations]);
+  }, [fetchStations, ref]);
 
-  // Re-fetch stations when fuel type changes or route is cleared
+  // When route is active, fetch corridor stations; otherwise bbox stations
   useEffect(() => {
-    fetchStations(selectedFuel);
-  }, [fetchStations, selectedFuel]);
+    if (routeGeometry) {
+      fetchRouteStations(selectedFuel, routeGeometry);
+    } else {
+      fetchStations(selectedFuel);
+    }
+  }, [fetchStations, fetchRouteStations, selectedFuel, routeGeometry]);
 
   // Reset price filter when fuel type changes
   useEffect(() => {
@@ -188,7 +219,7 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
 
   return (
     <Map
-      ref={mergedRef}
+      ref={mapRef}
       initialViewState={{
         longitude: center[0],
         latitude: center[1],
