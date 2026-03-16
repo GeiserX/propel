@@ -23,6 +23,8 @@ export const COUNTRIES: Record<string, CountryConfig> = {
  * - PROPEL_ENABLED_COUNTRIES: Comma-separated list of enabled countries (default: all with scrapers)
  * - PROPEL_DEFAULT_FUEL: Override default fuel type (default: per-country)
  * - PROPEL_CORRIDOR_KM: Station search corridor width in km (default: 5, range: 0.5-50)
+ * - PROPEL_SCRAPE_INTERVAL_HOURS: Global scrape interval override (default: per-country defaults)
+ * - PROPEL_SCRAPE_INTERVAL_XX: Per-country interval in hours, e.g. PROPEL_SCRAPE_INTERVAL_FR=0.5
  */
 export function getConfig() {
   const defaultCountry = process.env.PROPEL_DEFAULT_COUNTRY || "ES";
