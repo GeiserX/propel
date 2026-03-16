@@ -55,6 +55,7 @@ export function StationLayer({ stations, onPriceRange, cluster = true }: Station
   }, [min, max, onPriceRange]);
 
   // Build dynamic color interpolation expression using percentile range
+  // Guard against null/missing price to avoid "Expected value to be of type number, but found null"
   const circleColor = useMemo((): ExpressionSpecification => {
     if (min == null || max == null) {
       return ["case", ["!", ["has", "price"]], "#9ca3af", PRICE_COLORS[3]] as ExpressionSpecification;
@@ -68,9 +69,9 @@ export function StationLayer({ stations, onPriceRange, cluster = true }: Station
 
     return [
       "case",
-      ["!", ["has", "price"]],
-      "#9ca3af",
+      ["all", ["has", "price"], ["!=", ["get", "price"], null]],
       ["interpolate", ["linear"], ["get", "price"], ...stops],
+      "#9ca3af",
     ] as ExpressionSpecification;
   }, [min, max]);
 
@@ -125,86 +126,100 @@ export function StationLayer({ stations, onPriceRange, cluster = true }: Station
         map.off("mouseleave", layerId, resetCursor);
       }
     };
-  }, [mapRef, handleClick]);
+  }, [mapRef, handleClick, interactiveLayers]);
 
   const handleClosePopup = useCallback(() => {
     setSelectedStationId(null);
   }, []);
 
+  const pointPaint = {
+    "circle-color": circleColor,
+    "circle-radius": [
+      "interpolate",
+      ["linear"],
+      ["zoom"],
+      6, 4,
+      10, 6,
+      14, 8,
+    ] as ExpressionSpecification,
+    "circle-stroke-width": 1.5,
+    "circle-stroke-color": "#ffffff",
+  };
+
   return (
     <>
-      <Source
-        id="stations"
-        type="geojson"
-        data={stations}
-        {...(cluster ? { cluster: true, clusterMaxZoom: 7, clusterRadius: 40 } : {})}
-      >
-        {cluster && (
-          <>
-            <Layer
-              id="clusters"
-              type="circle"
-              filter={["has", "point_count"]}
-              paint={{
-                "circle-color": [
-                  "step",
-                  ["get", "point_count"],
-                  "#60a5fa",
-                  50,
-                  "#3b82f6",
-                  200,
-                  "#2563eb",
-                  500,
-                  "#1d4ed8",
-                ],
-                "circle-radius": [
-                  "step",
-                  ["get", "point_count"],
-                  16,
-                  50,
-                  22,
-                  200,
-                  30,
-                  500,
-                  38,
-                ],
-                "circle-stroke-width": 2,
-                "circle-stroke-color": "#ffffff",
-                "circle-opacity": 0.85,
-              }}
-            />
-            <Layer
-              id="cluster-count"
-              type="symbol"
-              filter={["has", "point_count"]}
-              layout={{
-                "text-field": ["get", "point_count_abbreviated"],
-                "text-font": ["Noto Sans Regular"],
-                "text-size": 12,
-              }}
-              paint={{ "text-color": "#ffffff" }}
-            />
-          </>
-        )}
-        <Layer
-          id="unclustered-point"
-          type="circle"
-          {...(cluster ? { filter: ["!", ["has", "point_count"]] } : {})}
-          paint={{
-            "circle-color": circleColor,
-            "circle-radius": [
-              "interpolate",
-              ["linear"],
-              ["zoom"],
-              6, 4,
-              10, 6,
-              14, 8,
-            ],
-            "circle-stroke-width": 1.5,
-            "circle-stroke-color": "#ffffff",
-          }}
-        />
-      </Source>
+      {cluster ? (
+        <Source
+          id="stations"
+          type="geojson"
+          data={stations}
+          cluster
+          clusterMaxZoom={7}
+          clusterRadius={40}
+        >
+          <Layer
+            id="clusters"
+            source="stations"
+            type="circle"
+            filter={["has", "point_count"]}
+            paint={{
+              "circle-color": [
+                "step",
+                ["get", "point_count"],
+                "#60a5fa",
+                50,
+                "#3b82f6",
+                200,
+                "#2563eb",
+                500,
+                "#1d4ed8",
+              ],
+              "circle-radius": [
+                "step",
+                ["get", "point_count"],
+                16,
+                50,
+                22,
+                200,
+                30,
+                500,
+                38,
+              ],
+              "circle-stroke-width": 2,
+              "circle-stroke-color": "#ffffff",
+              "circle-opacity": 0.85,
+            }}
+          />
+          <Layer
+            id="cluster-count"
+            source="stations"
+            type="symbol"
+            filter={["has", "point_count"]}
+            layout={{
+              "text-field": ["get", "point_count_abbreviated"],
+              "text-font": ["Noto Sans Regular"],
+              "text-size": 12,
+            }}
+            paint={{ "text-color": "#ffffff" }}
+          />
+          <Layer
+            id="unclustered-point"
+            source="stations"
+            type="circle"
+            filter={["!", ["has", "point_count"]]}
+            paint={pointPaint}
+          />
+        </Source>
+      ) : (
+        <Source id="stations" type="geojson" data={stations}>
+          <Layer
+            id="unclustered-point"
+            source="stations"
+            type="circle"
+            paint={pointPaint}
+          />
+        </Source>
+      )}
 
       {popup && (
         <StationPopup station={popup} onClose={handleClosePopup} />
