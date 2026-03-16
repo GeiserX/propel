@@ -197,6 +197,10 @@ Internal canonical IDs — display localized names per country/language:
 | `PROPEL_DEFAULT_COUNTRY` | ISO code for initial map view | `ES` |
 | `PROPEL_ENABLED_COUNTRIES` | Comma-separated ISO codes to enable (e.g. `ES,FR,DE`) | All countries with scrapers |
 | `PROPEL_DEFAULT_FUEL` | Override default fuel type | Per-country default |
+| `PROPEL_CLUSTER_STATIONS` | Enable station clustering at low zoom (`true`/`false`) | `true` |
+| `PROPEL_SCRAPE_INTERVAL_HOURS` | Auto-scrape interval in hours (0 = disabled) | `24` |
+| `VALHALLA_URL` | Valhalla routing engine URL | — |
+| `PHOTON_URL` | Photon geocoding service URL | — |
 
 These env vars allow self-hosters to scope the app to their country/region. For example, a French self-hoster can set `PROPEL_DEFAULT_COUNTRY=FR` and `PROPEL_ENABLED_COUNTRIES=FR` to show only France.
 
@@ -208,8 +212,14 @@ These env vars allow self-hosters to scope the app to their country/region. For 
 - **Stats dropdown** next to logo (separated by divider) — shows station/price totals, per-country breakdown with flags, last update timestamp. Footer: "Made with ♥ by Sergio Fernández" + GitHub Sponsors button (same pattern as Telegram-Archive)
 - **Fuel selector** has optgroup categories (Diésel, Gasolina, Gas, Hidrógeno, Otros) with category icon
 - **Station popup layout** (top to bottom): brand name (bold, primary heading) → address + city (small gray) → price card (large 22px price + EUR/L, fuel type label + "· Actualizado hace Xh" below). "Sin precio para [fuel]" if no data. Brand comes from MITECO "Rótulo" field; `name` = brand + city (internal, not shown in popup)
-- **Map clustering**: No API limit on station count (12K is fine for MapLibre). Cluster radius 80px. Larger circles for denser clusters (16px→38px scaling at 50/200/500 thresholds). Blue color deepens with density
+- **Map clustering**: Controlled by `PROPEL_CLUSTER_STATIONS` env var. When enabled, clusters only at zoom ≤7, radius 40px. Production instance has it disabled. 12K stations renders fine in MapLibre without clustering.
 - **Map default center/zoom** comes from server config (env vars), not hardcoded
+- **Auto-geolocation on load**: Uses Permissions API to check state first — if `granted`, flies directly (no wasted default fetch); if `denied`, loads default country view; if `prompt`, loads default view then asks (re-fetches if accepted). This avoids double fetches for returning users.
+- **Station fetch**: No min-zoom gate — stations load at all zoom levels (API returns 12K stations in ~100ms). 100ms debounce on pan/zoom.
+- **Search panel**: Always expanded by default. Users can collapse and re-expand.
+- **Fuel dropdown**: Uses explicit dark backgrounds on `<option>` elements to prevent unreadable text on light OS themes.
+- **Route z-order**: Route line renders below station points (`beforeId="unclustered-point"`) so stations are always clickable.
+- **Docker Publish workflow**: Must include a `type=raw,value=latest,enable={{is_default_branch}}` tag rule — without it, main-branch pushes produce zero tags and the build fails.
 
 ---
 
@@ -333,8 +343,8 @@ propel/
 | app | `drumsergio/propel:x.y.z` | 512 MB | 3200 | Next.js app |
 | db | `postgis/postgis:17-3.4` | 2 GB | 5432 | PostGIS spatial DB |
 | valhalla | `ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1` | 16 GB (build), 512 MB (serve) | 8002 | First start builds tiles from PBF (~20min). Enhance stage peaks at ~12GB. After build, steady-state ~512MB. |
-| photon | `eclipse-temurin:21-jre` | 4 GB (import), 1 GB (serve) | 2322 | First start downloads Photon 1.0.1 JAR + JSONL planet dump (4.7GB), imports Spain-only data (~30min). After import, steady-state ~1GB. |
-| scraper | `drumsergio/propel-scraper:x.y.z` | 256 MB | — | Cron-based |
+| photon | `eclipse-temurin:21-jre` | 4 GB (import), 1 GB (serve) | 2322 | First start downloads Photon 1.0.1 JAR + country-specific JSONL dump (~490MB for Spain). Imports ~5.6M docs in ~12 min. Steady-state ~1GB. |
+| scraper | Built into the app via `instrumentation.ts` | — | — | Runs on startup + `PROPEL_SCRAPE_INTERVAL_HOURS` interval. No separate container needed. |
 
 ### CI/CD
 
