@@ -11,8 +11,8 @@ export interface Route {
   bbox: [number, number, number, number];
 }
 
-// Alt route colors: violet, teal, amber
-const ALT_COLORS = ["#8b5cf6", "#14b8a6", "#f59e0b"];
+// Alt route colors: violet, teal, pink
+const ALT_COLORS = ["#8b5cf6", "#14b8a6", "#ec4899"];
 
 interface RouteLayerProps {
   routes: Route[];
