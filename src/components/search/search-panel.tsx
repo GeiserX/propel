@@ -8,7 +8,7 @@ import { AutocompleteInput, type AutocompleteRef } from "./autocomplete-input";
 
 type Phase = "search" | "destination" | "route";
 
-const ALT_COLORS = ["#8b5cf6", "#14b8a6", "#f59e0b"];
+const ALT_COLORS = ["#8b5cf6", "#14b8a6", "#ec4899"];
 const MAX_WAYPOINTS = 5;
 
 interface SearchPanelProps {
