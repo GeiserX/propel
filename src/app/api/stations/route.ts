@@ -135,13 +135,16 @@ export async function GET(request: NextRequest) {
       features,
     };
 
+    const withPrice = features.filter((f) => f.properties.price != null).length;
+    console.log(`[stations] bbox=${bbox.map((n) => n.toFixed(2)).join(",")} fuel=${fuel} → ${features.length} stations (${withPrice} with price)`);
+
     return NextResponse.json(collection, {
       headers: {
         "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
       },
     });
   } catch (err) {
-    console.error("Failed to query stations:", err);
+    console.error("[stations] Query failed:", err);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
