@@ -148,7 +148,7 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 - [x] Portugal scraper (DGEG API, ~3,200 stations, paginated per fuel type)
 - [x] Italy scraper (MIMIT CSV, ~23,600 stations, pipe-delimited)
 - [x] Austria scraper (E-Control API, ~930 stations, queried per district for max coverage)
-- [ ] Germany scraper (Tankerkoenig API, ~14,000 stations — needs API key)
+- [x] Germany scraper (Tankerkoenig v4 API, ~14,700 stations — code ready, needs API key activation)
 - [ ] UK scraper (CMA 14 retailer feeds, every 4 hours)
 
 ### 3.3 — Valhalla Multi-Country Tiles
@@ -229,9 +229,10 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 
 ### 5.1 — EV Data Sources
 - [ ] Research and integrate EV charging APIs:
-  - Open Charge Map (OCM) — open source, global, 270K+ chargers
-  - OCPI (Open Charge Point Interface) — standard protocol
-  - National APIs (e.g., UK National Chargepoint Registry)
+  - **Open Charge Map (OCM)** — open source, global, 270K+ chargers, CC BY-SA 4.0. REST API at `api.openchargemap.io/v3/poi`. Supports bbox queries, connector filtering. No auth required for basic use (API key recommended for higher rate limits). Best starting point.
+  - **OCPI (Open Charge Point Interface)** — B2B protocol between CPOs and eMSPs, not a public data source. Useful for real-time availability if we partner with a network.
+  - **National APIs**: UK National Chargepoint Registry (data.gov.uk), France IRVE (data.gouv.fr), Germany BNetzA (Bundesnetzagentur registry)
+  - **Network-specific**: Tesla Supercharger API (unofficial), Ionity (OCPI), ChargePoint (proprietary)
 - [ ] `ev_chargers` table: connector type, power (kW), price per kWh, network, availability
 - [ ] Station type: `fuel`, `ev_charger`, or `both`
 
@@ -277,11 +278,24 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 ## Phase 7: Global Expansion
 
 ### 7.1 — More European Countries
-- [ ] Belgium (Carbu.com unofficial API)
-- [ ] Netherlands
-- [ ] Poland
-- [ ] Switzerland
-- [ ] Nordics (Norway, Sweden, Denmark, Finland)
+
+**Tier 1 — Free government APIs (no auth, similar to existing scrapers):**
+- [ ] Belgium — SPF Economie official API (`economie.fgov.be`), all stations + daily prices
+- [ ] Ireland — CCPC fuel survey data, monthly averages (limited real-time)
+- [ ] Luxembourg — Official price data (government-regulated max prices)
+- [ ] Greece — Ministry of Development fuel price portal (`fuelprices.gr`)
+- [ ] Croatia — MINGOR API (`mingor.gov.hr`), daily prices
+- [ ] Slovenia — Government-regulated prices, published by Petrol/MOL
+
+**Tier 2 — Free with API key or registration:**
+- [ ] Netherlands — community data, no official API (explore OpenDataSoft Netherlands)
+- [ ] Poland — UOKiK data or e-petrol.pl (scraping, no API)
+- [ ] Czech Republic — no official API, explore PHM.cz community data
+- [ ] Hungary — government-regulated prices (fixed since 2022, limited variation)
+
+**Tier 3 — Requires research / scraping:**
+- [ ] Switzerland (not EU, but relevant for cross-border routing)
+- [ ] Nordics (Norway, Sweden, Denmark, Finland) — various sources, complex
 
 ### 7.2 — Outside Europe
 - [ ] USA — no single official API, explore:

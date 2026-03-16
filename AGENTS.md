@@ -86,24 +86,24 @@ The closest analog is **A Better Route Planner (ABRP)** for EVs — Propel does 
 | Component | Details |
 |---|---|
 | PostGIS 17 | Spatial database for stations + prices (`postgis/postgis:17-3.4`) |
-| Valhalla 3.5.1 | Self-hosted routing engine (`ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1`). Spain tiles built from Geofabrik PBF. Enhance stage needs ~12GB RAM peak. |
+| Valhalla 3.5.1 | Self-hosted routing engine (`ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1`). Multi-country tiles (ES+FR+PT+IT+AT) built from 5 Geofabrik PBFs (~9.3GB total). Enhance stage needs ~12GB RAM peak. |
 | Protomaps PMTiles | Self-hosted vector map tiles on NVMe |
 | OpenFreeMap | Primary tile provider (free, no API key, no rate limits) |
-| Photon 1.0.1 | Geocoding / address autocomplete. Runs on `eclipse-temurin:21-jre` with official JAR. Uses OpenSearch backend (NOT old Elasticsearch). Data imported from GraphHopper **country-specific** JSONL dump (`photon-dump-spain-release-*.jsonl.zst`, ~490MB). **Do NOT use the planet dump** — `photon-dump-planet-1.0-latest` is periodically truncated/broken, and Photon 1.0.1 has a bug where `-country-codes` crashes with NPE on entries lacking a `country_code` field. Country-specific dumps at `download1.graphhopper.com/public/europe/spain/` avoid both issues. |
+| Photon 1.0.1 | Geocoding / address autocomplete. Runs on `eclipse-temurin:21-jre` with official JAR. Uses OpenSearch backend (NOT old Elasticsearch). Data imported from GraphHopper **planet dump** (`photon-dump-planet-1.0-latest.jsonl.zst`, ~25GB compressed) filtered with `-country-codes es,fr,pt,it,at -languages es,en,fr,de,it,pt`. |
 | Caddy | Reverse proxy (existing on watchtower) |
 | Docker | Multi-stage builds, images on Docker Hub |
 | Portainer | Container management with GitOps |
 
 ### External Data Sources (All Free, No Auth Unless Noted)
-| Country | Source | Update Freq | Stations | Auth |
-|---|---|---|---|---|
-| Spain | MITECO REST API | Daily | ~12,000 | None |
-| France | Opendatasoft / prix-carburants.gouv.fr | 10 min | ~9,800 | None |
-| Germany | Tankerkoenig | 4 min | ~14,000 | Free API key |
-| Italy | MIMIT CSV | Daily | ~22,000 | None |
-| UK | CMA per-retailer JSON feeds | Varies | ~8,000 | None |
-| Austria | E-Control API | Real-time | All | None |
-| Portugal | DGEG API | Daily | ~3,500 | None (non-commercial) |
+| Country | Source | Update Freq | Stations | Auth | Scraper Status |
+|---|---|---|---|---|---|
+| Spain | MITECO REST API | Daily | ~12,200 | None | ✅ Implemented |
+| France | data.economie.gouv.fr bulk export | 10 min | ~9,900 | None | ✅ Implemented |
+| Portugal | DGEG paginated API | Daily | ~3,200 | None (non-commercial) | ✅ Implemented |
+| Italy | MIMIT CSV (pipe-delimited) | Daily | ~23,600 | None | ✅ Implemented |
+| Austria | E-Control API (per-district) | Real-time | ~930 | None | ✅ Implemented |
+| Germany | Tankerkoenig v4 API | Real-time | ~14,700 | Free API key | ✅ Code ready, needs key |
+| UK | CMA per-retailer JSON feeds | Varies | ~8,000 | None | Not started |
 
 ---
 
@@ -122,14 +122,14 @@ propel.geiser.cloud (Caddy reverse proxy on watchtower)
     |       |
     |       +-- PMTiles (static on NVMe via Caddy)
     |
-    +-- Scraper workers (cron, 2x daily per country)  [~256MB RAM]
+    +-- Scraper workers (built into app, per-country intervals)  [~256MB RAM]
     |
     +-- Photon (geocoding)                     [Port 2322, ~1GB RAM]
 ```
 
-**Steady-state: ~4-5GB RAM, ~10GB disk (Spain only).**
+**Steady-state: ~6-8GB RAM, ~40GB disk (5 countries: ES+FR+PT+IT+AT).**
 **First-time build: needs ~16GB RAM peak** (Valhalla enhance), then drops to steady-state. Run Valhalla and Photon builds sequentially to avoid memory pressure.
-**Disk breakdown**: PBF ~1.4GB, Valhalla tiles ~2GB, Photon data ~3GB, PostGIS ~1GB, app ~50MB.
+**Disk breakdown**: PBFs ~9.3GB, Valhalla tiles ~6-8GB, Photon data ~15GB (planet dump filtered), PostGIS ~2GB (~50K stations), app ~50MB.
 
 ### Database Schema (PostGIS)
 
@@ -198,9 +198,14 @@ Internal canonical IDs — display localized names per country/language:
 | `PROPEL_ENABLED_COUNTRIES` | Comma-separated ISO codes to enable (e.g. `ES,FR,DE`) | All countries with scrapers |
 | `PROPEL_DEFAULT_FUEL` | Override default fuel type | Per-country default |
 | `PROPEL_CLUSTER_STATIONS` | Enable station clustering at low zoom (`true`/`false`) | `true` |
-| `PROPEL_SCRAPE_INTERVAL_HOURS` | Auto-scrape interval in hours (0 = disabled) | `24` |
+| `PROPEL_CORRIDOR_KM` | Station search corridor width in km around route | `5` (range: 0.5-50) |
+| `PROPEL_SCRAPE_INTERVAL_HOURS` | Global scrape interval override (0 = disabled) | Per-country defaults |
+| `PROPEL_SCRAPE_INTERVAL_XX` | Per-country interval, e.g. `PROPEL_SCRAPE_INTERVAL_FR=0.5` | See defaults below |
+| `TANKERKOENIG_API_KEY` | Germany Tankerkoenig API key (free registration) | — |
 | `VALHALLA_URL` | Valhalla routing engine URL | — |
 | `PHOTON_URL` | Photon geocoding service URL | — |
+
+**Per-country default scrape intervals**: ES=12h, FR=1h, PT=12h, IT=12h, AT=2h, DE=1h. Real-time sources (FR/DE/AT) scrape more frequently; daily sources (ES/PT/IT) scrape every 12h. Each country runs on its own timer with staggered startup (5s apart).
 
 These env vars allow self-hosters to scope the app to their country/region. For example, a French self-hoster can set `PROPEL_DEFAULT_COUNTRY=FR` and `PROPEL_ENABLED_COUNTRIES=FR` to show only France.
 
@@ -237,9 +242,9 @@ These env vars allow self-hosters to scope the app to their country/region. For 
 - **`src/components/map/map-view.tsx`** — Uses `forwardRef` to expose MapRef. Switches between bbox station fetch and corridor station fetch based on active route.
 
 ### Infrastructure
-- **Valhalla**: Spain PBF from Geofabrik, tile build + enhance on first start. Image: `ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1`. Needs 16GB RAM limit (enhance peaks at ~12GB). Do NOT run simultaneously with Photon import — causes OOM.
-- **Photon**: No official Docker image. Uses `eclipse-temurin:21-jre` with custom entrypoint that downloads Photon 1.0.1 JAR + Spain JSONL dump (~490MB from `download1.graphhopper.com/public/europe/spain/`), imports via stdin pipe. Must bind to `0.0.0.0` (`-listen-ip 0.0.0.0`), default is localhost-only. Spain dump imports 5.6M documents in ~12 min.
-- **CRITICAL Photon dump notes**: (1) Do NOT use the planet dump (`photon-dump-planet-1.0-latest`) — it's periodically truncated/broken. (2) Photon 1.0.1 has a bug: `-country-codes` flag crashes with NPE on entries without a `country_code` field. Use country-specific dumps which avoid this. (3) Old `lehrenfried/photon` image is incompatible (Elasticsearch 5.5.0 vs OpenSearch). (4) Old `photon-db-es-*.tar.bz2` extracts are Elasticsearch format — incompatible with 1.0.x.
+- **Valhalla**: 5-country PBFs (ES+FR+PT+IT+AT) from Geofabrik, tile build on first start. Image: `ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1`. Needs 16GB RAM limit (enhance peaks at ~12GB). Downloads ~9.3GB of PBFs, build takes ~60-90 min. Do NOT run simultaneously with Photon import — causes OOM. To add a country: add its PBF URL to `tile_urls`, delete tiles, restart.
+- **Photon**: No official Docker image. Uses `eclipse-temurin:21-jre` with custom entrypoint that downloads Photon 1.0.1 JAR + planet dump (~25GB compressed from `download1.graphhopper.com/public/photon-dump-planet-1.0-latest.jsonl.zst`), imports filtered by `-country-codes es,fr,pt,it,at -languages es,en,fr,de,it,pt`. Must bind to `0.0.0.0` (`-listen-ip 0.0.0.0`). To add a country: add its code to `-country-codes`, delete `photon_data/`, restart.
+- **Photon notes**: (1) Old `lehrenfried/photon` image is incompatible (Elasticsearch 5.5.0 vs OpenSearch). (2) Old `photon-db-es-*.tar.bz2` extracts are Elasticsearch format — incompatible with 1.0.x. (3) Country-specific dumps at `download1.graphhopper.com/public/europe/{country}/` are smaller alternatives if only one country is needed.
 
 ## Core Features & Algorithms
 
@@ -287,19 +292,19 @@ interface Scraper {
 
 ### Country-Specific Notes
 
-**Spain (MITECO)** — Base: `https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/`. `EstacionesTerrestres/` returns all stations + prices. No auth. Cloud IPs sometimes blocked. Schedule: `0 8,20 * * *`
+**Spain (MITECO)** — Base: `https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/`. `EstacionesTerrestres/` returns all stations + prices in a single request. No auth. Cloud IPs sometimes blocked. Default scrape interval: 12h.
 
-**France (Opendatasoft)** — Base: `https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/prix-des-carburants-en-france-flux-instantane-v2/records`. JSON, proper lat/lon. Updates every 10 min. Schedule: `*/30 * * * *`
+**France (Opendatasoft)** — Uses bulk `/exports/json` endpoint (single request, ~9,800 records). Much faster than paginated `/records` (3s vs 30s). Updates every 10 min. Default scrape interval: 1h.
 
-**Germany (Tankerkoenig)** — Base: `https://creativecommons.tankerkoenig.de/json/`. Free API key required. 5-min rate limit. Schedule: `*/5 * * * *`
+**Germany (Tankerkoenig v4)** — Base: `https://creativecommons.tankerkoenig.de/api/v4/stations/search`. Free API key required (register at `onboarding.tankerkoenig.de`). 25km radius search limit — covers Germany with ~270 overlapping grid queries (0.40° lat × 0.55° lon steps). Rate limit returns HTTP 503. Default scrape interval: 1h.
 
-**Italy (MIMIT)** — CSV downloads (pipe-delimited). Coordinates voluntary. Schedule: `0 9 * * *`
+**Italy (MIMIT)** — CSV downloads (pipe-delimited). Coordinates voluntary (~23,600 stations). Default scrape interval: 12h.
 
-**UK (CMA Feeds)** — 14 separate JSON endpoints per retailer. Prices in pence. Schedule: `0 */4 * * *`
+**UK (CMA Feeds)** — 14 separate JSON endpoints per retailer. Prices in pence. Not yet implemented.
 
-**Austria (E-Control)** — Base: `https://api.e-control.at/sprit/1.0/`. Real-time. Schedule: `*/15 * * * *`
+**Austria (E-Control)** — Base: `https://api.e-control.at/sprit/1.0/`. Real-time. API returns max 10 results per query — queries 117 political districts (Bezirke, `type=PB`) instead of 9 states to get full coverage (~930 stations). Default scrape interval: 2h.
 
-**Portugal (DGEG)** — Base: `https://precoscombustiveis.dgeg.gov.pt/api/PrecoComb/`. Commercial use prohibited. Schedule: `0 10 * * *`
+**Portugal (DGEG)** — Base: `https://precoscombustiveis.dgeg.gov.pt/api/PrecoComb/`. Paginated per fuel type (~3,200 stations). Commercial use prohibited. Default scrape interval: 12h.
 
 ---
 
@@ -343,7 +348,7 @@ propel/
 | app | `drumsergio/propel:x.y.z` | 512 MB | 3200 | Next.js app |
 | db | `postgis/postgis:17-3.4` | 2 GB | 5432 | PostGIS spatial DB |
 | valhalla | `ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1` | 16 GB (build), 512 MB (serve) | 8002 | First start builds tiles from PBF (~20min). Enhance stage peaks at ~12GB. After build, steady-state ~512MB. |
-| photon | `eclipse-temurin:21-jre` | 4 GB (import), 1 GB (serve) | 2322 | First start downloads Photon 1.0.1 JAR + country-specific JSONL dump (~490MB for Spain). Imports ~5.6M docs in ~12 min. Steady-state ~1GB. |
+| photon | `eclipse-temurin:21-jre` | 4 GB (import), 1 GB (serve) | 2322 | First start downloads Photon 1.0.1 JAR + planet dump (~25GB compressed). Imports with `-country-codes es,fr,pt,it,at`. Steady-state ~1GB. |
 | scraper | Built into the app via `instrumentation.ts` | — | — | Runs on startup + `PROPEL_SCRAPE_INTERVAL_HOURS` interval. No separate container needed. |
 
 ### CI/CD
@@ -369,7 +374,7 @@ propel/
 2. **Spain API blocks cloud IPs** — scraper may need residential IP
 3. **Italy coordinates are voluntary** — geocode missing via Photon
 4. **UK has 14 separate feeds** — each needs individual parser
-5. **Germany Tankerkoenig has 5-min rate limit**
+5. **Germany Tankerkoenig v4**: 25km radius search limit, needs ~270 grid queries to cover country. HTTP 503 rate limiting.
 6. **Valhalla tiles need monthly rebuilds** from OSM data
 
 ---
