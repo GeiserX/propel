@@ -140,12 +140,12 @@ export function SearchPanel({
 
   return (
     <div className="absolute left-3 top-3 z-10 w-[340px]">
-      {/* Origin field */}
-      <div className="relative">
-        <div className="flex items-center rounded-xl border border-black/[0.08] bg-white/95 shadow-lg backdrop-blur-sm">
-          <div className="flex items-center pl-3.5">
+      <div className="rounded-xl border border-black/[0.08] bg-white/95 shadow-lg backdrop-blur-sm">
+        {/* Origin row */}
+        <div className="flex items-center">
+          <div className="flex w-10 shrink-0 items-center justify-center">
             {showDest ? (
-              <div className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+              <div className="h-2.5 w-2.5 rounded-full border-2 border-gray-400" />
             ) : (
               <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
@@ -183,51 +183,61 @@ export function SearchPanel({
             </button>
           )}
         </div>
-      </div>
 
-      {/* Destination field — slides in */}
-      <div
-        className={`mt-2 overflow-hidden transition-all duration-300 ease-out ${
-          showDest ? "max-h-[60px] opacity-100" : "max-h-0 opacity-0"
-        }`}
-      >
-        <div className="flex items-center rounded-xl border border-black/[0.08] bg-white/95 shadow-lg backdrop-blur-sm">
-          <div className="flex items-center pl-3.5">
-            <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
+        {/* Destination — slides in within the same card */}
+        <div
+          className={`overflow-hidden transition-all duration-300 ease-out ${
+            showDest ? "max-h-24 opacity-100" : "max-h-0 opacity-0"
+          }`}
+        >
+          {/* Connector: dashed line (left gutter) + horizontal divider */}
+          <div className="flex h-3">
+            <div className="flex w-10 shrink-0 justify-center">
+              <div className="h-full w-px border-l border-dashed border-gray-300" />
+            </div>
+            <div className="flex flex-1 items-center pr-3">
+              <div className="w-full border-t border-gray-100" />
+            </div>
           </div>
-          <AutocompleteInput
-            ref={destRef}
-            placeholder="Destino..."
-            value={destText}
-            onChange={handleDestChange}
-            onSelect={handleDestSelect}
-            onClearCoordinates={() => setDestination(null)}
-            onEnter={handleDestEnter}
-            mapCenter={mapCenter}
-            bare
-          />
 
-          {destText && (
-            <button
-              onClick={() => {
-                setDestText("");
-                setDestination(null);
-                if (phase === "route") {
-                  onClearRoute();
-                  setPhase("destination");
-                }
-              }}
-              className="pr-3 text-gray-400 hover:text-gray-600"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
+          {/* Destination row */}
+          <div className="flex items-center">
+            <div className="flex w-10 shrink-0 items-center justify-center">
+              <div className="h-2.5 w-2.5 rounded-sm bg-gray-700" />
+            </div>
+            <AutocompleteInput
+              ref={destRef}
+              placeholder="Destino..."
+              value={destText}
+              onChange={handleDestChange}
+              onSelect={handleDestSelect}
+              onClearCoordinates={() => setDestination(null)}
+              onEnter={handleDestEnter}
+              mapCenter={mapCenter}
+              bare
+            />
+            {destText && (
+              <button
+                onClick={() => {
+                  setDestText("");
+                  setDestination(null);
+                  if (phase === "route") {
+                    onClearRoute();
+                    setPhase("destination");
+                  }
+                }}
+                className="pr-3 text-gray-400 hover:text-gray-600"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Route info — slides in */}
+      {/* Route info — separate card below */}
       {routeInfo && (
         <div className="mt-2 rounded-xl border border-black/[0.08] bg-white/95 px-4 py-2.5 shadow-lg backdrop-blur-sm">
           <div className="flex items-center justify-between text-sm">
