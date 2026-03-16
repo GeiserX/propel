@@ -63,31 +63,6 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
       }
     : stations;
 
-  // Fetch corridor stations when route is active
-  const fetchRouteStations = useCallback(
-    async (fuel: FuelType, geometry: GeoJSON.LineString) => {
-      if (abortRef.current) abortRef.current.abort();
-      const controller = new AbortController();
-      abortRef.current = controller;
-
-      try {
-        const res = await fetch("/api/route-stations", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ geometry, fuel }),
-          signal: controller.signal,
-        });
-        if (!res.ok) return;
-        const data: StationsGeoJSONCollection = await res.json();
-        setStations(data);
-      } catch (err) {
-        if (err instanceof DOMException && err.name === "AbortError") return;
-        console.error("Failed to fetch route stations:", err);
-      }
-    },
-    [],
-  );
-
   const fetchStations = useCallback(
     async (fuel: FuelType) => {
       const map = mapRef.current;
@@ -131,10 +106,7 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
 
   const handleMoveEnd = useCallback(
     (_e: ViewStateChangeEvent) => {
-      // Only fetch bbox stations when no route is active
-      if (!routeGeometry) {
-        debouncedFetch(selectedFuel);
-      }
+      debouncedFetch(selectedFuel);
       // Report center for geo-biased autocomplete
       const map = mapRef.current;
       if (map) {
@@ -142,7 +114,7 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
         onMapMove?.([c.lng, c.lat]);
       }
     },
-    [debouncedFetch, selectedFuel, routeGeometry, onMapMove],
+    [debouncedFetch, selectedFuel, onMapMove],
   );
 
   const handleLoad = useCallback(() => {
@@ -193,14 +165,10 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchStations]);
 
-  // When route is active, fetch corridor stations; otherwise bbox stations
+  // Re-fetch stations when fuel type changes or route is cleared
   useEffect(() => {
-    if (routeGeometry) {
-      fetchRouteStations(selectedFuel, routeGeometry);
-    } else {
-      fetchStations(selectedFuel);
-    }
-  }, [fetchStations, fetchRouteStations, selectedFuel, routeGeometry]);
+    fetchStations(selectedFuel);
+  }, [fetchStations, selectedFuel]);
 
   // Reset price filter when fuel type changes
   useEffect(() => {
