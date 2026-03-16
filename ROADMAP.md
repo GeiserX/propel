@@ -227,13 +227,39 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 
 **Goal**: Extend Propel to electric vehicles — the ABRP killer.
 
-### 5.1 — EV Data Sources
-- [ ] Research and integrate EV charging APIs:
-  - **Open Charge Map (OCM)** — open source, global, 270K+ chargers, CC BY-SA 4.0. REST API at `api.openchargemap.io/v3/poi`. Supports bbox queries, connector filtering. No auth required for basic use (API key recommended for higher rate limits). Best starting point.
-  - **OCPI (Open Charge Point Interface)** — B2B protocol between CPOs and eMSPs, not a public data source. Useful for real-time availability if we partner with a network.
-  - **National APIs**: UK National Chargepoint Registry (data.gov.uk), France IRVE (data.gouv.fr), Germany BNetzA (Bundesnetzagentur registry)
-  - **Network-specific**: Tesla Supercharger API (unofficial), Ionity (OCPI), ChargePoint (proprietary)
-- [ ] `ev_chargers` table: connector type, power (kW), price per kWh, network, availability
+### 5.1 — EV Data Sources (Researched)
+
+**Primary: Open Charge Map (OCM)** — open source, global, 270K+ chargers, CC BY-SA 4.0.
+- API: `GET https://api.openchargemap.io/v3/poi/?countrycode=ES&maxresults=100000&compact=true&key=KEY`
+- **API key required** (free): register at openchargemap.org → My Profile → My Apps → Register
+- Pagination: use `greaterthanid=MAX_ID` + `sortby=id_asc` + `maxresults=10000` for bulk export
+- Incremental sync: `modifiedsince=YYYY-MM-DD` for updates since last scrape
+- Rich data: connector types, power (kW), operator/network, usage type (public/private/membership)
+- **No real-time availability** — `StatusType` is editorial/crowdsourced, not live OCPP
+- **No structured pricing** — only `UsageCost` free-text field (e.g. "0.39 EUR/kWh")
+- Rate limits: no published numbers, but auto-banning for abuse. Use 100ms+ delay between pages.
+- Robot user-agents are blocked (set proper `User-Agent: Propel/1.0`)
+
+**National registries (supplement OCM with authoritative data):**
+- **France IRVE** — daily CSV/GeoJSON, ~50K+ charging points, Licence Ouverte v1.0. Structured connector types, power, pricing, EVSE IDs. URL: `data.gouv.fr` dataset `eb76d20a-8501-400e-b336-d85724de5435`
+- **Germany BNetzA** — monthly XLSX/CSV (~26-45MB), CC BY 4.0. All legally-registered operators. URL: `data.bundesnetzagentur.de`
+- **Spain** — no single national registry; ~22 fragmented regional datasets on datos.gob.es (Madrid, Barcelona, Navarra, etc.)
+- **Austria E-Control** — charging point registry at e-control.at, CC BY 4.0
+- **Italy PUN** — piattaformaunicanazionale.it (new, needs evaluation)
+- **Portugal** — only municipal-level datasets on dados.gov.pt
+
+**Other free sources:**
+- **OpenStreetMap** via Overpass API — tag `amenity=charging_station`, good coverage, ODbL license
+- **OCPI protocol** — B2B between CPOs and eMSPs, not a public API. Useful for real-time if we partner with a network.
+
+**Commercial (future fallback):** Eco-Movement (pan-European, paid), HERE EV API (paid), TomTom EV API (paid)
+
+**Implementation strategy:** OCM bulk import per country → supplement with France IRVE + Germany BNetzA → OSM for validation/enrichment → accept that real-time availability needs commercial APIs or direct OCPI integrations.
+
+- [ ] OCM scraper: bulk import per country with `greaterthanid` pagination
+- [ ] France IRVE scraper: daily CSV download
+- [ ] Germany BNetzA scraper: monthly XLSX download
+- [ ] `ev_chargers` table: connector type, power (kW), price per kWh (free-text parsed), network, status
 - [ ] Station type: `fuel`, `ev_charger`, or `both`
 
 ### 5.2 — EV Route Planning
