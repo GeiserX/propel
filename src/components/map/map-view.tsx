@@ -174,6 +174,18 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
     mapRef.current?.flyTo({ center: [lon, lat], zoom: 12, duration: 1500 });
   }, []);
 
+  // Auto-geolocate on first load — silently ignored if denied
+  const geolocatedRef = useRef(false);
+  useEffect(() => {
+    if (geolocatedRef.current || !navigator.geolocation) return;
+    geolocatedRef.current = true;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => handleGeolocate(pos.coords.longitude, pos.coords.latitude),
+      () => {}, // silently ignore denial
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 },
+    );
+  }, [handleGeolocate]);
+
   return (
     <Map
       ref={mapRef}

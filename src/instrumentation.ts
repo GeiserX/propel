@@ -4,9 +4,9 @@ export async function register() {
   // Only run on the server (not edge runtime)
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
 
-  const intervalHours = parseFloat(process.env.PROPEL_SCRAPE_INTERVAL_HOURS ?? "0");
+  const intervalHours = parseFloat(process.env.PROPEL_SCRAPE_INTERVAL_HOURS ?? "24");
   if (intervalHours <= 0) {
-    console.log("[scraper] PROPEL_SCRAPE_INTERVAL_HOURS not set or 0 — automatic scraping disabled");
+    console.log("[scraper] PROPEL_SCRAPE_INTERVAL_HOURS=0 — automatic scraping disabled");
     return;
   }
 
