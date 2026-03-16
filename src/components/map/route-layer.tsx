@@ -4,9 +4,10 @@ import { Source, Layer } from "react-map-gl/maplibre";
 
 interface RouteLayerProps {
   geometry: GeoJSON.LineString;
+  beforeLayerId?: string;
 }
 
-export function RouteLayer({ geometry }: RouteLayerProps) {
+export function RouteLayer({ geometry, beforeLayerId = "unclustered-point" }: RouteLayerProps) {
   const geojson: GeoJSON.Feature<GeoJSON.LineString> = {
     type: "Feature",
     geometry,
@@ -19,7 +20,7 @@ export function RouteLayer({ geometry }: RouteLayerProps) {
       <Layer
         id="route-outline"
         type="line"
-        beforeId="unclustered-point"
+        beforeId={beforeLayerId}
         paint={{
           "line-color": "#ffffff",
           "line-width": 7,
@@ -34,7 +35,7 @@ export function RouteLayer({ geometry }: RouteLayerProps) {
       <Layer
         id="route-fill"
         type="line"
-        beforeId="unclustered-point"
+        beforeId={beforeLayerId}
         paint={{
           "line-color": "#3b82f6",
           "line-width": 4,

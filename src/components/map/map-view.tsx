@@ -221,7 +221,7 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
       attributionControl={{ compact: true }}
       style={{ width: "100%", height: "100%" }}
     >
-      {routeGeometry && <RouteLayer geometry={routeGeometry} />}
+      {routeGeometry && <RouteLayer geometry={routeGeometry} beforeLayerId={clusterStations ? "clusters" : "unclustered-point"} />}
       <StationLayer stations={filteredStations} onPriceRange={handlePriceRange} cluster={clusterStations} />
       <GeolocateButton onGeolocate={handleGeolocate} />
       <PriceFilter
