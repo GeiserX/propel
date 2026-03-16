@@ -145,7 +145,10 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
   );
 
   const handleLoad = useCallback(() => {
-    // Auto-geolocate on first load — fly to user location if allowed
+    // Always fetch stations at default view immediately
+    fetchStations(selectedFuel);
+
+    // Also auto-geolocate — if allowed, flyTo triggers moveEnd which re-fetches
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -154,16 +157,10 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
             zoom: 12,
             duration: 1500,
           });
-          // flyTo triggers moveEnd which fetches stations
         },
-        () => {
-          // Denied or error — fetch stations at default view
-          fetchStations(selectedFuel);
-        },
+        () => {}, // silently ignore denial
         { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 },
       );
-    } else {
-      fetchStations(selectedFuel);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchStations]);
