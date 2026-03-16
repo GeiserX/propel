@@ -5,6 +5,7 @@ import type { PhotonResult } from "@/lib/photon";
 
 export interface AutocompleteRef {
   geocode: (query: string) => Promise<PhotonResult | null>;
+  focus: () => void;
 }
 
 interface AutocompleteInputProps {
@@ -13,7 +14,12 @@ interface AutocompleteInputProps {
   onChange: (value: string) => void;
   onSelect: (result: PhotonResult) => void;
   onClearCoordinates?: () => void;
-  mapCenter?: [number, number]; // [lon, lat] for geo-biased results
+  onEnter?: () => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
+  mapCenter?: [number, number];
+  /** Render without border/bg — parent provides the container */
+  bare?: boolean;
 }
 
 export const AutocompleteInput = forwardRef<AutocompleteRef, AutocompleteInputProps>(function AutocompleteInput({
@@ -22,13 +28,18 @@ export const AutocompleteInput = forwardRef<AutocompleteRef, AutocompleteInputPr
   onChange,
   onSelect,
   onClearCoordinates,
+  onEnter,
+  onFocus,
+  onBlur,
   mapCenter,
+  bare,
 }, ref) {
   const [results, setResults] = useState<PhotonResult[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const internalInputRef = useRef<HTMLInputElement>(null);
 
   const doGeocode = useCallback(
     async (query: string): Promise<PhotonResult[]> => {
@@ -52,6 +63,9 @@ export const AutocompleteInput = forwardRef<AutocompleteRef, AutocompleteInputPr
     geocode: async (query: string) => {
       const results = await doGeocode(query);
       return results[0] ?? null;
+    },
+    focus: () => {
+      internalInputRef.current?.focus();
     },
   }), [doGeocode]);
 
@@ -95,6 +109,18 @@ export const AutocompleteInput = forwardRef<AutocompleteRef, AutocompleteInputPr
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") {
+        if (isOpen && activeIndex >= 0) {
+          e.preventDefault();
+          handleSelect(results[activeIndex]);
+        } else {
+          e.preventDefault();
+          setIsOpen(false);
+          onEnter?.();
+        }
+        return;
+      }
+
       if (!isOpen || results.length === 0) return;
 
       if (e.key === "ArrowDown") {
@@ -103,14 +129,11 @@ export const AutocompleteInput = forwardRef<AutocompleteRef, AutocompleteInputPr
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         setActiveIndex((i) => Math.max(i - 1, 0));
-      } else if (e.key === "Enter" && activeIndex >= 0) {
-        e.preventDefault();
-        handleSelect(results[activeIndex]);
       } else if (e.key === "Escape") {
         setIsOpen(false);
       }
     },
-    [isOpen, results, activeIndex, handleSelect],
+    [isOpen, results, activeIndex, handleSelect, onEnter],
   );
 
   // Close dropdown on outside click
@@ -130,20 +153,29 @@ export const AutocompleteInput = forwardRef<AutocompleteRef, AutocompleteInputPr
     };
   }, []);
 
+  const inputClassName = bare
+    ? "w-full bg-transparent px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none"
+    : "w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400";
+
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative flex-1">
       <input
+        ref={internalInputRef}
         type="text"
         value={value}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
-        onFocus={() => results.length > 0 && setIsOpen(true)}
+        onFocus={() => {
+          if (results.length > 0) setIsOpen(true);
+          onFocus?.();
+        }}
+        onBlur={onBlur}
         placeholder={placeholder}
-        className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+        className={inputClassName}
       />
 
       {isOpen && results.length > 0 && (
-        <ul className="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-md border border-gray-200 bg-white shadow-lg">
+        <ul className="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg">
           {results.map((r, i) => (
             <li
               key={`${r.coordinates[0]}-${r.coordinates[1]}-${i}`}
