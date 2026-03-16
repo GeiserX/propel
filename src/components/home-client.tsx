@@ -13,6 +13,7 @@ interface Props {
   center: [number, number];
   zoom: number;
   clusterStations: boolean;
+  corridorKm: number;
 }
 
 interface RouteState {
@@ -20,7 +21,7 @@ interface RouteState {
   primaryIndex: number;
 }
 
-export function HomeClient({ defaultFuel, center, zoom, clusterStations }: Props) {
+export function HomeClient({ defaultFuel, center, zoom, clusterStations, corridorKm }: Props) {
   const [selectedFuel, setSelectedFuel] = useState<FuelType>(defaultFuel as FuelType);
   const [routeState, setRouteState] = useState<RouteState | null>(null);
   const [isRouteLoading, setIsRouteLoading] = useState(false);
@@ -114,6 +115,7 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations }: Props
           center={center}
           zoom={zoom}
           clusterStations={clusterStations}
+          corridorKm={corridorKm}
           routes={routeState?.routes ?? null}
           primaryRouteIndex={routeState?.primaryIndex ?? 0}
           selectedStationId={selectedStationId}

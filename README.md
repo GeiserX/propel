@@ -116,6 +116,9 @@ npm run scraper:run -- --country=ES --once
 | `DATABASE_URL` | PostGIS connection string | Required |
 | `PROPEL_DEFAULT_COUNTRY` | ISO code for initial map view | `ES` |
 | `PROPEL_ENABLED_COUNTRIES` | Comma-separated ISO codes | All |
+| `PROPEL_DEFAULT_FUEL` | Override default fuel type | Per-country |
+| `PROPEL_CLUSTER_STATIONS` | Enable map marker clustering | `true` |
+| `PROPEL_CORRIDOR_KM` | Route corridor width in km (0.5–50) | `5` |
 | `VALHALLA_URL` | Valhalla routing endpoint | `http://propel-valhalla:8002` |
 | `PHOTON_URL` | Photon geocoding endpoint | `http://propel-photon:2322` |
 
