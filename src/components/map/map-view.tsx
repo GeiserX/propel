@@ -145,7 +145,26 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
   );
 
   const handleLoad = useCallback(() => {
-    fetchStations(selectedFuel);
+    // Auto-geolocate on first load — fly to user location if allowed
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          mapRef.current?.flyTo({
+            center: [pos.coords.longitude, pos.coords.latitude],
+            zoom: 12,
+            duration: 1500,
+          });
+          // flyTo triggers moveEnd which fetches stations
+        },
+        () => {
+          // Denied or error — fetch stations at default view
+          fetchStations(selectedFuel);
+        },
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 },
+      );
+    } else {
+      fetchStations(selectedFuel);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchStations]);
 
@@ -173,18 +192,6 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
   const handleGeolocate = useCallback((lon: number, lat: number) => {
     mapRef.current?.flyTo({ center: [lon, lat], zoom: 12, duration: 1500 });
   }, []);
-
-  // Auto-geolocate on first load — silently ignored if denied
-  const geolocatedRef = useRef(false);
-  useEffect(() => {
-    if (geolocatedRef.current || !navigator.geolocation) return;
-    geolocatedRef.current = true;
-    navigator.geolocation.getCurrentPosition(
-      (pos) => handleGeolocate(pos.coords.longitude, pos.coords.latitude),
-      () => {}, // silently ignore denial
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 },
-    );
-  }, [handleGeolocate]);
 
   return (
     <Map
