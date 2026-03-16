@@ -61,7 +61,7 @@ export class AustriaScraper extends BaseScraper {
 
     for (const [ecFuel, fuelType] of FUEL_TYPE_MAP) {
       for (const bz of BEZIRKE) {
-        const url = `${BASE_URL}?code=${bz}&type=PB&fuelType=${ecFuel}&includeClosed=true`;
+        const url = `${BASE_URL}?code=${bz}&type=PB&fuelType=${ecFuel}&includeClosed=false`;
         try {
           const res = await fetch(url, {
             headers: { Accept: "application/json", "User-Agent": "Propel/1.0" },
