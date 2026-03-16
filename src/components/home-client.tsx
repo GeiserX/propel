@@ -31,9 +31,10 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, corrido
   const [mapCenter, setMapCenter] = useState<[number, number]>(center);
   const [selectedStationId, setSelectedStationId] = useState<string | null>(null);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
+  const [maxDetour, setMaxDetour] = useState<number | null>(null);
 
-  // Reset price filter when fuel type changes
-  useEffect(() => { setMaxPrice(null); }, [selectedFuel]);
+  // Reset filters when fuel type changes
+  useEffect(() => { setMaxPrice(null); setMaxDetour(null); }, [selectedFuel]);
 
   const handleMapMove = useCallback((newCenter: [number, number]) => {
     setMapCenter(newCenter);
@@ -122,6 +123,7 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, corrido
           onSelectStation={setSelectedStationId}
           maxPrice={maxPrice}
           onMaxPriceChange={setMaxPrice}
+          maxDetour={maxDetour}
           onMapMove={handleMapMove}
           onSelectRoute={handleSelectRoute}
           onPrimaryStationsChange={handlePrimaryStationsChange}
@@ -137,6 +139,8 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, corrido
           isLoading={isRouteLoading}
           primaryStations={primaryStations}
           maxPrice={maxPrice}
+          maxDetour={maxDetour}
+          onMaxDetourChange={setMaxDetour}
         />
       </div>
     </main>

@@ -30,6 +30,7 @@ interface StationRow {
   currency: string;
   reported_at: Date | null;
   route_fraction: number;
+  distance_m: number;
 }
 
 export async function POST(request: NextRequest) {
@@ -69,7 +70,8 @@ export async function POST(request: NextRequest) {
         fp.price::float AS price,
         COALESCE(fp.currency, 'EUR') AS currency,
         fp.reported_at,
-        ST_LineLocatePoint(${routeGeom}, s.geom)::float AS route_fraction
+        ST_LineLocatePoint(${routeGeom}, s.geom)::float AS route_fraction,
+        ST_Distance(s.geom::geography, ${routeGeom}::geography)::float AS distance_m
       FROM stations s
       LEFT JOIN LATERAL (
         SELECT price, currency, reported_at
@@ -91,25 +93,30 @@ export async function POST(request: NextRequest) {
       fuel,
     );
 
-    const features: StationGeoJSON[] = rows.map((row) => ({
-      type: "Feature",
-      geometry: {
-        type: "Point",
-        coordinates: [row.longitude, row.latitude],
-      },
-      properties: {
-        id: row.id,
-        name: row.name,
-        brand: row.brand,
-        address: row.address,
-        city: row.city,
-        fuelType: fuel,
-        currency: row.currency,
-        ...(row.price != null ? { price: row.price } : {}),
-        ...(row.reported_at ? { reportedAt: new Date(row.reported_at).toISOString() } : {}),
-        routeFraction: row.route_fraction,
-      },
-    }));
+    const features: StationGeoJSON[] = rows.map((row) => {
+      // Estimate detour: round trip off-route, 1.3x road winding factor, 40 km/h avg
+      const detourMin = Math.round((2 * row.distance_m * 1.3) / (40000 / 60) * 10) / 10;
+      return {
+        type: "Feature",
+        geometry: {
+          type: "Point",
+          coordinates: [row.longitude, row.latitude],
+        },
+        properties: {
+          id: row.id,
+          name: row.name,
+          brand: row.brand,
+          address: row.address,
+          city: row.city,
+          fuelType: fuel,
+          currency: row.currency,
+          ...(row.price != null ? { price: row.price } : {}),
+          ...(row.reported_at ? { reportedAt: new Date(row.reported_at).toISOString() } : {}),
+          routeFraction: row.route_fraction,
+          detourMin,
+        },
+      };
+    });
 
     const collection: StationsGeoJSONCollection = {
       type: "FeatureCollection",

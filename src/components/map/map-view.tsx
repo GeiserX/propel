@@ -32,13 +32,14 @@ interface MapViewProps {
   onSelectStation?: (id: string | null) => void;
   maxPrice: number | null;
   onMaxPriceChange: (price: number | null) => void;
+  maxDetour: number | null;
   onMapMove?: (center: [number, number]) => void;
   onSelectRoute?: (index: number) => void;
   onPrimaryStationsChange?: (stations: StationsGeoJSONCollection) => void;
 }
 
 export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
-  { selectedFuel, center, zoom, clusterStations, corridorKm, routes, primaryRouteIndex, selectedStationId, onSelectStation, maxPrice, onMaxPriceChange, onMapMove, onSelectRoute, onPrimaryStationsChange },
+  { selectedFuel, center, zoom, clusterStations, corridorKm, routes, primaryRouteIndex, selectedStationId, onSelectStation, maxPrice, onMaxPriceChange, maxDetour, onMapMove, onSelectRoute, onPrimaryStationsChange },
   ref,
 ) {
   const mapRef = useRef<MapRef | null>(null);
@@ -75,14 +76,16 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
   // Choose which stations to display: corridor when routes active, bbox otherwise
   const displayStations = routes ? mergedCorridorStations : bboxStations;
 
-  const filteredStations: StationsGeoJSONCollection = maxPrice != null
-    ? {
-        type: "FeatureCollection",
-        features: displayStations.features.filter(
-          (f) => f.properties.price != null && f.properties.price <= maxPrice,
-        ),
-      }
-    : displayStations;
+  const filteredStations: StationsGeoJSONCollection = useMemo(() => {
+    let features = displayStations.features;
+    if (maxPrice != null) {
+      features = features.filter((f) => f.properties.price != null && f.properties.price <= maxPrice);
+    }
+    if (maxDetour != null && routes) {
+      features = features.filter((f) => f.properties.detourMin == null || f.properties.detourMin <= maxDetour);
+    }
+    return { type: "FeatureCollection", features };
+  }, [displayStations, maxPrice, maxDetour, routes]);
 
   // Report primary corridor stations to parent for station list
   useEffect(() => {

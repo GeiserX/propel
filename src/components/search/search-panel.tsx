@@ -22,6 +22,8 @@ interface SearchPanelProps {
   isLoading: boolean;
   primaryStations?: StationsGeoJSONCollection;
   maxPrice?: number | null;
+  maxDetour?: number | null;
+  onMaxDetourChange?: (detour: number | null) => void;
 }
 
 interface Location {
@@ -48,6 +50,8 @@ export function SearchPanel({
   isLoading,
   primaryStations,
   maxPrice,
+  maxDetour,
+  onMaxDetourChange,
 }: SearchPanelProps) {
   const [phase, setPhase] = useState<Phase>("search");
   const [originText, setOriginText] = useState("");
@@ -246,12 +250,18 @@ export function SearchPanel({
     setDestVisible(false);
   }, [showDest]);
 
-  // Station list: sorted by routeFraction, only those with price
+  // Station list: sorted by routeFraction, filtered by price and detour
   const stationList = primaryStations?.features
     .filter((f) => f.properties.routeFraction != null && f.properties.price != null
-      && (maxPrice == null || f.properties.price! <= maxPrice))
+      && (maxPrice == null || f.properties.price! <= maxPrice)
+      && (maxDetour == null || (f.properties.detourMin ?? 0) <= maxDetour))
     .sort((a, b) => (a.properties.routeFraction ?? 0) - (b.properties.routeFraction ?? 0))
     ?? [];
+
+  // Best deal: cheapest station in current filtered list
+  const bestDealId = stationList.length > 0
+    ? stationList.reduce((best, s) => (s.properties.price! < best.properties.price! ? s : best)).properties.id
+    : null;
 
   return (
     <div className="absolute left-3 top-3 z-10 w-[340px]">
@@ -470,21 +480,49 @@ export function SearchPanel({
               Estaciones en ruta ({stationList.length})
             </span>
           </div>
-          <div className="max-h-[280px] overflow-y-auto">
+          {/* Detour slider */}
+          <div className="border-b border-gray-100 px-4 py-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] text-gray-500">Desvío máximo</span>
+              <span className="text-[11px] font-medium text-gray-700">
+                {maxDetour == null ? "Sin límite" : `${maxDetour} min`}
+              </span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={15}
+              step={1}
+              value={maxDetour ?? 15}
+              onChange={(e) => {
+                const v = parseInt(e.target.value);
+                onMaxDetourChange?.(v >= 15 ? null : v);
+              }}
+              className="mt-1 h-1 w-full cursor-pointer accent-emerald-500"
+            />
+          </div>
+          <div className="max-h-[240px] overflow-y-auto">
             {stationList.map((station) => {
               const km = primaryRoute
                 ? (station.properties.routeFraction ?? 0) * primaryRoute.distance
                 : 0;
+              const detour = station.properties.detourMin ?? 0;
+              const isBest = station.properties.id === bestDealId;
               return (
                 <button
                   key={station.properties.id}
                   onClick={() => onFlyTo(station.geometry.coordinates, station.properties.id)}
-                  className="flex w-full items-center justify-between border-b border-gray-50 px-4 py-2 text-left hover:bg-gray-50 last:border-b-0"
+                  className={`flex w-full items-center justify-between border-b border-gray-50 px-4 py-2 text-left last:border-b-0 ${isBest ? "bg-emerald-50" : "hover:bg-gray-50"}`}
                 >
                   <div className="min-w-0 flex-1">
-                    {station.properties.brand && (
-                      <span className="text-xs font-semibold text-gray-700">{station.properties.brand}</span>
-                    )}
+                    <div className="flex items-center gap-1.5">
+                      {station.properties.brand && (
+                        <span className="text-xs font-semibold text-gray-700">{station.properties.brand}</span>
+                      )}
+                      {isBest && (
+                        <span className="rounded bg-emerald-500 px-1 py-0.5 text-[9px] font-bold leading-none text-white">MEJOR</span>
+                      )}
+                    </div>
                     <p className="truncate text-xs text-gray-500">{station.properties.name}</p>
                   </div>
                   <div className="ml-3 shrink-0 text-right">
@@ -493,7 +531,12 @@ export function SearchPanel({
                         {station.properties.price.toFixed(3)} {station.properties.currency}
                       </span>
                     )}
-                    <p className="text-[10px] text-gray-400">km {km.toFixed(0)}</p>
+                    <div className="flex items-center justify-end gap-1.5">
+                      <span className="text-[10px] text-gray-400">km {km.toFixed(0)}</span>
+                      {detour > 0 && (
+                        <span className="text-[10px] text-amber-600">+{detour.toFixed(0)} min</span>
+                      )}
+                    </div>
                   </div>
                 </button>
               );

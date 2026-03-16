@@ -64,6 +64,7 @@ export interface StationGeoJSON {
     fuelType: string;
     currency: string;
     routeFraction?: number;
+    detourMin?: number;
   };
 }
 
