@@ -3,6 +3,7 @@
 import type { FuelType } from "@/types/station";
 import { FUEL_TYPES, FUEL_CATEGORIES, FUEL_TYPE_MAP } from "@/types/fuel";
 import { StatsDropdown } from "./stats-dropdown";
+import { useI18n, LOCALES, type Locale } from "@/lib/i18n";
 
 interface NavbarProps {
   selectedFuel: FuelType;
@@ -44,6 +45,8 @@ function CategoryIcon({ category }: { category: string }) {
 
 export function Navbar({ selectedFuel, onFuelChange }: NavbarProps) {
   const currentFuel = FUEL_TYPE_MAP.get(selectedFuel);
+  const { locale, setLocale } = useI18n();
+  const currentLocale = LOCALES.find((l) => l.code === locale);
 
   return (
     <nav className="relative z-20 flex h-11 shrink-0 items-center justify-between bg-[#0c111b] px-3.5">
@@ -70,8 +73,26 @@ export function Navbar({ selectedFuel, onFuelChange }: NavbarProps) {
         <StatsDropdown />
       </div>
 
-      {/* Right: Fuel type selector */}
+      {/* Right: Language + Fuel type selector */}
       <div className="flex items-center gap-1.5">
+        <select
+          value={locale}
+          onChange={(e) => setLocale(e.target.value as Locale)}
+          className="h-7 cursor-pointer appearance-none rounded border border-white/[0.08] bg-[#0c111b] py-0 pr-5 pl-2 text-[13px] font-medium text-gray-200 transition-all hover:border-white/15 hover:bg-white/10 focus:border-emerald-400/40 focus:bg-white/10 focus:ring-1 focus:ring-emerald-400/20 focus:outline-none [&_option]:bg-[#0c111b] [&_option]:text-gray-200"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "right 0.2rem center",
+          }}
+          title={currentLocale?.label}
+        >
+          {LOCALES.map((l) => (
+            <option key={l.code} value={l.code}>{l.label}</option>
+          ))}
+        </select>
+
+        <div className="h-4 w-px bg-white/[0.08]" />
+
         <span className="text-emerald-400/80">
           {currentFuel && <CategoryIcon category={currentFuel.category} />}
         </span>
