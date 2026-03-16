@@ -25,6 +25,7 @@ interface MapViewProps {
   center: [number, number];
   zoom: number;
   clusterStations: boolean;
+  corridorKm: number;
   routes: Route[] | null;
   primaryRouteIndex: number;
   selectedStationId?: string | null;
@@ -37,7 +38,7 @@ interface MapViewProps {
 }
 
 export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
-  { selectedFuel, center, zoom, clusterStations, routes, primaryRouteIndex, selectedStationId, onSelectStation, maxPrice, onMaxPriceChange, onMapMove, onSelectRoute, onPrimaryStationsChange },
+  { selectedFuel, center, zoom, clusterStations, corridorKm, routes, primaryRouteIndex, selectedStationId, onSelectStation, maxPrice, onMaxPriceChange, onMapMove, onSelectRoute, onPrimaryStationsChange },
   ref,
 ) {
   const mapRef = useRef<MapRef | null>(null);
@@ -108,7 +109,7 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
             fetch("/api/route-stations", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ geometry: r.geometry, fuel }),
+              body: JSON.stringify({ geometry: r.geometry, fuel, corridorKm }),
               signal: controller.signal,
             }).then((res) => (res.ok ? res.json() as Promise<StationsGeoJSONCollection> : EMPTY_COLLECTION)),
           ),
@@ -122,7 +123,7 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
         console.error("[map] Failed to fetch route stations:", err);
       }
     },
-    [],
+    [corridorKm],
   );
 
   const fetchStations = useCallback(
