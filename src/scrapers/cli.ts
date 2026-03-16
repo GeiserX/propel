@@ -1,6 +1,10 @@
 import "dotenv/config";
 import type { BaseScraper, ScraperResult } from "./base";
 import { SpainScraper } from "./spain";
+import { FranceScraper } from "./france";
+import { PortugalScraper } from "./portugal";
+import { ItalyScraper } from "./italy";
+import { AustriaScraper } from "./austria";
 
 // ---------------------------------------------------------------------------
 // Scraper CLI
@@ -17,7 +21,10 @@ import { SpainScraper } from "./spain";
 
 const SCRAPERS: Record<string, () => BaseScraper> = {
   ES: () => new SpainScraper(),
-  // Future: FR, DE, IT, GB, AT, PT
+  FR: () => new FranceScraper(),
+  PT: () => new PortugalScraper(),
+  IT: () => new ItalyScraper(),
+  AT: () => new AustriaScraper(),
 };
 
 function usage(): never {

@@ -14,10 +14,18 @@ export async function register() {
   console.log(`[scraper] Automatic scraping every ${intervalHours}h`);
 
   const { SpainScraper } = await import("./scrapers/spain");
+  const { FranceScraper } = await import("./scrapers/france");
+  const { PortugalScraper } = await import("./scrapers/portugal");
+  const { ItalyScraper } = await import("./scrapers/italy");
+  const { AustriaScraper } = await import("./scrapers/austria");
 
   // Map of country code -> scraper factory
   const scrapers: Record<string, () => BaseScraper> = {
     ES: () => new SpainScraper(),
+    FR: () => new FranceScraper(),
+    PT: () => new PortugalScraper(),
+    IT: () => new ItalyScraper(),
+    AT: () => new AustriaScraper(),
   };
 
   // Determine which countries to scrape from config
