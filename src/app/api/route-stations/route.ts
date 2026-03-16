@@ -111,9 +111,10 @@ export async function POST(request: NextRequest) {
       features,
     };
 
+    console.log(`[route-stations] fuel=${fuel} corridor=${corridorKm}km → ${features.length} stations`);
     return NextResponse.json(collection);
   } catch (err) {
-    console.error("Failed to query route stations:", err);
+    console.error("[route-stations] Query failed:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

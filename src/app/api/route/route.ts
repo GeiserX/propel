@@ -41,11 +41,14 @@ export async function POST(request: NextRequest) {
   try {
     const route = await getRoute(locations);
     if (!route) {
+      console.error("[route] Valhalla returned no route");
       return NextResponse.json({ error: "Routing service unavailable" }, { status: 502 });
     }
 
+    console.log(`[route] ${route.distance.toFixed(1)}km, ${Math.round(route.duration / 60)}min, ${route.geometry.coordinates.length} points`);
     return NextResponse.json(route);
-  } catch {
+  } catch (err) {
+    console.error("[route] Calculation failed:", err);
     return NextResponse.json({ error: "Route calculation failed" }, { status: 502 });
   }
 }
