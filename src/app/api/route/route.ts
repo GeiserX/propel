@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getRoute } from "@/lib/valhalla";
+import { getRoute, getRoutes } from "@/lib/valhalla";
 
 const coordSchema = z.tuple([
   z.number().min(-180).max(180),
@@ -31,7 +31,6 @@ export async function POST(request: NextRequest) {
 
   const { origin, destination, waypoints } = parseResult.data;
 
-  // Build locations array: origin + waypoints + destination
   const locations = [
     { lon: origin[0], lat: origin[1] },
     ...(waypoints ?? []).map(([lon, lat]) => ({ lon, lat })),
@@ -39,14 +38,27 @@ export async function POST(request: NextRequest) {
   ];
 
   try {
-    const route = await getRoute(locations);
-    if (!route) {
-      console.error("[route] Valhalla returned no route");
+    // Alternates only available for simple A->B (Valhalla limitation)
+    const hasWaypoints = waypoints && waypoints.length > 0;
+
+    if (hasWaypoints) {
+      const route = await getRoute(locations);
+      if (!route) {
+        console.error("[route] Valhalla returned no route");
+        return NextResponse.json({ error: "Routing service unavailable" }, { status: 502 });
+      }
+      console.log(`[route] 1 route (${waypoints!.length} waypoints): ${route.distance.toFixed(1)}km, ${Math.round(route.duration / 60)}min`);
+      return NextResponse.json({ routes: [route] });
+    }
+
+    const routes = await getRoutes(locations, 2);
+    if (routes.length === 0) {
+      console.error("[route] Valhalla returned no routes");
       return NextResponse.json({ error: "Routing service unavailable" }, { status: 502 });
     }
 
-    console.log(`[route] ${route.distance.toFixed(1)}km, ${Math.round(route.duration / 60)}min, ${route.geometry.coordinates.length} points`);
-    return NextResponse.json(route);
+    console.log(`[route] ${routes.length} routes: ${routes.map((r, i) => `${i === 0 ? "primary" : `alt${i}`}=${r.distance.toFixed(1)}km/${Math.round(r.duration / 60)}min`).join(", ")}`);
+    return NextResponse.json({ routes });
   } catch (err) {
     console.error("[route] Calculation failed:", err);
     return NextResponse.json({ error: "Route calculation failed" }, { status: 502 });

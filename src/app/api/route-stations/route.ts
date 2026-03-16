@@ -29,6 +29,7 @@ interface StationRow {
   price: number | null;
   currency: string;
   reported_at: Date | null;
+  route_fraction: number;
 }
 
 export async function POST(request: NextRequest) {
@@ -54,6 +55,7 @@ export async function POST(request: NextRequest) {
   const corridorMeters = corridorKm * 1000;
 
   try {
+    const routeGeom = `ST_GeomFromText($1, 4326)`;
     const rows: StationRow[] = await prisma.$queryRawUnsafe(
       `
       SELECT
@@ -66,7 +68,8 @@ export async function POST(request: NextRequest) {
         ST_Y(s.geom) AS latitude,
         fp.price::float AS price,
         COALESCE(fp.currency, 'EUR') AS currency,
-        fp.reported_at
+        fp.reported_at,
+        ST_LineLocatePoint(${routeGeom}, s.geom)::float AS route_fraction
       FROM stations s
       LEFT JOIN LATERAL (
         SELECT price, currency, reported_at
@@ -78,9 +81,10 @@ export async function POST(request: NextRequest) {
       ) fp ON true
       WHERE ST_DWithin(
         s.geom::geography,
-        ST_GeomFromText($1, 4326)::geography,
+        ${routeGeom}::geography,
         $2
       )
+      ORDER BY route_fraction
       `,
       wkt,
       corridorMeters,
@@ -103,6 +107,7 @@ export async function POST(request: NextRequest) {
         currency: row.currency,
         ...(row.price != null ? { price: row.price } : {}),
         ...(row.reported_at ? { reportedAt: new Date(row.reported_at).toISOString() } : {}),
+        routeFraction: row.route_fraction,
       },
     }));
 

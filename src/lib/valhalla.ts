@@ -49,6 +49,34 @@ function decodePolyline(encoded: string): [number, number][] {
   return coords;
 }
 
+function tripToRoute(trip: ValhallaTrip): ValhallaRoute {
+  const allCoords: [number, number][] = [];
+  for (const leg of trip.legs) {
+    const decoded = decodePolyline(leg.shape);
+    if (allCoords.length > 0 && decoded.length > 0) {
+      allCoords.push(...decoded.slice(1));
+    } else {
+      allCoords.push(...decoded);
+    }
+  }
+
+  let minLon = Infinity, minLat = Infinity, maxLon = -Infinity, maxLat = -Infinity;
+  for (const [lon, lat] of allCoords) {
+    if (lon < minLon) minLon = lon;
+    if (lat < minLat) minLat = lat;
+    if (lon > maxLon) maxLon = lon;
+    if (lat > maxLat) maxLat = lat;
+  }
+
+  return {
+    geometry: { type: "LineString", coordinates: allCoords },
+    distance: trip.summary.length,
+    duration: trip.summary.time,
+    bbox: [minLon, minLat, maxLon, maxLat],
+  };
+}
+
+/** Get a single route (used when waypoints are present). */
 export async function getRoute(
   locations: { lat: number; lon: number }[],
   costing: string = "auto",
@@ -71,33 +99,42 @@ export async function getRoute(
   if (!res.ok) return null;
 
   const data: { trip: ValhallaTrip } = await res.json();
-  const { trip } = data;
+  return tripToRoute(data.trip);
+}
 
-  // Combine all leg shapes into a single coordinate array
-  const allCoords: [number, number][] = [];
-  for (const leg of trip.legs) {
-    const decoded = decodePolyline(leg.shape);
-    // Skip first point of subsequent legs (duplicate with previous leg's last point)
-    if (allCoords.length > 0 && decoded.length > 0) {
-      allCoords.push(...decoded.slice(1));
-    } else {
-      allCoords.push(...decoded);
+/** Get routes with alternatives (only for simple A->B, no waypoints). */
+export async function getRoutes(
+  locations: { lat: number; lon: number }[],
+  alternates: number = 2,
+  costing: string = "auto",
+): Promise<ValhallaRoute[]> {
+  if (!VALHALLA_URL) return [];
+
+  const body = {
+    locations: locations.map((l) => ({ lat: l.lat, lon: l.lon })),
+    costing,
+    alternates,
+    directions_options: { units: "kilometers" },
+  };
+
+  const res = await fetch(`${VALHALLA_URL}/route`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(15000),
+  });
+
+  if (!res.ok) return [];
+
+  const data: { trip: ValhallaTrip; alternates?: { trip: ValhallaTrip }[] } = await res.json();
+  const routes: ValhallaRoute[] = [];
+
+  if (data.trip) routes.push(tripToRoute(data.trip));
+  if (data.alternates) {
+    for (const alt of data.alternates) {
+      if (alt.trip) routes.push(tripToRoute(alt.trip));
     }
   }
 
-  // Compute bounding box
-  let minLon = Infinity, minLat = Infinity, maxLon = -Infinity, maxLat = -Infinity;
-  for (const [lon, lat] of allCoords) {
-    if (lon < minLon) minLon = lon;
-    if (lat < minLat) minLat = lat;
-    if (lon > maxLon) maxLon = lon;
-    if (lat > maxLat) maxLat = lat;
-  }
-
-  return {
-    geometry: { type: "LineString", coordinates: allCoords },
-    distance: trip.summary.length,
-    duration: trip.summary.time,
-    bbox: [minLon, minLat, maxLon, maxLat],
-  };
+  return routes;
 }

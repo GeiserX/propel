@@ -63,6 +63,7 @@ export interface StationGeoJSON {
     reportedAt?: string | null;
     fuelType: string;
     currency: string;
+    routeFraction?: number;
   };
 }
 
