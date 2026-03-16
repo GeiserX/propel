@@ -69,23 +69,23 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 - [x] Route search component: origin + destination inputs with typeahead autocomplete
 - [x] Debounced Photon requests (300ms)
 - [x] Geo-biased results (user location passed as lat/lon)
-- [ ] "Add waypoint" button (up to 5 intermediate stops)
-- [x] Swap origin/destination button
+- [x] "Add waypoint" button (up to 5 intermediate stops)
+- [x] Swap origin/destination button (also reverses waypoints)
 
 ### 1.3 — Route Display
 - [x] Draw route polyline on map (MapLibre `addLayer` type `line`)
 - [x] Blue route line with outline for visibility
 - [x] Auto-fit map bounds to show full route
 - [x] Route info panel: total distance, total duration, number of legs
-- [ ] Alternative routes via Valhalla `alternates` parameter (show as grey lines)
+- [x] Alternative routes via Valhalla `alternates` parameter (violet/teal/amber colored lines, click to switch primary)
 
 ### 1.4 — Stations Along Route
 - [x] Corridor query using PostGIS `ST_DWithin`:
   - Uses PostGIS geography-aware `ST_DWithin` with 5km default corridor
   - Route geometry passed as WKT LineString to PostGIS
   - `SELECT * FROM stations WHERE ST_DWithin(geom::geography, route::geography, 5000)`
-- [x] Show corridor stations on map with fuel prices
-- [ ] Station list panel: sorted by position along route (not distance from user)
+- [x] Show corridor stations on map with fuel prices (all routes, deduplicated)
+- [x] Station list panel: sorted by position along route (routeFraction via ST_LineLocatePoint)
 - [ ] Highlight stations that are directly on the route vs requiring detour
 
 **Deliverable**: Plan a route Madrid→Barcelona, see all fuel stations within 5km of the route with prices.
