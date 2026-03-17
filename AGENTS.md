@@ -86,10 +86,10 @@ The closest analog is **A Better Route Planner (ABRP)** for EVs — Propel does 
 | Component | Details |
 |---|---|
 | PostGIS 17 | Spatial database for stations + prices (`postgis/postgis:17-3.4`) |
-| Valhalla 3.5.1 | Self-hosted routing engine (`ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1`). Multi-country tiles (ES+FR+PT+IT+AT) built from 5 Geofabrik PBFs (~9.3GB total). Enhance stage needs ~12GB RAM peak. |
+| Valhalla 3.5.1 | Self-hosted routing engine (`ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1`). 8-country merged PBF (17GB) built with osmium-tool. Multiple PBFs cause SIGABRT — always merge first. Needs 24GB RAM limit for tile build. |
 | Protomaps PMTiles | Self-hosted vector map tiles on NVMe |
 | OpenFreeMap | Primary tile provider (free, no API key, no rate limits) |
-| Photon 1.0.1 | Geocoding / address autocomplete. Runs on `eclipse-temurin:21-jre` with official JAR. Uses OpenSearch backend (NOT old Elasticsearch). Data imported from **per-country JSONL dumps** (~2.9GB total for 5 countries, ~37M docs). |
+| Photon 1.0.1 | Geocoding / address autocomplete. Runs on `eclipse-temurin:21-jre` with official JAR. Uses OpenSearch backend (NOT old Elasticsearch). Data imported from **per-country JSONL dumps** (8 countries: ES,FR,PT,IT,AT,DE,GB,SI). |
 | Caddy | Reverse proxy (existing on watchtower) |
 | Docker | Multi-stage builds, images on Docker Hub |
 | Portainer | Container management with GitOps |
@@ -97,14 +97,14 @@ The closest analog is **A Better Route Planner (ABRP)** for EVs — Propel does 
 ### External Data Sources (All Free, No Auth Unless Noted)
 | Country | Source | Update Freq | Stations | Auth | Scraper Status |
 |---|---|---|---|---|---|
-| Spain | MITECO REST API | Daily | ~12,200 | None | ✅ Implemented |
-| France | data.economie.gouv.fr bulk export | 10 min | ~9,900 | None | ✅ Implemented |
-| Portugal | DGEG paginated API | Daily | ~3,200 | None (non-commercial) | ✅ Implemented |
-| Italy | MIMIT CSV (pipe-delimited) | Daily | ~23,600 | None | ✅ Implemented |
-| Austria | E-Control API (per-district) | Real-time | ~930 | None | ✅ Implemented |
-| Germany | Tankerkoenig v4 API | Real-time | ~14,700 | Free API key | ✅ Code ready, needs key |
-| UK | CMA Open Data (14 retailer JSON endpoints) | Near real-time | ~8,000 | None | Not started |
-| Slovenia | goriva.si REST API | Real-time | TBD | None | Not started |
+| Spain | MITECO REST API | Daily | ~12,215 | None | ✅ Running |
+| France | data.economie.gouv.fr bulk export | 10 min | ~9,868 | None | ✅ Running |
+| Portugal | DGEG paginated API | Daily | ~3,186 | None (non-commercial) | ✅ Running |
+| Italy | MIMIT CSV (pipe-delimited) | Daily | ~23,605 | None | ✅ Running |
+| Austria | E-Control API (per-district) | Real-time | ~920 | None | ✅ Running |
+| Germany | Tankerkoenig v4 API | Real-time | ~14,347 | Free API key | ✅ Running |
+| UK | CMA Open Data (13 retailer JSON feeds) | Near real-time | ~3,536 | None | ✅ Running |
+| Slovenia | goriva.si REST API | Real-time | ~551 | None | ✅ Running |
 
 ---
 
@@ -128,9 +128,9 @@ propel.geiser.cloud (Caddy reverse proxy on watchtower)
     +-- Photon (geocoding)                     [Port 2322, ~1GB RAM]
 ```
 
-**Steady-state: ~6-8GB RAM, ~40GB disk (5 countries: ES+FR+PT+IT+AT).**
-**First-time build: needs ~24GB RAM limit** (Valhalla enhance OOMs at 16GB with 5 PBFs), then drops to steady-state. Run Valhalla and Photon builds sequentially to avoid memory pressure.
-**Disk breakdown**: PBFs ~9.3GB, Valhalla tiles ~6-8GB, Photon data ~8-10GB (37M docs indexed), PostGIS ~2GB (~50K stations), app ~50MB.
+**Steady-state: ~8-10GB RAM, ~60GB disk (8 countries: ES+FR+PT+IT+AT+DE+GB+SI).**
+**First-time build: needs ~24GB RAM limit** (Valhalla tile build from 17GB merged PBF). Run Valhalla and Photon builds sequentially to avoid memory pressure.
+**Disk breakdown**: Merged PBF ~17GB, Valhalla tiles ~10-15GB, Photon data ~15-20GB (8-country index), PostGIS ~3GB (~68K stations), app ~50MB.
 
 ### Database Schema (PostGIS)
 
@@ -206,7 +206,7 @@ Internal canonical IDs — display localized names per country/language:
 | `VALHALLA_URL` | Valhalla routing engine URL | — |
 | `PHOTON_URL` | Photon geocoding service URL | — |
 
-**Per-country default scrape intervals**: ES=12h, FR=1h, PT=12h, IT=12h, AT=2h, DE=1h. Real-time sources (FR/DE/AT) scrape more frequently; daily sources (ES/PT/IT) scrape every 12h. Each country runs on its own timer with staggered startup (5s apart).
+**Per-country default scrape intervals**: ES=12h, FR=1h, PT=12h, IT=12h, AT=2h, DE=1h, GB=4h, SI=6h. Real-time sources (FR/DE/AT) scrape more frequently; daily sources (ES/PT/IT) scrape every 12h. Each country runs on its own timer with staggered startup (5s apart).
 
 These env vars allow self-hosters to scope the app to their country/region. For example, a French self-hoster can set `PROPEL_DEFAULT_COUNTRY=FR` and `PROPEL_ENABLED_COUNTRIES=FR` to show only France.
 
@@ -243,8 +243,8 @@ These env vars allow self-hosters to scope the app to their country/region. For 
 - **`src/components/map/map-view.tsx`** — Uses `forwardRef` to expose MapRef. Switches between bbox station fetch and corridor station fetch based on active route.
 
 ### Infrastructure
-- **Valhalla**: 5-country PBFs (ES+FR+PT+IT+AT) from Geofabrik, tile build on first start. Image: `ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1`. **Needs 24GB RAM limit** (enhance OOMs at 16GB with 5 PBFs). Downloads ~9.3GB of PBFs, build takes ~60-90 min. Do NOT run simultaneously with Photon import — causes OOM. To add a country: add its PBF URL to `tile_urls`, delete tiles, restart.
-- **Photon**: No official Docker image. Uses `eclipse-temurin:21-jre` with custom entrypoint that downloads Photon 1.0.1 JAR + per-country JSONL dumps from `download1.graphhopper.com/public/europe/{country}/photon-dump-{country}-1.0-latest.jsonl.zst`. Downloads 5 dumps (~2.9GB total: ES 469MB, FR 1.4GB, PT 107MB, IT 548MB, AT 308MB), concatenates (first file keeps header, rest skip line 1), imports as one file. ~37M docs, ~89 min import. Must bind to `0.0.0.0` (`-listen-ip 0.0.0.0`). To add a country: add its dump URL to the DUMPS list, delete `.import_done` + `photon_data/`, restart.
+- **Valhalla**: 8-country merged PBF (17GB, merged with `osmium merge`). Image: `ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1`. **Needs 24GB RAM limit**. No `tile_urls` env var — uses local PBF in `/custom_files/`. **CRITICAL: Valhalla crashes (SIGABRT `vector::_M_range_check`) when building from multiple PBFs** — always merge with osmium first. To add a country: download new PBF, re-merge all PBFs, delete old tiles, restart.
+- **Photon**: No official Docker image. Uses `eclipse-temurin:21-jre` with custom entrypoint that downloads Photon 1.0.1 JAR + per-country JSONL dumps from `download1.graphhopper.com/public/europe/{country}/photon-dump-{country}-1.0-latest.jsonl.zst`. Downloads 8 dumps, concatenates (first file keeps header, rest skip line 1), imports as one file. Must bind to `0.0.0.0` (`-listen-ip 0.0.0.0`). To add a country: add its dump URL to the DUMPS list, delete `.import_done` + `photon_data/`, restart.
 - **CRITICAL Photon notes**: (1) **Do NOT use planet dump with `-country-codes` flag** — Photon 1.0.1 crashes with NPE on entries lacking `country_code`. (2) **Do NOT use `grep`/`awk` to filter planet dump** — the JSONL header line must be preserved and gets stripped by naive filtering. (3) **Country-specific dumps are the reliable approach** — they avoid both issues. (4) France is listed as `france-monacco` (sic) on the download server. (5) Docker Compose `$$` escaping required for shell variables in the command block. (6) Old `lehrenfried/photon` image is incompatible (Elasticsearch 5.5.0 vs OpenSearch).
 
 ## Core Features & Algorithms
@@ -301,11 +301,13 @@ interface Scraper {
 
 **Italy (MIMIT)** — CSV downloads (pipe-delimited). Coordinates voluntary (~23,600 stations). Default scrape interval: 12h.
 
-**UK (CMA Feeds)** — 14 separate JSON endpoints per retailer. Prices in pence. Not yet implemented.
+**UK (CMA Feeds)** — 13 retailer JSON endpoints (Shell excluded — returns HTML). All share schema `{last_updated, stations: [{site_id, brand, address, postcode, location, prices}]}`. Prices in GBP pence. Morrisons stores lat/lng as strings (needs `parseFloat`). Sentinel values ≥900 or ≤1 pence are filtered. Default scrape interval: 4h.
 
-**Austria (E-Control)** — Base: `https://api.e-control.at/sprit/1.0/`. Real-time. API returns max 10 results per query — queries 117 political districts (Bezirke, `type=PB`) instead of 9 states to get full coverage (~930 stations). Default scrape interval: 2h.
+**Austria (E-Control)** — Base: `https://api.e-control.at/sprit/1.0/`. Real-time. API returns max 10 results per query — queries 117 political districts (Bezirke, `type=PB`) instead of 9 states to get full coverage (~920 stations). Uses `includeClosed=false` to exclude closed stations with no prices. Default scrape interval: 2h.
 
-**Portugal (DGEG)** — Base: `https://precoscombustiveis.dgeg.gov.pt/api/PrecoComb/`. Paginated per fuel type (~3,200 stations). Commercial use prohibited. Default scrape interval: 12h.
+**Portugal (DGEG)** — Base: `https://precoscombustiveis.dgeg.gov.pt/api/PrecoComb/`. Paginated per fuel type (~3,186 stations). Commercial use prohibited. Default scrape interval: 12h.
+
+**Slovenia (goriva.si)** — Base: `https://goriva.si/api/v1/search/`. Paginated, single 200km-radius query from center covers entire country. No auth. 9 fuel types including HVO, CNG, LNG. Government-regulated prices. Default scrape interval: 6h.
 
 ---
 
@@ -324,7 +326,7 @@ propel/
 │   │   └── api/{stations,route,detour,refuel}/
 │   ├── components/{map,search,route,ui}/
 │   ├── lib/{db,valhalla,photon,geo,fuel-types,detour,refuel,i18n}.ts
-│   ├── scrapers/{base,spain,france,germany,italy,uk,austria,portugal}.ts
+│   ├── scrapers/{base,cli,spain,france,germany,italy,uk,austria,portugal,slovenia}.ts
 │   └── types/{station,route,fuel}.ts
 ├── docker/{Dockerfile,Dockerfile.scraper,docker-compose.yml}
 ├── AGENTS.md
@@ -348,8 +350,8 @@ propel/
 |---|---|---|---|---|
 | app | `drumsergio/propel:x.y.z` | 512 MB | 3200 | Next.js app |
 | db | `postgis/postgis:17-3.4` | 2 GB | 5432 | PostGIS spatial DB |
-| valhalla | `ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1` | 24 GB (build), 512 MB (serve) | 8002 | First start builds tiles from 5 PBFs (~60-90 min). Enhance stage peaks ~12-16GB (OOMs at 16GB with 5 countries). After build, steady-state ~512MB. |
-| photon | `eclipse-temurin:21-jre` | 4 GB (import), 1-2 GB (serve) | 2322 | First start downloads Photon 1.0.1 JAR + 5 country dumps (~2.9GB). Concatenates and imports ~37M docs in ~89 min. Steady-state ~1-2GB. |
+| valhalla | `ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1` | 24 GB (build), 1-2 GB (serve) | 8002 | Uses local 17GB merged PBF (8 countries). No `tile_urls`. First build ~2-4 hours. Steady-state ~1-2GB. |
+| photon | `eclipse-temurin:21-jre` | 4 GB (import), 2-3 GB (serve) | 2322 | First start downloads Photon 1.0.1 JAR + 8 country dumps. Concatenates and imports. Steady-state ~2-3GB. |
 | scraper | Built into the app via `instrumentation.ts` | — | — | Runs on startup + `PROPEL_SCRAPE_INTERVAL_HOURS` interval. No separate container needed. |
 
 ### CI/CD
@@ -374,8 +376,9 @@ propel/
 1. **Portugal data is non-commercial** — display with disclaimer
 2. **Spain API blocks cloud IPs** — scraper may need residential IP
 3. **Italy coordinates are voluntary** — geocode missing via Photon
-4. **UK has 14 separate feeds** — each needs individual parser
-5. **Germany Tankerkoenig v4**: 25km radius search limit, needs ~270 grid queries to cover country. HTTP 503 rate limiting.
+4. **UK has 13 separate feeds** — Shell excluded (returns HTML not JSON). Prices in GBP pence.
+5. **Germany Tankerkoenig v4**: 25km radius search limit, needs ~340 grid queries to cover country. HTTP 503 rate limiting.
+6. **Valhalla multi-PBF bug**: SIGABRT with `vector::_M_range_check` when building from multiple PBFs. Must merge with `osmium merge` first.
 6. **Valhalla tiles need monthly rebuilds** from OSM data
 
 ---
