@@ -17,7 +17,7 @@ const NL_BBOX = { south: 50.7, west: 3.3, north: 53.6, east: 7.3 };
 
 const FUEL_TYPE_MAP: ReadonlyMap<string, FuelType> = new Map([
   ["EURO95", "E10"],
-  ["EURO98", "E5"],
+  ["EURO98", "E5_98"],
   ["DIESEL", "B7"],
   ["DIESEL_SPECIAL", "B7_PREMIUM"],
   ["AUTOGAS", "LPG"],

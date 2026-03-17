@@ -1,0 +1,126 @@
+import { BaseScraper, type RawFuelPrice, type RawStation } from "./base";
+import type { FuelType } from "../types/station";
+
+// ---------------------------------------------------------------------------
+// Romania — Peco Online (Parse backend)
+// ---------------------------------------------------------------------------
+// Parse API with publicly known keys. Returns ~1,400 stations with prices.
+// Prices in RON (Romanian Leu). Paginated (limit 1000).
+// 999999 = no data sentinel value.
+// ---------------------------------------------------------------------------
+
+const API_URL = "https://pg-app-hnf14cfy2xb2v9x9eueuchcd2xyetd.scalabl.cloud/1/classes/farapret3";
+
+const PARSE_HEADERS = {
+  "X-Parse-Application-Id": "YueWcf0orjSz3IQmaT8yBNDTM5POP0mOU6EDyE3U",
+  "X-Parse-Client-Key": "ctPx9Ahrz9aaXhEvN0oWCzlX8FHX1cv3r7vZwxH8",
+  "User-Agent": "Parse Android SDK API Level 34",
+  Accept: "application/json",
+};
+
+const FUEL_FIELD_MAP: ReadonlyArray<[string, FuelType]> = [
+  ["Benzina_Regular", "E5"],
+  ["Benzina_Premium", "E5_98"],
+  ["Motorina_Regular", "B7"],
+  ["Motorina_Premium", "B7_PREMIUM"],
+  ["GPL", "LPG"],
+  ["AdBlue", "ADBLUE"],
+];
+
+interface PecoStation {
+  objectId: string;
+  Id: string;
+  Retea: string;
+  Statie: string;
+  Adresa: string;
+  Oras: string;
+  Judet: string;
+  lat: number;
+  lng: number;
+  Benzina_Regular: number;
+  Benzina_Premium: number;
+  Motorina_Regular: number;
+  Motorina_Premium: number;
+  GPL: number;
+  AdBlue: number;
+}
+
+interface ParseResponse {
+  results: PecoStation[];
+  count?: number;
+}
+
+export class RomaniaScraper extends BaseScraper {
+  readonly country = "RO";
+  readonly source = "peco_online";
+
+  async fetch(): Promise<{ stations: RawStation[]; prices: RawFuelPrice[] }> {
+    const stations: RawStation[] = [];
+    const prices: RawFuelPrice[] = [];
+    const LIMIT = 1000;
+    let skip = 0;
+    let total = 0;
+
+    // Paginate through all stations with valid prices
+    const where = encodeURIComponent(JSON.stringify({
+      Benzina_Regular: { $gt: 0, $lt: 999999 },
+    }));
+
+    while (true) {
+      const url = `${API_URL}?limit=${LIMIT}&skip=${skip}&count=1&where=${where}`;
+      const res = await fetch(url, {
+        headers: PARSE_HEADERS,
+        signal: AbortSignal.timeout(30_000),
+      });
+
+      if (!res.ok) throw new Error(`Peco Online HTTP ${res.status}`);
+      const data: ParseResponse = await res.json();
+
+      if (skip === 0 && data.count != null) {
+        total = data.count;
+        console.log(`[${this.source}] Total stations with prices: ${total}`);
+      }
+
+      for (const s of data.results) {
+        if (!s.lat || !s.lng) continue;
+        // Romania bounding box
+        if (s.lat < 43.5 || s.lat > 48.3 || s.lng < 20.2 || s.lng > 30.0) continue;
+
+        const externalId = s.Id || s.objectId;
+
+        stations.push({
+          externalId,
+          name: s.Statie?.trim() || `${s.Retea ?? ""} ${s.Oras ?? ""}`.trim(),
+          brand: s.Retea?.trim() || null,
+          address: s.Adresa?.trim() || "",
+          city: s.Oras?.trim() || "",
+          province: s.Judet?.trim() || null,
+          latitude: s.lat,
+          longitude: s.lng,
+          stationType: "fuel",
+        });
+
+        for (const [field, fuelType] of FUEL_FIELD_MAP) {
+          const price = s[field as keyof PecoStation] as number;
+          if (price != null && price > 0 && price < 999999) {
+            prices.push({
+              stationExternalId: externalId,
+              fuelType,
+              price,
+              currency: "RON",
+            });
+          }
+        }
+      }
+
+      skip += data.results.length;
+      if (data.results.length < LIMIT) break;
+
+      // Small delay between pages
+      await new Promise((r) => setTimeout(r, 200));
+    }
+
+    console.log(`[${this.source}] Fetched ${stations.length} stations, ${prices.length} prices`);
+    return { stations, prices };
+  }
+}

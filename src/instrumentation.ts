@@ -15,6 +15,7 @@ const DEFAULT_INTERVALS: Record<string, number> = {
   NL: 6,    // Netherlands ANWB — commercial API, scrape every 6h
   BE: 6,    // Belgium ANWB — commercial API, scrape every 6h
   LU: 12,   // Luxembourg ANWB — small country, scrape every 12h
+  RO: 12,   // Romania Peco Online — daily updates, scrape every 12h
 };
 
 export async function register() {
@@ -39,6 +40,7 @@ export async function register() {
   const { NetherlandsScraper } = await import("./scrapers/netherlands");
   const { BelgiumScraper } = await import("./scrapers/belgium");
   const { LuxembourgScraper } = await import("./scrapers/luxembourg");
+  const { RomaniaScraper } = await import("./scrapers/romania");
 
   const scraperFactories: Record<string, () => BaseScraper> = {
     ES: () => new SpainScraper(),
@@ -52,6 +54,7 @@ export async function register() {
     NL: () => new NetherlandsScraper(),
     BE: () => new BelgiumScraper(),
     LU: () => new LuxembourgScraper(),
+    RO: () => new RomaniaScraper(),
   };
 
   // Determine which countries to scrape
