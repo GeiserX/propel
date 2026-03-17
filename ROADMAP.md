@@ -160,7 +160,7 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 - [x] Croatia scraper (MZOE government API, ~911 stations, EUR, single JSON dump)
 
 ### 3.3 — Valhalla Multi-Country Tiles
-- [x] Valhalla configured with 14-country merged PBF (ES, FR, PT, IT, AT, DE, GB, SI, NL, BE, LU, RO, GR, IE)
+- [x] Valhalla configured with 15-country merged PBF (ES, FR, PT, IT, AT, DE, GB, SI, NL, BE, LU, RO, GR, IE, HR)
 - [x] PBFs merged with osmium-tool to avoid Valhalla multi-PBF SIGABRT bug
 - [ ] Automated monthly tile rebuild (cron or triggered by Geofabrik update)
 
@@ -174,8 +174,8 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 - [ ] Fuel type names localized per country
 
 ### 3.5 — Photon Multi-Country Geocoding
-- [x] Photon configured to import ES, FR, PT, IT, AT, DE, GB, SI, NL, BE, LU, RO, GR, IE from per-country dumps
-- [x] Serves all 11 languages (es, en, fr, de, it, pt, sl, nl, ro, el, ga)
+- [x] Photon configured to import ES, FR, PT, IT, AT, DE, GB, SI, NL, BE, LU, RO, GR, IE, HR from per-country dumps
+- [x] Serves all 12 languages (es, en, fr, de, it, pt, sl, nl, ro, el, ga, hr)
 - [x] Cross-border routing works (e.g., Madrid → Paris)
 
 ### 3.6 — Cross-Border Features (future)
@@ -183,7 +183,7 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 - [ ] Currency conversion for comparison (always show in user's preferred currency)
 - [ ] Border-crossing fuel strategy recommendations
 
-**Deliverable**: 16 countries, ~83K+ stations, 11 languages, cross-border routing.
+**Deliverable**: 15 countries, ~84K+ stations, 12 languages, cross-border routing.
 
 ---
 
@@ -317,21 +317,27 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 - [x] UK — CMA Open Data Scheme: 13 retailer JSON endpoints (Shell excluded — HTML), 3,536 stations, GBP pence
 - [x] Slovenia — goriva.si REST API, 551 stations, 9 fuel types incl. HVO/CNG/LNG
 - [x] Netherlands — ANWB API (`api.anwb.nl`, no auth, ~3,893 stations, EUR)
-- [x] Greece — FuelGR/Deixto.gr reverse-engineered Android app XML API (~2,500+ stations, EUR, grid-based queries)
+- [x] Greece — FuelGR/Deixto.gr reverse-engineered Android app XML API (~3,111 stations, EUR, grid-based queries)
 - [x] Romania — Peco-Online Parse API (~1,386 stations, RON)
 - [x] Belgium — ANWB API (`api.anwb.nl`, no auth, ~3,190 stations, EUR, station-level prices)
 - [x] Luxembourg — ANWB API (`api.anwb.nl`, no auth, ~237 stations, EUR, station-level prices)
 - [x] Ireland — Pick A Pump API (`api.pickapump.com`, ~1,345 stations, EUR, grid-based nearby queries)
-- [x] Croatia — MZOE government API (`mzoe-gor.hr/data.json`, ~911 stations, EUR, single JSON dump, coords swapped)
+- [x] Croatia — MZOE government API (`mzoe-gor.hr/data.json`, ~897 stations, EUR, single JSON dump, coords swapped)
 
 **Tier 2 — Government data, national/regional averages only (no station-level):**
 - [ ] Czech Republic — CZSO: weekly/monthly average consumer fuel prices, CSV/JSON, CC BY 4.0.
 - [ ] Finland — Statistics Finland PxWeb API: monthly national averages since 1988.
+- [ ] Serbia — cenagoriva.rs has brand-level prices (6 brands, HTML scrape), no station-level data. Government sets max prices per brand.
 
 **Tier 3 — No usable open data found:**
-- [ ] Poland — no government station-level data; e-petrol.pl is paywalled
+- [ ] Switzerland — no government mandate; Comparis.ch has data but behind DataDome bot protection, no public API. TCS/Avenergy only publish aggregates.
+- [ ] Slovakia — exhaustive search of 9 sources (natankuj.sk, data.gov.sk, URSO, SOI, Slovnaft, OMV WiGeoGIS). No station-level price data.
+- [ ] Estonia — Olerex has station JSON API (locations, no prices). No government fuel price portal.
+- [ ] Latvia — degviela.info tested, no public API. No government station-level data.
+- [ ] Lithuania — no government station-level data found.
+- [ ] Poland — no government station-level data; e-petrol.pl is paywalled; Orlen API has stations but no prices
 - [ ] Bulgaria — no government API found
-- [ ] Hungary — government-regulated fixed prices (595 Ft/l E95, 615 Ft/l diesel)
+- [ ] Hungary — price regulation ended 2022; holtankoljak.hu unreachable; no public API
 - [ ] Sweden — no API; bensinpriser.nu is crowdsourced, no public API
 - [ ] Norway — not EU (EEA); DrivstoffAppen.no (1M+ users) API not public
 - [ ] Denmark — no API; would need per-retailer scraping (Circle K, Q8, Shell, etc.)
