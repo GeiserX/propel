@@ -143,20 +143,27 @@ export abstract class BaseScraper {
         ];
       });
 
-      await prisma.$transaction(async (tx: TransactionClient) => {
-        // Delete existing prices from this source
-        await tx.$executeRawUnsafe(
-          `DELETE FROM fuel_prices WHERE source = $1`,
-          this.source,
-        );
+      await prisma.$transaction(
+        async (tx: TransactionClient) => {
+          // Delete existing prices from this source + country
+          // (scoped by country so scrapers sharing a source name
+          //  like "anwb" for NL/BE/LU don't wipe each other's data)
+          await tx.$executeRawUnsafe(
+            `DELETE FROM fuel_prices WHERE source = $1
+             AND station_id IN (SELECT id FROM stations WHERE country = $2)`,
+            this.source,
+            this.country,
+          );
 
-        // Insert in batches
-        for (let i = 0; i < resolvedPrices.length; i += PRICE_BATCH) {
-          const batch = resolvedPrices.slice(i, i + PRICE_BATCH);
-          const inserted = await this.insertPriceBatch(tx, batch);
-          pricesUpserted += inserted;
-        }
-      });
+          // Insert in batches
+          for (let i = 0; i < resolvedPrices.length; i += PRICE_BATCH) {
+            const batch = resolvedPrices.slice(i, i + PRICE_BATCH);
+            const inserted = await this.insertPriceBatch(tx, batch);
+            pricesUpserted += inserted;
+          }
+        },
+        { timeout: 120_000 },
+      );
 
       console.log(`[${this.source}] Inserted ${pricesUpserted} prices`);
     } catch (err) {
