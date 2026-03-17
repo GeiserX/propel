@@ -6,6 +6,8 @@ import { PortugalScraper } from "./portugal";
 import { ItalyScraper } from "./italy";
 import { AustriaScraper } from "./austria";
 import { GermanyScraper } from "./germany";
+import { UKScraper } from "./uk";
+import { SloveniaScraper } from "./slovenia";
 
 // ---------------------------------------------------------------------------
 // Scraper CLI
@@ -27,6 +29,8 @@ const SCRAPERS: Record<string, () => BaseScraper> = {
   IT: () => new ItalyScraper(),
   AT: () => new AustriaScraper(),
   DE: () => new GermanyScraper(),
+  GB: () => new UKScraper(),
+  SI: () => new SloveniaScraper(),
 };
 
 function usage(): never {
