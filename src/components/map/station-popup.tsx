@@ -58,7 +58,7 @@ export function StationPopup({ station, onClose }: StationPopupProps) {
                 {properties.price.toFixed(3)}
               </span>
               <span className="text-[11px] font-medium text-gray-500">
-                {properties.currency === "GBP" ? "£" : properties.currency === "EUR" ? "€" : properties.currency}/L
+                {{ EUR: "€", GBP: "£", RON: "lei", PLN: "zł", HUF: "Ft", CZK: "Kč" }[properties.currency] ?? properties.currency}/L
               </span>
             </div>
             <p className="mt-1 text-[10px] text-gray-400">
