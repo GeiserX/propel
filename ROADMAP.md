@@ -106,7 +106,7 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 - [x] Detour slider in station list panel (0-15 min)
 - [x] Filters both map markers and station list simultaneously
 - [x] "MEJOR" (best deal) badge on cheapest station within current detour filter
-- [ ] Show savings comparison: "Save X EUR vs route average, +N min detour"
+- [x] Show savings comparison: per-station delta vs route average price (green negative, gray positive)
 
 ### ~~2.3 — "Best Station in Area" Mode~~ (skipped)
 
@@ -169,7 +169,8 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 - [x] 6 locales: es, en, fr, de, it, pt
 - [x] Language selector in navbar
 - [x] Translated: search panel, station list, badges, detour slider
-- [ ] Auto-detect locale from browser `Accept-Language` header
+- [x] Auto-detect locale from browser `navigator.languages`
+- [x] All UI strings internationalized (popup, price filter, geolocate, fuel categories)
 - [ ] Currency formatting per locale (EUR, GBP, PLN)
 - [ ] Fuel type names localized per country
 
