@@ -22,6 +22,8 @@ const translations: Record<Locale, Record<string, string>> = {
     "search.placeholder": "Buscar lugar...",
     "search.destination": "Destino",
     "search.addWaypoint": "Añadir parada",
+    "search.waypoint": "Parada intermedia",
+    "search.swap": "Intercambiar origen y destino",
     "route.distance": "km",
     "route.duration": "min",
     "route.loading": "Calculando ruta...",
@@ -33,6 +35,7 @@ const translations: Record<Locale, Record<string, string>> = {
     "stations.cheapest": "MÁS BARATA",
     "stations.leastDetour": "MENOS RODEO",
     "stations.balanced": "EQUILIBRADA",
+    "stations.avg": "Media:",
     "fuel.diesel": "Diésel",
     "fuel.gasoline": "Gasolina",
     "fuel.gas": "Gas",
@@ -47,6 +50,8 @@ const translations: Record<Locale, Record<string, string>> = {
     "search.placeholder": "Search place...",
     "search.destination": "Destination",
     "search.addWaypoint": "Add stop",
+    "search.waypoint": "Intermediate stop",
+    "search.swap": "Swap origin and destination",
     "route.distance": "km",
     "route.duration": "min",
     "route.loading": "Calculating route...",
@@ -58,6 +63,7 @@ const translations: Record<Locale, Record<string, string>> = {
     "stations.cheapest": "CHEAPEST",
     "stations.leastDetour": "LEAST DETOUR",
     "stations.balanced": "BALANCED",
+    "stations.avg": "Avg:",
     "fuel.diesel": "Diesel",
     "fuel.gasoline": "Gasoline",
     "fuel.gas": "Gas",
@@ -72,6 +78,8 @@ const translations: Record<Locale, Record<string, string>> = {
     "search.placeholder": "Rechercher un lieu...",
     "search.destination": "Destination",
     "search.addWaypoint": "Ajouter un arrêt",
+    "search.waypoint": "Arrêt intermédiaire",
+    "search.swap": "Inverser origine et destination",
     "route.distance": "km",
     "route.duration": "min",
     "route.loading": "Calcul de l'itinéraire...",
@@ -83,6 +91,7 @@ const translations: Record<Locale, Record<string, string>> = {
     "stations.cheapest": "MOINS CHÈRE",
     "stations.leastDetour": "MOINS DE DÉTOUR",
     "stations.balanced": "ÉQUILIBRÉE",
+    "stations.avg": "Moy.:",
     "fuel.diesel": "Diesel",
     "fuel.gasoline": "Essence",
     "fuel.gas": "Gaz",
@@ -97,6 +106,8 @@ const translations: Record<Locale, Record<string, string>> = {
     "search.placeholder": "Ort suchen...",
     "search.destination": "Ziel",
     "search.addWaypoint": "Zwischenstopp",
+    "search.waypoint": "Zwischenziel",
+    "search.swap": "Start und Ziel tauschen",
     "route.distance": "km",
     "route.duration": "Min",
     "route.loading": "Route wird berechnet...",
@@ -108,6 +119,7 @@ const translations: Record<Locale, Record<string, string>> = {
     "stations.cheapest": "GÜNSTIGSTE",
     "stations.leastDetour": "WENIGSTER UMWEG",
     "stations.balanced": "AUSGEWOGEN",
+    "stations.avg": "Schnitt:",
     "fuel.diesel": "Diesel",
     "fuel.gasoline": "Benzin",
     "fuel.gas": "Gas",
@@ -122,6 +134,8 @@ const translations: Record<Locale, Record<string, string>> = {
     "search.placeholder": "Cerca luogo...",
     "search.destination": "Destinazione",
     "search.addWaypoint": "Aggiungi tappa",
+    "search.waypoint": "Tappa intermedia",
+    "search.swap": "Inverti partenza e arrivo",
     "route.distance": "km",
     "route.duration": "min",
     "route.loading": "Calcolo percorso...",
@@ -133,6 +147,7 @@ const translations: Record<Locale, Record<string, string>> = {
     "stations.cheapest": "PIÙ ECONOMICA",
     "stations.leastDetour": "MENO DEVIAZIONE",
     "stations.balanced": "EQUILIBRATA",
+    "stations.avg": "Media:",
     "fuel.diesel": "Diesel",
     "fuel.gasoline": "Benzina",
     "fuel.gas": "Gas",
@@ -147,6 +162,8 @@ const translations: Record<Locale, Record<string, string>> = {
     "search.placeholder": "Pesquisar local...",
     "search.destination": "Destino",
     "search.addWaypoint": "Adicionar paragem",
+    "search.waypoint": "Paragem intermédia",
+    "search.swap": "Trocar origem e destino",
     "route.distance": "km",
     "route.duration": "min",
     "route.loading": "A calcular rota...",
@@ -158,6 +175,7 @@ const translations: Record<Locale, Record<string, string>> = {
     "stations.cheapest": "MAIS BARATA",
     "stations.leastDetour": "MENOS DESVIO",
     "stations.balanced": "EQUILIBRADA",
+    "stations.avg": "Média:",
     "fuel.diesel": "Gasóleo",
     "fuel.gasoline": "Gasolina",
     "fuel.gas": "Gás",
@@ -186,11 +204,22 @@ const I18nContext = createContext<I18nContextValue>({
   t: (key) => key,
 });
 
+function detectBrowserLocale(): Locale | null {
+  if (typeof navigator === "undefined") return null;
+  const langs = navigator.languages ?? [navigator.language];
+  for (const lang of langs) {
+    const code = lang.split("-")[0].toLowerCase();
+    if (code in translations) return code as Locale;
+  }
+  return null;
+}
+
 export function I18nProvider({ defaultLocale = "es", children }: { defaultLocale?: Locale; children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(() => {
     if (typeof window === "undefined") return defaultLocale;
     const stored = localStorage.getItem("propel-locale") as Locale | null;
-    return stored && stored in translations ? stored : defaultLocale;
+    if (stored && stored in translations) return stored;
+    return detectBrowserLocale() ?? defaultLocale;
   });
 
   const setLocale = useCallback((l: Locale) => {

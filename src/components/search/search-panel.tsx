@@ -263,6 +263,11 @@ export function SearchPanel({
       && (maxDetour == null || (f.properties.detourMin ?? 0) <= maxDetour))
     .sort((a, b) => (a.properties.routeFraction ?? 0) - (b.properties.routeFraction ?? 0));
 
+  // Average price for savings comparison
+  const avgPrice = stationList.length > 0
+    ? stationList.reduce((sum, s) => sum + s.properties.price!, 0) / stationList.length
+    : null;
+
   // Badges: cheapest, shortest detour, balanced (only when 2+ stations)
   const cheapestId = stationList.length > 0
     ? stationList.reduce((best, s) => (s.properties.price! < best.properties.price! ? s : best)).properties.id
@@ -368,7 +373,7 @@ export function SearchPanel({
                     if (el) waypointRefs.current.set(wp.id, el);
                     else waypointRefs.current.delete(wp.id);
                   }}
-                  placeholder="Parada intermedia..."
+                  placeholder={`${t("search.waypoint")}...`}
                   value={wp.text}
                   onChange={(val) => handleWaypointChange(wp.id, val)}
                   onSelect={(result) => handleWaypointSelect(wp.id, result)}
@@ -401,7 +406,7 @@ export function SearchPanel({
               <button
                 onClick={handleSwap}
                 className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full border border-gray-200 bg-white p-1 shadow-sm hover:bg-gray-50"
-                title="Intercambiar origen y destino"
+                title={t("search.swap")}
               >
                 <svg className="h-3.5 w-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 7.5 7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5" />
@@ -502,10 +507,15 @@ export function SearchPanel({
       {/* Station list along route */}
       {phase === "route" && allStationsWithPrice.length > 0 && (
         <div className="mt-2 rounded-xl border border-black/[0.08] bg-white/95 shadow-lg backdrop-blur-sm">
-          <div className="border-b border-gray-100 px-4 py-2">
+          <div className="flex items-center justify-between border-b border-gray-100 px-4 py-2">
             <span className="text-xs font-medium text-gray-500">
               {t("stations.title")} ({stationList.length})
             </span>
+            {avgPrice != null && (
+              <span className="text-[10px] text-gray-400">
+                {t("stations.avg")} {avgPrice.toFixed(3)}
+              </span>
+            )}
           </div>
           {/* Detour slider */}
           <div className="border-b border-gray-100 px-4 py-2">
@@ -577,6 +587,13 @@ export function SearchPanel({
                       {detour > 0 && (
                         <span className="text-[10px] text-amber-600">+{detour.toFixed(0)} min</span>
                       )}
+                      {avgPrice != null && station.properties.price != null && (() => {
+                        const diff = station.properties.price - avgPrice;
+                        if (Math.abs(diff) < 0.001) return null;
+                        return diff < 0
+                          ? <span className="text-[10px] font-medium text-emerald-600">{diff.toFixed(3)}</span>
+                          : <span className="text-[10px] text-gray-400">+{diff.toFixed(3)}</span>;
+                      })()}
                     </div>
                   </div>
                 </button>
