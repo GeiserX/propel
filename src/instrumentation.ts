@@ -18,6 +18,7 @@ const DEFAULT_INTERVALS: Record<string, number> = {
   RO: 12,   // Romania Peco Online — daily updates, scrape every 12h
   GR: 12,   // Greece FuelGR — grid queries, scrape every 12h
   IE: 12,   // Ireland Pick A Pump — crowdsourced, scrape every 12h
+  HR: 12,   // Croatia MZOE — government monitoring, scrape every 12h
 };
 
 export async function register() {
@@ -45,6 +46,7 @@ export async function register() {
   const { RomaniaScraper } = await import("./scrapers/romania");
   const { GreeceScraper } = await import("./scrapers/greece");
   const { IrelandScraper } = await import("./scrapers/ireland");
+  const { CroatiaScraper } = await import("./scrapers/croatia");
 
   const scraperFactories: Record<string, () => BaseScraper> = {
     ES: () => new SpainScraper(),
@@ -61,6 +63,7 @@ export async function register() {
     RO: () => new RomaniaScraper(),
     GR: () => new GreeceScraper(),
     IE: () => new IrelandScraper(),
+    HR: () => new CroatiaScraper(),
   };
 
   // Determine which countries to scrape

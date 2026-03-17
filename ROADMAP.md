@@ -156,9 +156,11 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 - [x] Luxembourg scraper (ANWB API, ~237 stations, EUR)
 - [x] Romania scraper (Peco Online Parse API, ~1,386 stations, RON)
 - [x] Greece scraper (FuelGR/deixto.gr XML API, ~2,500+ stations, EUR, grid-based)
+- [x] Ireland scraper (Pick A Pump API, ~1,345 stations, EUR, grid-based nearby queries)
+- [x] Croatia scraper (MZOE government API, ~911 stations, EUR, single JSON dump)
 
 ### 3.3 — Valhalla Multi-Country Tiles
-- [x] Valhalla configured with 13-country merged PBF (ES, FR, PT, IT, AT, DE, GB, SI, NL, BE, LU, RO, GR)
+- [x] Valhalla configured with 14-country merged PBF (ES, FR, PT, IT, AT, DE, GB, SI, NL, BE, LU, RO, GR, IE)
 - [x] PBFs merged with osmium-tool to avoid Valhalla multi-PBF SIGABRT bug
 - [ ] Automated monthly tile rebuild (cron or triggered by Geofabrik update)
 
@@ -172,8 +174,8 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 - [ ] Fuel type names localized per country
 
 ### 3.5 — Photon Multi-Country Geocoding
-- [x] Photon configured to import ES, FR, PT, IT, AT, DE, GB, SI, NL, BE, LU, RO, GR from per-country dumps
-- [x] Serves all 10 languages (es, en, fr, de, it, pt, sl, nl, ro, el)
+- [x] Photon configured to import ES, FR, PT, IT, AT, DE, GB, SI, NL, BE, LU, RO, GR, IE from per-country dumps
+- [x] Serves all 11 languages (es, en, fr, de, it, pt, sl, nl, ro, el, ga)
 - [x] Cross-border routing works (e.g., Madrid → Paris)
 
 ### 3.6 — Cross-Border Features (future)
@@ -181,7 +183,7 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 - [ ] Currency conversion for comparison (always show in user's preferred currency)
 - [ ] Border-crossing fuel strategy recommendations
 
-**Deliverable**: 13 countries, ~77K+ stations, 10 languages, cross-border routing.
+**Deliverable**: 16 countries, ~83K+ stations, 11 languages, cross-border routing.
 
 ---
 
@@ -319,14 +321,14 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 - [x] Romania — Peco-Online Parse API (~1,386 stations, RON)
 - [x] Belgium — ANWB API (`api.anwb.nl`, no auth, ~3,190 stations, EUR, station-level prices)
 - [x] Luxembourg — ANWB API (`api.anwb.nl`, no auth, ~237 stations, EUR, station-level prices)
+- [x] Ireland — Pick A Pump API (`api.pickapump.com`, ~1,345 stations, EUR, grid-based nearby queries)
+- [x] Croatia — MZOE government API (`mzoe-gor.hr/data.json`, ~911 stations, EUR, single JSON dump, coords swapped)
 
 **Tier 2 — Government data, national/regional averages only (no station-level):**
 - [ ] Czech Republic — CZSO: weekly/monthly average consumer fuel prices, CSV/JSON, CC BY 4.0.
 - [ ] Finland — Statistics Finland PxWeb API: monthly national averages since 1988.
 
 **Tier 3 — No usable open data found:**
-- [ ] Ireland — no government fuel price API or open data
-- [ ] Croatia — regulated max prices in Official Gazette PDFs only
 - [ ] Poland — no government station-level data; e-petrol.pl is paywalled
 - [ ] Bulgaria — no government API found
 - [ ] Hungary — government-regulated fixed prices (595 Ft/l E95, 615 Ft/l diesel)
@@ -394,7 +396,7 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 | Real-time prices along route | Yes | Yes | Limited | No (estimates) | N/A (EV) |
 | **Detour time calculation** | **Yes** | No | No | No | N/A |
 | **Smart refuel by range** | **Yes** | No | No | No | Yes (EV) |
-| Multi-country Europe | Yes (13) | No (US/CA) | Partial | Partial | Yes (EV) |
+| Multi-country Europe | Yes (16) | No (US/CA) | Partial | Partial | Yes (EV) |
 | Fuel + EV support | Yes | No | No | No | EV only |
 | Open source | Yes | No | No | No | No |
 | Self-hostable | Yes | No | No | No | No |
