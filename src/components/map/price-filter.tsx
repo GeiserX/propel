@@ -4,6 +4,20 @@ import { useMemo } from "react";
 import type { StationsGeoJSONCollection } from "@/types/station";
 import { PRICE_COLORS } from "./price-legend";
 
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  EUR: "€",
+  GBP: "£",
+  PLN: "zł",
+  CZK: "Kč",
+  HUF: "Ft",
+  CHF: "CHF",
+  NOK: "kr",
+  SEK: "kr",
+  DKK: "kr",
+  RON: "lei",
+  HRK: "kn",
+};
+
 interface PriceFilterProps {
   stations: StationsGeoJSONCollection;
   maxPrice: number | null;
@@ -20,14 +34,26 @@ export function PriceFilter({
   legendMin,
   legendMax,
 }: PriceFilterProps) {
-  const { min, max, pricedCount } = useMemo(() => {
+  const { min, max, pricedCount, currencySymbol } = useMemo(() => {
     const prices: number[] = [];
+    const currencyCounts: Record<string, number> = {};
     for (const f of stations.features) {
-      if (f.properties.price != null) prices.push(f.properties.price);
+      if (f.properties.price != null) {
+        prices.push(f.properties.price);
+        const c = f.properties.currency || "EUR";
+        currencyCounts[c] = (currencyCounts[c] || 0) + 1;
+      }
     }
-    if (prices.length === 0) return { min: null, max: null, pricedCount: 0 };
+    if (prices.length === 0) return { min: null, max: null, pricedCount: 0, currencySymbol: "€" };
     prices.sort((a, b) => a - b);
-    return { min: prices[0], max: prices[prices.length - 1], pricedCount: prices.length };
+    // Use the most common currency among visible stations
+    const dominant = Object.entries(currencyCounts).sort((a, b) => b[1] - a[1])[0][0];
+    return {
+      min: prices[0],
+      max: prices[prices.length - 1],
+      pricedCount: prices.length,
+      currencySymbol: CURRENCY_SYMBOLS[dominant] || dominant,
+    };
   }, [stations]);
 
   // Build gradient string for the color legend
@@ -65,8 +91,8 @@ export function PriceFilter({
             style={{ background: `linear-gradient(to right, ${gradient})` }}
           />
           <div className="mt-1 flex justify-between text-[10px] font-semibold tabular-nums text-gray-600">
-            <span>{legendMin.toFixed(3)} €</span>
-            <span>{legendMax.toFixed(3)} €</span>
+            <span>{legendMin.toFixed(3)} {currencySymbol}</span>
+            <span>{legendMax.toFixed(3)} {currencySymbol}</span>
           </div>
         </div>
       )}
@@ -100,11 +126,11 @@ export function PriceFilter({
           />
 
           <div className="mt-0.5 flex items-center justify-between">
-            <span className="text-[10px] tabular-nums text-gray-400">{sliderMin.toFixed(3)} €</span>
+            <span className="text-[10px] tabular-nums text-gray-400">{sliderMin.toFixed(3)} {currencySymbol}</span>
             <span className={`text-[11px] font-bold tabular-nums ${isActive ? "text-emerald-600" : "text-gray-500"}`}>
-              {currentValue.toFixed(3)} €
+              {currentValue.toFixed(3)} {currencySymbol}
             </span>
-            <span className="text-[10px] tabular-nums text-gray-400">{sliderMax.toFixed(3)} €</span>
+            <span className="text-[10px] tabular-nums text-gray-400">{sliderMax.toFixed(3)} {currencySymbol}</span>
           </div>
 
           {isActive && (

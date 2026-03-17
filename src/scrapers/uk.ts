@@ -113,7 +113,7 @@ export class UKScraper extends BaseScraper {
             prices.push({
               stationExternalId: externalId,
               fuelType,
-              price: pence, // keep in pence — convert to GBP display in frontend
+              price: pence / 100, // convert pence to pounds per litre
               currency: "GBP",
             });
           }
