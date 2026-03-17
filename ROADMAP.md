@@ -148,12 +148,13 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 - [x] Portugal scraper (DGEG API, ~3,200 stations, paginated per fuel type)
 - [x] Italy scraper (MIMIT CSV, ~23,600 stations, pipe-delimited)
 - [x] Austria scraper (E-Control API, ~930 stations, queried per district for max coverage)
-- [x] Germany scraper (Tankerkoenig v4 API, ~14,700 stations — code ready, needs API key activation)
-- [ ] UK scraper (CMA 14 retailer feeds, every 4 hours)
+- [x] Germany scraper (Tankerkoenig v4 API, ~14,347 stations, CC BY 4.0)
+- [x] UK scraper (CMA 14 retailer feeds, ~3,536 stations, Open Government Licence v3.0)
+- [x] Slovenia scraper (goriva.si API, ~551 stations, government-regulated prices)
 
 ### 3.3 — Valhalla Multi-Country Tiles
-- [x] Valhalla configured with 5-country PBFs (ES, FR, PT, IT, AT)
-- [x] Docker Compose updated with multi-country tile_urls
+- [x] Valhalla configured with 8-country merged PBF (ES, FR, PT, IT, AT, DE, GB, SI — 17GB)
+- [x] PBFs merged with osmium-tool to avoid Valhalla multi-PBF SIGABRT bug
 - [ ] Automated monthly tile rebuild (cron or triggered by Geofabrik update)
 
 ### 3.4 — Internationalization
@@ -166,8 +167,8 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 - [ ] Fuel type names localized per country
 
 ### 3.5 — Photon Multi-Country Geocoding
-- [x] Photon configured to import ES, FR, PT, IT, AT from planet dump
-- [x] Serves all 6 languages (es, en, fr, de, it, pt)
+- [x] Photon configured to import ES, FR, PT, IT, AT, DE, GB, SI from per-country dumps
+- [x] Serves all 7 languages (es, en, fr, de, it, pt, sl)
 - [x] Cross-border routing works (e.g., Madrid → Paris)
 
 ### 3.6 — Cross-Border Features (future)
@@ -175,7 +176,7 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 - [ ] Currency conversion for comparison (always show in user's preferred currency)
 - [ ] Border-crossing fuel strategy recommendations
 
-**Deliverable**: 5 countries, ~50K stations, 6 languages, cross-border routing.
+**Deliverable**: 8 countries, ~68K stations, 7 languages, cross-border routing.
 
 ---
 
@@ -306,8 +307,8 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 ### 7.1 — More European Countries (Researched)
 
 **Tier 1 — Station-level data, open APIs:**
-- [ ] UK — CMA Open Data Scheme: 14 retailer JSON endpoints (Asda, BP, Esso, Tesco, Shell, etc.), no auth, Open Government Licence v3.0. Shell is HTML not JSON. A unified "Fuel Finder" scheme expected 2026.
-- [ ] Slovenia — goriva.si REST API: `GET /api/v1/search/?position={lat},{lon}&radius={r}`. No auth, full network, real-time. Government-regulated prices.
+- [x] UK — CMA Open Data Scheme: 13 retailer JSON endpoints (Shell excluded — HTML), 3,536 stations, GBP pence
+- [x] Slovenia — goriva.si REST API, 551 stations, 9 fuel types incl. HVO/CNG/LNG
 - [ ] Netherlands — DirectLease TankService API (NL+BE, ~800 stations, requires computed checksum header) or ANWB API (undocumented, may need key). CBS OData for national averages only.
 - [ ] Greece — data.gov.gr `mindev_fuel_prices` API (free key, regional averages). Station-level via FuelGR/Deixto.gr (reverse-engineered Android app API, fragile).
 - [ ] Romania — Peco-Online Parse API (reverse-engineered, requires hardcoded Parse keys from app decompilation). Not government.
@@ -388,7 +389,7 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 | Real-time prices along route | Yes | Yes | Limited | No (estimates) | N/A (EV) |
 | **Detour time calculation** | **Yes** | No | No | No | N/A |
 | **Smart refuel by range** | **Yes** | No | No | No | Yes (EV) |
-| Multi-country Europe | Yes (7+) | No (US/CA) | Partial | Partial | Yes (EV) |
+| Multi-country Europe | Yes (8) | No (US/CA) | Partial | Partial | Yes (EV) |
 | Fuel + EV support | Yes | No | No | No | EV only |
 | Open source | Yes | No | No | No | No |
 | Self-hostable | Yes | No | No | No | No |
