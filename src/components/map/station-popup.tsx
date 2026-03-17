@@ -3,24 +3,26 @@
 import { Popup } from "react-map-gl/maplibre";
 import type { StationGeoJSON } from "@/types/station";
 import { FUEL_TYPE_MAP } from "@/types/fuel";
+import { useI18n } from "@/lib/i18n";
 
 interface StationPopupProps {
   station: StationGeoJSON;
   onClose: () => void;
 }
 
-function timeAgo(iso: string): string {
+function timeAgo(iso: string, t: (key: string) => string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "Actualizado ahora";
-  if (mins < 60) return `Actualizado hace ${mins} min`;
+  if (mins < 1) return t("popup.updatedNow");
+  if (mins < 60) return `${t("popup.updated")} ${mins} min`;
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `Actualizado hace ${hours}h`;
+  if (hours < 24) return `${t("popup.updated")} ${hours}h`;
   const days = Math.floor(hours / 24);
-  return `Actualizado hace ${days}d`;
+  return `${t("popup.updated")} ${days}d`;
 }
 
 export function StationPopup({ station, onClose }: StationPopupProps) {
+  const { t } = useI18n();
   const { properties, geometry } = station;
   const fuelInfo = FUEL_TYPE_MAP.get(properties.fuelType as Parameters<typeof FUEL_TYPE_MAP.get>[0]);
 
@@ -65,7 +67,7 @@ export function StationPopup({ station, onClose }: StationPopupProps) {
               {fuelInfo?.label ?? properties.fuelType}
               {properties.reportedAt && (
                 <span className="ml-1.5 text-gray-400/70">
-                  · {timeAgo(properties.reportedAt)}
+                  · {timeAgo(properties.reportedAt, t)}
                 </span>
               )}
             </p>
@@ -73,7 +75,7 @@ export function StationPopup({ station, onClose }: StationPopupProps) {
         ) : (
           <div className="mt-2 rounded-lg bg-gray-50 px-3 py-2.5 text-center">
             <span className="text-[11px] text-gray-400">
-              Sin precio para {fuelInfo?.label ?? properties.fuelType}
+              {t("popup.noPrice")} {fuelInfo?.label ?? properties.fuelType}
             </span>
           </div>
         )}

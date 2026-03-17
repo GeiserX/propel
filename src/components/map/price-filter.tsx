@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import type { StationsGeoJSONCollection } from "@/types/station";
 import { PRICE_COLORS } from "./price-legend";
+import { useI18n } from "@/lib/i18n";
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
   EUR: "€",
@@ -34,6 +35,7 @@ export function PriceFilter({
   legendMin,
   legendMax,
 }: PriceFilterProps) {
+  const { t } = useI18n();
   const { min, max, pricedCount, currencySymbol } = useMemo(() => {
     const prices: number[] = [];
     const currencyCounts: Record<string, number> = {};
@@ -101,13 +103,13 @@ export function PriceFilter({
       {hasFilter && (
         <div>
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-semibold text-gray-600">Precio máx.</span>
+            <span className="text-[10px] font-semibold text-gray-600">{t("filter.maxPrice")}</span>
             {isActive && (
               <button
                 onClick={() => onMaxPriceChange(null)}
                 className="text-[9px] font-medium text-emerald-600 hover:text-emerald-700"
               >
-                Quitar
+                {t("filter.clear")}
               </button>
             )}
           </div>
@@ -135,7 +137,7 @@ export function PriceFilter({
 
           {isActive && (
             <p className="mt-0.5 text-center text-[9px] text-gray-400">
-              {filteredCount} de {pricedCount} con precio
+              {filteredCount} / {pricedCount}
             </p>
           )}
         </div>
