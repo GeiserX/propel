@@ -12,6 +12,9 @@ const DEFAULT_INTERVALS: Record<string, number> = {
   DE: 1,    // Germany Tankerkoenig — real-time, we scrape hourly
   GB: 4,    // UK CMA — 14 retailer feeds, near real-time, scrape every 4h
   SI: 6,    // Slovenia goriva.si — government-regulated, scrape every 6h
+  NL: 6,    // Netherlands ANWB — commercial API, scrape every 6h
+  BE: 6,    // Belgium ANWB — commercial API, scrape every 6h
+  LU: 12,   // Luxembourg ANWB — small country, scrape every 12h
 };
 
 export async function register() {
@@ -33,6 +36,9 @@ export async function register() {
   const { GermanyScraper } = await import("./scrapers/germany");
   const { UKScraper } = await import("./scrapers/uk");
   const { SloveniaScraper } = await import("./scrapers/slovenia");
+  const { NetherlandsScraper } = await import("./scrapers/netherlands");
+  const { BelgiumScraper } = await import("./scrapers/belgium");
+  const { LuxembourgScraper } = await import("./scrapers/luxembourg");
 
   const scraperFactories: Record<string, () => BaseScraper> = {
     ES: () => new SpainScraper(),
@@ -43,6 +49,9 @@ export async function register() {
     DE: () => new GermanyScraper(),
     GB: () => new UKScraper(),
     SI: () => new SloveniaScraper(),
+    NL: () => new NetherlandsScraper(),
+    BE: () => new BelgiumScraper(),
+    LU: () => new LuxembourgScraper(),
   };
 
   // Determine which countries to scrape
