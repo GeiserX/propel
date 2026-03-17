@@ -569,7 +569,7 @@ export function SearchPanel({
                   <div className="ml-3 shrink-0 text-right">
                     {station.properties.price != null && (
                       <span className="text-sm font-semibold text-gray-800">
-                        {station.properties.price.toFixed(3)} {station.properties.currency === "GBP" ? "£" : station.properties.currency === "EUR" ? "€" : station.properties.currency}
+                        {station.properties.price.toFixed(3)} {{ EUR: "€", GBP: "£", RON: "lei", PLN: "zł", HUF: "Ft", CZK: "Kč" }[station.properties.currency] ?? station.properties.currency}
                       </span>
                     )}
                     <div className="flex items-center justify-end gap-1.5">
