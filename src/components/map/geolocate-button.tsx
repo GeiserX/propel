@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useI18n } from "@/lib/i18n";
 
 type GeoState = "idle" | "loading" | "denied";
 
@@ -9,6 +10,7 @@ interface GeolocateButtonProps {
 }
 
 export function GeolocateButton({ onGeolocate }: GeolocateButtonProps) {
+  const { t } = useI18n();
   const [state, setState] = useState<GeoState>("idle");
 
   const handleClick = useCallback(() => {
@@ -36,7 +38,7 @@ export function GeolocateButton({ onGeolocate }: GeolocateButtonProps) {
     <button
       onClick={handleClick}
       disabled={state === "loading"}
-      title={state === "denied" ? "Ubicación denegada" : "Centrar en mi ubicación"}
+      title={state === "denied" ? t("geo.denied") : t("geo.center")}
       className="absolute top-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-lg border border-black/10 bg-white shadow-md transition-all hover:bg-gray-50 active:scale-95 disabled:opacity-60"
     >
       {state === "loading" ? (
