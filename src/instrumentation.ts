@@ -10,6 +10,8 @@ const DEFAULT_INTERVALS: Record<string, number> = {
   IT: 12,   // Italy MIMIT — updated daily
   AT: 2,    // Austria E-Control — real-time, we scrape every 2h
   DE: 1,    // Germany Tankerkoenig — real-time, we scrape hourly
+  GB: 4,    // UK CMA — 14 retailer feeds, near real-time, scrape every 4h
+  SI: 6,    // Slovenia goriva.si — government-regulated, scrape every 6h
 };
 
 export async function register() {
@@ -29,6 +31,8 @@ export async function register() {
   const { ItalyScraper } = await import("./scrapers/italy");
   const { AustriaScraper } = await import("./scrapers/austria");
   const { GermanyScraper } = await import("./scrapers/germany");
+  const { UKScraper } = await import("./scrapers/uk");
+  const { SloveniaScraper } = await import("./scrapers/slovenia");
 
   const scraperFactories: Record<string, () => BaseScraper> = {
     ES: () => new SpainScraper(),
@@ -37,6 +41,8 @@ export async function register() {
     IT: () => new ItalyScraper(),
     AT: () => new AustriaScraper(),
     DE: () => new GermanyScraper(),
+    GB: () => new UKScraper(),
+    SI: () => new SloveniaScraper(),
   };
 
   // Determine which countries to scrape
