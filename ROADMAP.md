@@ -151,9 +151,14 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 - [x] Germany scraper (Tankerkoenig v4 API, ~14,347 stations, CC BY 4.0)
 - [x] UK scraper (CMA 14 retailer feeds, ~3,536 stations, Open Government Licence v3.0)
 - [x] Slovenia scraper (goriva.si API, ~551 stations, government-regulated prices)
+- [x] Netherlands scraper (ANWB API, ~3,893 stations, EUR)
+- [x] Belgium scraper (ANWB API, ~3,190 stations, EUR)
+- [x] Luxembourg scraper (ANWB API, ~237 stations, EUR)
+- [x] Romania scraper (Peco Online Parse API, ~1,386 stations, RON)
+- [x] Greece scraper (FuelGR/deixto.gr XML API, ~2,500+ stations, EUR, grid-based)
 
 ### 3.3 — Valhalla Multi-Country Tiles
-- [x] Valhalla configured with 8-country merged PBF (ES, FR, PT, IT, AT, DE, GB, SI — 17GB)
+- [x] Valhalla configured with 13-country merged PBF (ES, FR, PT, IT, AT, DE, GB, SI, NL, BE, LU, RO, GR)
 - [x] PBFs merged with osmium-tool to avoid Valhalla multi-PBF SIGABRT bug
 - [ ] Automated monthly tile rebuild (cron or triggered by Geofabrik update)
 
@@ -167,8 +172,8 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 - [ ] Fuel type names localized per country
 
 ### 3.5 — Photon Multi-Country Geocoding
-- [x] Photon configured to import ES, FR, PT, IT, AT, DE, GB, SI from per-country dumps
-- [x] Serves all 7 languages (es, en, fr, de, it, pt, sl)
+- [x] Photon configured to import ES, FR, PT, IT, AT, DE, GB, SI, NL, BE, LU, RO, GR from per-country dumps
+- [x] Serves all 10 languages (es, en, fr, de, it, pt, sl, nl, ro, el)
 - [x] Cross-border routing works (e.g., Madrid → Paris)
 
 ### 3.6 — Cross-Border Features (future)
@@ -176,7 +181,7 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 - [ ] Currency conversion for comparison (always show in user's preferred currency)
 - [ ] Border-crossing fuel strategy recommendations
 
-**Deliverable**: 8 countries, ~68K stations, 7 languages, cross-border routing.
+**Deliverable**: 13 countries, ~77K+ stations, 10 languages, cross-border routing.
 
 ---
 
@@ -309,13 +314,13 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 **Tier 1 — Station-level data, open APIs:**
 - [x] UK — CMA Open Data Scheme: 13 retailer JSON endpoints (Shell excluded — HTML), 3,536 stations, GBP pence
 - [x] Slovenia — goriva.si REST API, 551 stations, 9 fuel types incl. HVO/CNG/LNG
-- [ ] Netherlands — DirectLease TankService API (NL+BE, ~800 stations, requires computed checksum header) or ANWB API (undocumented, may need key). CBS OData for national averages only.
-- [ ] Greece — data.gov.gr `mindev_fuel_prices` API (free key, regional averages). Station-level via FuelGR/Deixto.gr (reverse-engineered Android app API, fragile).
-- [ ] Romania — Peco-Online Parse API (reverse-engineered, requires hardcoded Parse keys from app decompilation). Not government.
+- [x] Netherlands — ANWB API (`api.anwb.nl`, no auth, ~3,893 stations, EUR)
+- [x] Greece — FuelGR/Deixto.gr reverse-engineered Android app XML API (~2,500+ stations, EUR, grid-based queries)
+- [x] Romania — Peco-Online Parse API (~1,386 stations, RON)
+- [x] Belgium — ANWB API (`api.anwb.nl`, no auth, ~3,190 stations, EUR, station-level prices)
+- [x] Luxembourg — ANWB API (`api.anwb.nl`, no auth, ~237 stations, EUR, station-level prices)
 
 **Tier 2 — Government data, national/regional averages only (no station-level):**
-- [ ] Belgium — Statbel beSTAT: government-regulated max prices only (Belgium doesn't mandate station-level reporting). DirectLease covers some stations.
-- [ ] Luxembourg — STATEC via data.public.lu: CC0, max prices only (government-regulated).
 - [ ] Czech Republic — CZSO: weekly/monthly average consumer fuel prices, CSV/JSON, CC BY 4.0.
 - [ ] Finland — Statistics Finland PxWeb API: monthly national averages since 1988.
 
@@ -389,7 +394,7 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 | Real-time prices along route | Yes | Yes | Limited | No (estimates) | N/A (EV) |
 | **Detour time calculation** | **Yes** | No | No | No | N/A |
 | **Smart refuel by range** | **Yes** | No | No | No | Yes (EV) |
-| Multi-country Europe | Yes (8) | No (US/CA) | Partial | Partial | Yes (EV) |
+| Multi-country Europe | Yes (13) | No (US/CA) | Partial | Partial | Yes (EV) |
 | Fuel + EV support | Yes | No | No | No | EV only |
 | Open source | Yes | No | No | No | No |
 | Self-hostable | Yes | No | No | No | No |
