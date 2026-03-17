@@ -11,6 +11,7 @@ import { StationLayer } from "./station-layer";
 import { GeolocateButton } from "./geolocate-button";
 import { PriceFilter } from "./price-filter";
 import { RouteLayer } from "./route-layer";
+import { useConvertedStations } from "@/lib/currency";
 
 const OPENFREEMAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 const DEBOUNCE_MS = 100;
@@ -74,7 +75,9 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
   }, [corridorPerRoute]);
 
   // Choose which stations to display: corridor when routes active, bbox otherwise
-  const displayStations = routes ? mergedCorridorStations : bboxStations;
+  const rawDisplayStations = routes ? mergedCorridorStations : bboxStations;
+  // Convert all prices to the user's selected currency
+  const displayStations = useConvertedStations(rawDisplayStations);
 
   const filteredStations: StationsGeoJSONCollection = useMemo(() => {
     let features = displayStations.features;
@@ -87,17 +90,18 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
     return { type: "FeatureCollection", features };
   }, [displayStations, maxPrice, maxDetour, routes]);
 
+  // Convert primary corridor stations for the station list panel
+  const rawPrimaryStations = (routes && corridorPerRoute[primaryRouteIndex]) || EMPTY_COLLECTION;
+  const convertedPrimaryStations = useConvertedStations(rawPrimaryStations);
+
   // Report primary corridor stations to parent for station list
   useEffect(() => {
     if (!routes) {
       onPrimaryStationsChange?.(EMPTY_COLLECTION);
       return;
     }
-    const primary = corridorPerRoute[primaryRouteIndex];
-    if (primary) {
-      onPrimaryStationsChange?.(primary);
-    }
-  }, [corridorPerRoute, primaryRouteIndex, routes, onPrimaryStationsChange]);
+    onPrimaryStationsChange?.(convertedPrimaryStations);
+  }, [convertedPrimaryStations, routes, onPrimaryStationsChange]);
 
   // Fetch corridor stations for ALL routes in parallel
   const fetchAllRouteStations = useCallback(

@@ -5,6 +5,7 @@ import type { FuelType, StationsGeoJSONCollection } from "@/types/station";
 import type { MapRef } from "react-map-gl/maplibre";
 import type { Route } from "@/components/map/route-layer";
 import { I18nProvider } from "@/lib/i18n";
+import { CurrencyProvider } from "@/lib/currency";
 import { Navbar } from "@/components/nav/navbar";
 import { MapView } from "@/components/map/map-view";
 import { SearchPanel } from "@/components/search/search-panel";
@@ -109,6 +110,7 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, corrido
 
   return (
     <I18nProvider>
+    <CurrencyProvider>
     <main className="flex h-screen w-screen flex-col overflow-hidden">
       <Navbar selectedFuel={selectedFuel} onFuelChange={setSelectedFuel} />
       <div className="relative flex-1">
@@ -146,6 +148,7 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, corrido
         />
       </div>
     </main>
+    </CurrencyProvider>
     </I18nProvider>
   );
 }

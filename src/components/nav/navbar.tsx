@@ -4,6 +4,7 @@ import type { FuelType } from "@/types/station";
 import { FUEL_TYPES, FUEL_CATEGORIES, FUEL_TYPE_MAP } from "@/types/fuel";
 import { StatsDropdown } from "./stats-dropdown";
 import { useI18n, LOCALES, type Locale } from "@/lib/i18n";
+import { useCurrency, CURRENCIES, type Currency } from "@/lib/currency";
 
 interface NavbarProps {
   selectedFuel: FuelType;
@@ -47,6 +48,7 @@ export function Navbar({ selectedFuel, onFuelChange }: NavbarProps) {
   const currentFuel = FUEL_TYPE_MAP.get(selectedFuel);
   const { locale, setLocale, t } = useI18n();
   const currentLocale = LOCALES.find((l) => l.code === locale);
+  const { currency, setCurrency } = useCurrency();
 
   return (
     <nav className="relative z-20 flex h-11 shrink-0 items-center justify-between bg-[#0c111b] px-3.5">
@@ -88,6 +90,21 @@ export function Navbar({ selectedFuel, onFuelChange }: NavbarProps) {
         >
           {LOCALES.map((l) => (
             <option key={l.code} value={l.code}>{l.label}</option>
+          ))}
+        </select>
+
+        <select
+          value={currency}
+          onChange={(e) => setCurrency(e.target.value as Currency)}
+          className="h-7 cursor-pointer appearance-none rounded border border-white/[0.08] bg-[#0c111b] py-0 pr-5 pl-2 text-[13px] font-medium text-gray-200 transition-all hover:border-white/15 hover:bg-white/10 focus:border-emerald-400/40 focus:bg-white/10 focus:ring-1 focus:ring-emerald-400/20 focus:outline-none [&_option]:bg-[#0c111b] [&_option]:text-gray-200"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "right 0.2rem center",
+          }}
+        >
+          {CURRENCIES.map((c) => (
+            <option key={c.code} value={c.code}>{c.symbol} {c.code}</option>
           ))}
         </select>
 

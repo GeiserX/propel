@@ -4,6 +4,7 @@ import { Popup } from "react-map-gl/maplibre";
 import type { StationGeoJSON } from "@/types/station";
 import { FUEL_TYPE_MAP } from "@/types/fuel";
 import { useI18n } from "@/lib/i18n";
+import { useCurrency, CURRENCIES } from "@/lib/currency";
 
 interface StationPopupProps {
   station: StationGeoJSON;
@@ -21,10 +22,18 @@ function timeAgo(iso: string, t: (key: string) => string): string {
   return `${t("popup.updated")} ${days}d`;
 }
 
+function symbolFor(code: string): string {
+  return CURRENCIES.find((c) => c.code === code)?.symbol ?? code;
+}
+
 export function StationPopup({ station, onClose }: StationPopupProps) {
   const { t } = useI18n();
+  const { symbol, formatPrice, rateInfo } = useCurrency();
   const { properties, geometry } = station;
   const fuelInfo = FUEL_TYPE_MAP.get(properties.fuelType as Parameters<typeof FUEL_TYPE_MAP.get>[0]);
+
+  const isConverted = properties.originalCurrency != null;
+  const conversionNote = isConverted ? rateInfo(properties.originalCurrency!) : null;
 
   return (
     <Popup
@@ -34,10 +43,10 @@ export function StationPopup({ station, onClose }: StationPopupProps) {
       onClose={onClose}
       closeOnClick={false}
       className="station-popup"
-      maxWidth="260px"
+      maxWidth="280px"
     >
       <div className="px-3 pt-2.5 pb-2">
-        {/* Brand — primary heading */}
+        {/* Brand */}
         {properties.brand && (
           <p className="text-[13px] font-bold text-gray-900 leading-tight">
             {properties.brand}
@@ -56,11 +65,14 @@ export function StationPopup({ station, onClose }: StationPopupProps) {
         {properties.price != null ? (
           <div className="mt-2 rounded-lg bg-gray-50 px-3 py-2">
             <div className="flex items-baseline gap-1">
+              {isConverted && (
+                <span className="text-[15px] font-medium text-gray-400">≈</span>
+              )}
               <span className="text-[22px] font-bold tabular-nums leading-none text-gray-900">
-                {properties.price.toFixed(3)}
+                {formatPrice(properties.price)}
               </span>
               <span className="text-[11px] font-medium text-gray-500">
-                {{ EUR: "€", GBP: "£", RON: "lei", PLN: "zł", HUF: "Ft", CZK: "Kč" }[properties.currency] ?? properties.currency}/L
+                {symbol}/L
               </span>
             </div>
             <p className="mt-1 text-[10px] text-gray-400">
@@ -71,6 +83,15 @@ export function StationPopup({ station, onClose }: StationPopupProps) {
                 </span>
               )}
             </p>
+            {/* Conversion info */}
+            {isConverted && properties.originalPrice != null && (
+              <p className="mt-1.5 border-t border-gray-200/60 pt-1.5 text-[9px] leading-tight text-gray-400">
+                {properties.originalPrice.toFixed(3)} {symbolFor(properties.originalCurrency!)}/L
+                {conversionNote && (
+                  <span className="ml-1">· {conversionNote}</span>
+                )}
+              </p>
+            )}
           </div>
         ) : (
           <div className="mt-2 rounded-lg bg-gray-50 px-3 py-2.5 text-center">
