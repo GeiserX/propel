@@ -45,7 +45,7 @@ function CategoryIcon({ category }: { category: string }) {
 
 export function Navbar({ selectedFuel, onFuelChange }: NavbarProps) {
   const currentFuel = FUEL_TYPE_MAP.get(selectedFuel);
-  const { locale, setLocale } = useI18n();
+  const { locale, setLocale, t } = useI18n();
   const currentLocale = LOCALES.find((l) => l.code === locale);
 
   return (
@@ -110,7 +110,7 @@ export function Navbar({ selectedFuel, onFuelChange }: NavbarProps) {
             const fuels = FUEL_TYPES.filter((f) => f.category === cat.key);
             if (fuels.length === 0) return null;
             return (
-              <optgroup key={cat.key} label={cat.label}>
+              <optgroup key={cat.key} label={t(`fuel.${cat.key}`)}>
                 {fuels.map((fuel) => (
                   <option key={fuel.code} value={fuel.code}>
                     {fuel.label}
