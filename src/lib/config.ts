@@ -15,6 +15,14 @@ export const COUNTRIES: Record<string, CountryConfig> = {
   GB: { code: "GB", name: "United Kingdom", center: [-1.17, 52.35], zoom: 6, defaultFuel: "E5" },
   AT: { code: "AT", name: "Österreich", center: [13.33, 47.52], zoom: 7, defaultFuel: "B7" },
   PT: { code: "PT", name: "Portugal", center: [-8.22, 39.4], zoom: 7, defaultFuel: "B7" },
+  SI: { code: "SI", name: "Slovenija", center: [14.99, 46.15], zoom: 8, defaultFuel: "B7" },
+  NL: { code: "NL", name: "Nederland", center: [5.29, 52.13], zoom: 7, defaultFuel: "E10" },
+  BE: { code: "BE", name: "België", center: [4.47, 50.5], zoom: 8, defaultFuel: "E10" },
+  LU: { code: "LU", name: "Luxembourg", center: [6.13, 49.81], zoom: 9, defaultFuel: "E10" },
+  RO: { code: "RO", name: "România", center: [24.97, 45.94], zoom: 7, defaultFuel: "B7" },
+  GR: { code: "GR", name: "Ελλάδα", center: [23.73, 37.97], zoom: 7, defaultFuel: "B7" },
+  IE: { code: "IE", name: "Ireland", center: [-7.69, 53.14], zoom: 7, defaultFuel: "B7" },
+  HR: { code: "HR", name: "Hrvatska", center: [15.98, 45.81], zoom: 7, defaultFuel: "B7" },
 };
 
 /**

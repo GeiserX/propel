@@ -32,6 +32,7 @@ function timeAgo(iso: string): string {
 
 const FLAG: Record<string, string> = {
   ES: "🇪🇸", FR: "🇫🇷", DE: "🇩🇪", IT: "🇮🇹", GB: "🇬🇧", AT: "🇦🇹", PT: "🇵🇹",
+  SI: "🇸🇮", NL: "🇳🇱", BE: "🇧🇪", LU: "🇱🇺", RO: "🇷🇴", GR: "🇬🇷", IE: "🇮🇪", HR: "🇭🇷",
 };
 
 export function StatsDropdown() {
