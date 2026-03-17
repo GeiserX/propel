@@ -296,7 +296,7 @@ export function SearchPanel({
   })() : null;
 
   return (
-    <div className="absolute left-3 top-3 z-10 w-[340px]">
+    <div className="absolute left-2 right-2 top-2 z-10 sm:left-3 sm:right-auto sm:top-3 sm:w-[340px]">
       {/* Search card */}
       <div className="rounded-xl border border-black/[0.08] bg-white/95 shadow-lg backdrop-blur-sm">
         {/* Origin row */}

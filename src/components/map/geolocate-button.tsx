@@ -39,7 +39,7 @@ export function GeolocateButton({ onGeolocate }: GeolocateButtonProps) {
       onClick={handleClick}
       disabled={state === "loading"}
       title={state === "denied" ? t("geo.denied") : t("geo.center")}
-      className="absolute top-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-lg border border-black/10 bg-white shadow-md transition-all hover:bg-gray-50 active:scale-95 disabled:opacity-60"
+      className="absolute top-14 right-2 z-10 flex h-9 w-9 items-center justify-center rounded-lg border border-black/10 bg-white shadow-md transition-all hover:bg-gray-50 active:scale-95 disabled:opacity-60 sm:top-3 sm:right-3"
     >
       {state === "loading" ? (
         <svg className="h-4.5 w-4.5 animate-spin text-gray-500" viewBox="0 0 24 24" fill="none">
