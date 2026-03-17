@@ -23,10 +23,10 @@
 
 ## Features
 
-- Real-time fuel prices from government open data APIs (Spain, France, Germany, Italy, UK, Austria, Portugal)
-- Interactive map with 65,000+ stations across Europe
-- Route planning with geocoding autocomplete and corridor station filtering
-- "Cheapest within N minutes detour" — calculates if a detour is worth it (planned)
+- Real-time fuel prices from government open data APIs across 15 European countries
+- Interactive map with 84,000+ stations across Europe
+- Route planning with geocoding autocomplete, alternative routes, and corridor station filtering
+- "Cheapest within N minutes detour" — filters stations by detour time with price comparison
 - Smart refuel/recharge advisor based on your remaining range (planned)
 - EV charging integration (planned)
 - Multi-language, multi-currency, multi-unit support
@@ -39,11 +39,11 @@
 
 | Resource | First-time build | Steady state |
 |---|---|---|
-| **RAM** | 16 GB (Valhalla tile build) | 4-5 GB |
-| **Disk** | ~15 GB | ~10 GB |
+| **RAM** | 24 GB (Valhalla 15-country tile build) | 6-8 GB |
+| **Disk** | ~250 GB (15-country Photon + Valhalla) | ~80 GB |
 | **CPU** | Multi-core recommended | Any |
 
-> **Important**: On first start, Valhalla builds routing tiles from OpenStreetMap data (~20 min) and Photon imports geocoding data (~30 min). These are one-time operations — data persists across restarts. **Run them sequentially** (Valhalla first, then Photon) to avoid memory pressure.
+> **Important**: On first start, Valhalla builds routing tiles from OpenStreetMap data (3-6 hours for 15 countries) and Photon imports geocoding data (20+ hours for 15 countries). These are one-time operations — data persists across restarts.
 
 ### Quick Start
 
@@ -86,8 +86,8 @@ npm run scraper:run -- --country=ES --once
 
 | Service | First start | Subsequent starts |
 |---|---|---|
-| **Valhalla** | Downloads Spain OSM PBF from Geofabrik (~1.4 GB), builds routing tiles with 20 threads. Enhance stage peaks at ~12 GB RAM. | Loads pre-built tiles instantly (~500 MB RAM) |
-| **Photon** | Downloads Photon 1.0.1 JAR (~92 MB) + Spain geocoding dump (~490 MB). Imports ~5.6M documents (~12 min). | Starts OpenSearch with existing index (~1 GB RAM) |
+| **Valhalla** | Builds routing tiles from 15-country merged PBF (~20 GB). Uses 8 threads, peaks at ~15 GB RAM. Takes 3-6 hours. | Loads pre-built tiles instantly (~2 GB RAM) |
+| **Photon** | Downloads Photon 1.0.1 JAR (~92 MB) + 15 country geocoding dumps. Imports 200M+ documents (20+ hours). | Starts with existing index (~3 GB RAM) |
 | **PostGIS** | Creates database schema | Ready immediately |
 | **App** | Ready immediately | Ready immediately |
 
@@ -100,14 +100,14 @@ npm run scraper:run -- --country=ES --once
 | valhalla | `ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1` | 512 MB | 8002 |
 | photon | `eclipse-temurin:21-jre` + Photon 1.0.1 JAR | 1 GB | 2322 |
 
-### Disk Usage (Spain)
+### Disk Usage (15 countries)
 
 | Directory | Size | Contents |
 |---|---|---|
-| `valhalla/` | ~3.5 GB | Spain PBF + routing tiles + tar |
-| `photon/` | ~4 GB | Photon JAR + OpenSearch index |
-| `pgdata/` | ~1 GB | PostGIS database |
-| **Total** | **~8.5 GB** | |
+| `valhalla/` | ~30 GB | 15-country merged PBF + routing tiles |
+| `photon/` | ~250 GB | Combined JSONL + OpenSearch index |
+| `pgdata/` | ~2 GB | PostGIS database (84K+ stations) |
+| **Total** | **~280 GB** | |
 
 ### Configuration
 
@@ -134,13 +134,21 @@ Valhalla and Photon can be configured for any country:
 
 | Country | Source | Stations | Update |
 |---|---|---|---|
-| Spain | MITECO | ~12,000 | Daily |
-| France | prix-carburants.gouv.fr | ~9,800 | 10 min |
-| Germany | Tankerkoenig (MTS-K) | ~14,000 | 4 min |
-| Italy | MIMIT | ~22,000 | Daily |
-| UK | CMA Open Data | ~8,000 | Varies |
-| Austria | E-Control | All | Real-time |
-| Portugal | DGEG | ~3,500 | Daily |
+| Italy | MIMIT | ~23,600 | Daily |
+| Germany | Tankerkoenig (MTS-K) | ~14,300 | Hourly |
+| Spain | MITECO | ~12,200 | Daily |
+| France | prix-carburants.gouv.fr | ~9,900 | Daily |
+| Netherlands | ANWB | ~3,900 | Daily |
+| UK | CMA Open Data | ~3,500 | Daily |
+| Portugal | DGEG | ~3,200 | Daily |
+| Belgium | ANWB | ~3,200 | Daily |
+| Greece | FuelGR | ~3,100 | Daily |
+| Austria | E-Control | ~2,700 | Real-time |
+| Romania | Peco Online | ~1,400 | Daily |
+| Ireland | Pick A Pump | ~1,300 | Daily |
+| Croatia | MZOE | ~900 | Daily |
+| Slovenia | goriva.si | ~550 | Daily |
+| Luxembourg | ANWB | ~240 | Daily |
 
 ## Tech Stack
 
