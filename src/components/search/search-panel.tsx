@@ -6,6 +6,7 @@ import type { Route } from "@/components/map/route-layer";
 import type { StationsGeoJSONCollection } from "@/types/station";
 import { AutocompleteInput, type AutocompleteRef } from "./autocomplete-input";
 import { useI18n } from "@/lib/i18n";
+import { useCurrency } from "@/lib/currency";
 
 type Phase = "search" | "destination" | "route";
 
@@ -55,6 +56,7 @@ export function SearchPanel({
   onMaxDetourChange,
 }: SearchPanelProps) {
   const { t } = useI18n();
+  const { symbol: currencySymbol, formatPrice } = useCurrency();
   const [phase, setPhase] = useState<Phase>("search");
   const [originText, setOriginText] = useState("");
   const [destText, setDestText] = useState("");
@@ -513,7 +515,7 @@ export function SearchPanel({
             </span>
             {avgPrice != null && (
               <span className="text-[10px] text-gray-400">
-                {t("stations.avg")} {avgPrice.toFixed(3)}
+                {t("stations.avg")} {formatPrice(avgPrice)} {currencySymbol}
               </span>
             )}
           </div>
@@ -579,7 +581,8 @@ export function SearchPanel({
                   <div className="ml-3 shrink-0 text-right">
                     {station.properties.price != null && (
                       <span className="text-sm font-semibold text-gray-800">
-                        {station.properties.price.toFixed(3)} {{ EUR: "€", GBP: "£", RON: "lei", PLN: "zł", HUF: "Ft", CZK: "Kč" }[station.properties.currency] ?? station.properties.currency}
+                        {station.properties.originalCurrency && <span className="font-normal text-gray-400">≈ </span>}
+                        {formatPrice(station.properties.price)} {currencySymbol}
                       </span>
                     )}
                     <div className="flex items-center justify-end gap-1.5">
@@ -591,8 +594,8 @@ export function SearchPanel({
                         const diff = station.properties.price - avgPrice;
                         if (Math.abs(diff) < 0.001) return null;
                         return diff < 0
-                          ? <span className="text-[10px] font-medium text-emerald-600">{diff.toFixed(3)}</span>
-                          : <span className="text-[10px] text-gray-400">+{diff.toFixed(3)}</span>;
+                          ? <span className="text-[10px] font-medium text-emerald-600">{formatPrice(diff)}</span>
+                          : <span className="text-[10px] text-gray-400">+{formatPrice(diff)}</span>;
                       })()}
                     </div>
                   </div>

@@ -270,8 +270,16 @@ See **ROADMAP.md** for the full feature breakdown and phase plan.
 ### Units
 - Distance: km (Europe default), miles (UK)
 - Volume: liters (Europe), gallons (UK for display, stored as liters)
-- Currency: EUR, GBP, PLN — always show in local currency
 - Decimal separator: `,` (continental Europe), `.` (UK)
+
+### Currency Conversion
+- **`src/lib/currency.tsx`** — CurrencyProvider context with 90+ world currencies (all ISO 4217 major currencies)
+- **`src/app/api/exchange-rates/route.ts`** — Proxies ECB daily XML feed, in-memory cache (24h TTL), serves stale on ECB failure
+- **Auto-detection**: Uses `navigator.languages` → region code → currency (standard approach like Booking.com/Google)
+- **Display**: Native prices shown as-is; converted prices prefixed with `≈` and show original price + ECB rate + date in popup
+- **Architecture**: `useConvertedStations()` hook pre-converts GeoJSON station prices so MapLibre color scale, price filter slider, and all UI components work in the selected currency. Original price/currency preserved in `originalPrice`/`originalCurrency` properties.
+- **Decimal places**: Currency-aware (3 for EUR/GBP/USD, 2 for SEK/NOK/CZK, 0 for JPY/KRW/HUF/IDR etc.)
+- **Limitation**: Only currencies with ECB rates (~30) can convert; others show native prices unchanged
 
 ---
 

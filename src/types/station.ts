@@ -63,6 +63,10 @@ export interface StationGeoJSON {
     reportedAt?: string | null;
     fuelType: string;
     currency: string;
+    /** Original price before currency conversion (only set when converted) */
+    originalPrice?: number | null;
+    /** Original currency code before conversion (only set when converted) */
+    originalCurrency?: string;
     routeFraction?: number;
     detourMin?: number;
   };
