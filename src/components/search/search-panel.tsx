@@ -6,7 +6,7 @@ import type { Route } from "@/components/map/route-layer";
 import type { StationsGeoJSONCollection } from "@/types/station";
 import { AutocompleteInput, type AutocompleteRef } from "./autocomplete-input";
 import { useI18n } from "@/lib/i18n";
-import { useCurrency } from "@/lib/currency";
+import { useCurrency, CURRENCIES } from "@/lib/currency";
 
 type Phase = "search" | "destination" | "route";
 
@@ -515,7 +515,7 @@ export function SearchPanel({
             </span>
             {avgPrice != null && (
               <span className="text-[10px] text-gray-400">
-                {t("stations.avg")} {formatPrice(avgPrice)} {currencySymbol}
+                {t("stations.avg")} {formatPrice(avgPrice)} {currencySymbol}/L
               </span>
             )}
           </div>
@@ -579,12 +579,17 @@ export function SearchPanel({
                     <p className="truncate text-xs text-gray-500">{station.properties.name}</p>
                   </div>
                   <div className="ml-3 shrink-0 text-right">
-                    {station.properties.price != null && (
-                      <span className="text-sm font-semibold text-gray-800">
-                        {station.properties.originalCurrency && <span className="font-normal text-gray-400">≈ </span>}
-                        {formatPrice(station.properties.price)} {currencySymbol}
-                      </span>
-                    )}
+                    {station.properties.price != null && (() => {
+                      const sc = CURRENCIES.find((c) => c.code === station.properties.currency);
+                      const sym = sc?.symbol ?? station.properties.currency;
+                      const dec = station.properties.originalCurrency ? undefined : sc?.decimals;
+                      return (
+                        <span className="text-sm font-semibold text-gray-800">
+                          {station.properties.originalCurrency && <span className="font-normal text-gray-400">≈ </span>}
+                          {dec != null ? station.properties.price.toFixed(dec) : formatPrice(station.properties.price)} {sym}
+                        </span>
+                      );
+                    })()}
                     <div className="flex items-center justify-end gap-1.5">
                       <span className="text-[10px] text-gray-400">km {km.toFixed(0)}</span>
                       {detour > 0 && (
