@@ -175,10 +175,15 @@ export function StationLayer({ stations, onPriceRange, cluster = true, selectedS
     countPrice: ["+", ["case", ["all", ["has", "price"], ["!=", ["get", "price"], null]], 1, 0]] as ExpressionSpecification,
   }), []);
 
+  // Use a key to force full unmount/remount when switching cluster mode.
+  // MapLibre cannot change the `cluster` property on an existing source.
+  const sourceKey = cluster ? "stations-clustered" : "stations-plain";
+
   return (
     <>
       {cluster ? (
         <Source
+          key={sourceKey}
           id="stations"
           type="geojson"
           data={stations}
@@ -231,7 +236,7 @@ export function StationLayer({ stations, onPriceRange, cluster = true, selectedS
           />
         </Source>
       ) : (
-        <Source id="stations" type="geojson" data={stations}>
+        <Source key={sourceKey} id="stations" type="geojson" data={stations}>
           <Layer
             id="unclustered-point"
             source="stations"
