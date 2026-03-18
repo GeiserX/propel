@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
         ST_LineLocatePoint(${routeGeom}, s.geom)::float AS route_fraction,
         ST_Distance(s.geom::geography, ${routeGeom}::geography)::float AS distance_m
       FROM stations s
-      LEFT JOIN LATERAL (
+      JOIN LATERAL (
         SELECT price, currency, reported_at
         FROM fuel_prices
         WHERE station_id = s.id
