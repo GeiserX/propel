@@ -23,6 +23,17 @@ export const COUNTRIES: Record<string, CountryConfig> = {
   GR: { code: "GR", name: "Ελλάδα", center: [23.73, 37.97], zoom: 7, defaultFuel: "B7" },
   IE: { code: "IE", name: "Ireland", center: [-7.69, 53.14], zoom: 7, defaultFuel: "B7" },
   HR: { code: "HR", name: "Hrvatska", center: [15.98, 45.81], zoom: 7, defaultFuel: "B7" },
+  CH: { code: "CH", name: "Schweiz", center: [8.23, 46.82], zoom: 8, defaultFuel: "E5" },
+  PL: { code: "PL", name: "Polska", center: [19.15, 51.92], zoom: 6, defaultFuel: "E5" },
+  CZ: { code: "CZ", name: "Česko", center: [15.47, 49.82], zoom: 7, defaultFuel: "E5" },
+  HU: { code: "HU", name: "Magyarország", center: [19.50, 47.16], zoom: 7, defaultFuel: "E5" },
+  BG: { code: "BG", name: "България", center: [25.49, 42.73], zoom: 7, defaultFuel: "B7" },
+  SK: { code: "SK", name: "Slovensko", center: [19.70, 48.67], zoom: 8, defaultFuel: "E5" },
+  DK: { code: "DK", name: "Danmark", center: [9.50, 56.26], zoom: 7, defaultFuel: "E10" },
+  SE: { code: "SE", name: "Sverige", center: [18.64, 60.13], zoom: 5, defaultFuel: "E5" },
+  NO: { code: "NO", name: "Norge", center: [8.47, 60.47], zoom: 5, defaultFuel: "E5" },
+  RS: { code: "RS", name: "Srbija", center: [21.01, 44.02], zoom: 7, defaultFuel: "E5" },
+  FI: { code: "FI", name: "Suomi", center: [25.75, 61.92], zoom: 5, defaultFuel: "E10" },
 };
 
 /**

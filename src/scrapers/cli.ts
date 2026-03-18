@@ -15,6 +15,17 @@ import { RomaniaScraper } from "./romania";
 import { GreeceScraper } from "./greece";
 import { IrelandScraper } from "./ireland";
 import { CroatiaScraper } from "./croatia";
+import { HungaryScraper } from "./hungary";
+import { BulgariaScraper } from "./bulgaria";
+import { SlovakiaScraper } from "./slovakia";
+import { SwitzerlandScraper } from "./switzerland";
+import { PolandScraper } from "./poland";
+import { CzechScraper } from "./czech";
+import { DenmarkScraper } from "./denmark";
+import { SwedenScraper } from "./sweden";
+import { NorwayScraper } from "./norway";
+import { SerbiaScraper } from "./serbia";
+import { FinlandScraper } from "./finland";
 
 // ---------------------------------------------------------------------------
 // Scraper CLI
@@ -45,6 +56,17 @@ const SCRAPERS: Record<string, () => BaseScraper> = {
   GR: () => new GreeceScraper(),
   IE: () => new IrelandScraper(),
   HR: () => new CroatiaScraper(),
+  HU: () => new HungaryScraper(),
+  BG: () => new BulgariaScraper(),
+  SK: () => new SlovakiaScraper(),
+  CH: () => new SwitzerlandScraper(),
+  PL: () => new PolandScraper(),
+  CZ: () => new CzechScraper(),
+  DK: () => new DenmarkScraper(),
+  SE: () => new SwedenScraper(),
+  NO: () => new NorwayScraper(),
+  RS: () => new SerbiaScraper(),
+  FI: () => new FinlandScraper(),
 };
 
 function usage(): never {

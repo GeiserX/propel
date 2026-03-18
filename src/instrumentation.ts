@@ -19,6 +19,17 @@ const DEFAULT_INTERVALS: Record<string, number> = {
   GR: 12,   // Greece FuelGR — grid queries, scrape every 12h
   IE: 12,   // Ireland Pick A Pump — crowdsourced, scrape every 12h
   HR: 12,   // Croatia MZOE — government monitoring, scrape every 12h
+  CH: 12,   // Switzerland Fuelo.net — community-sourced, scrape every 12h
+  PL: 12,   // Poland Fuelo.net — community-sourced, scrape every 12h
+  CZ: 12,   // Czech Republic Fuelo.net — community-sourced, scrape every 12h
+  HU: 12,   // Hungary Fuelo.net — community-sourced, scrape every 12h
+  BG: 12,   // Bulgaria Fuelo.net — community-sourced, scrape every 12h
+  SK: 12,   // Slovakia Fuelo.net — community-sourced, scrape every 12h
+  DK: 6,    // Denmark fuelprices.dk — API, scrape every 6h
+  SE: 12,   // Sweden bensinpriser.nu — community-sourced, scrape every 12h
+  NO: 6,    // Norway DrivstoffAppen — government-mandated, scrape every 6h
+  RS: 12,   // Serbia NIS + cenagoriva — brand-level, scrape every 12h
+  FI: 12,   // Finland polttoaine.net — community-sourced, scrape every 12h
 };
 
 export async function register() {
@@ -47,6 +58,17 @@ export async function register() {
   const { GreeceScraper } = await import("./scrapers/greece");
   const { IrelandScraper } = await import("./scrapers/ireland");
   const { CroatiaScraper } = await import("./scrapers/croatia");
+  const { SwitzerlandScraper } = await import("./scrapers/switzerland");
+  const { PolandScraper } = await import("./scrapers/poland");
+  const { CzechScraper } = await import("./scrapers/czech");
+  const { HungaryScraper } = await import("./scrapers/hungary");
+  const { BulgariaScraper } = await import("./scrapers/bulgaria");
+  const { SlovakiaScraper } = await import("./scrapers/slovakia");
+  const { DenmarkScraper } = await import("./scrapers/denmark");
+  const { SwedenScraper } = await import("./scrapers/sweden");
+  const { NorwayScraper } = await import("./scrapers/norway");
+  const { SerbiaScraper } = await import("./scrapers/serbia");
+  const { FinlandScraper } = await import("./scrapers/finland");
 
   const scraperFactories: Record<string, () => BaseScraper> = {
     ES: () => new SpainScraper(),
@@ -64,6 +86,17 @@ export async function register() {
     GR: () => new GreeceScraper(),
     IE: () => new IrelandScraper(),
     HR: () => new CroatiaScraper(),
+    CH: () => new SwitzerlandScraper(),
+    PL: () => new PolandScraper(),
+    CZ: () => new CzechScraper(),
+    HU: () => new HungaryScraper(),
+    BG: () => new BulgariaScraper(),
+    SK: () => new SlovakiaScraper(),
+    DK: () => new DenmarkScraper(),
+    SE: () => new SwedenScraper(),
+    NO: () => new NorwayScraper(),
+    RS: () => new SerbiaScraper(),
+    FI: () => new FinlandScraper(),
   };
 
   // Determine which countries to scrape
