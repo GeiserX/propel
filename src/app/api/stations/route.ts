@@ -103,6 +103,7 @@ export async function GET(request: NextRequest) {
         s.geom,
         ST_MakeEnvelope($1, $2, $3, $4, 4326)
       )
+      LIMIT 20000
       `,
       minLon,
       minLat,
