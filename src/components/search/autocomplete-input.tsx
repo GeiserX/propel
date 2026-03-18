@@ -160,8 +160,8 @@ export const AutocompleteInput = forwardRef<AutocompleteRef, AutocompleteInputPr
   }, []);
 
   const inputClassName = bare
-    ? "w-full bg-transparent px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none"
-    : "w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400";
+    ? "w-full bg-transparent px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none dark:text-gray-100 dark:placeholder-gray-500"
+    : "w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500";
 
   return (
     <div ref={containerRef} className="relative flex-1">
@@ -181,12 +181,12 @@ export const AutocompleteInput = forwardRef<AutocompleteRef, AutocompleteInputPr
       />
 
       {isOpen && results.length > 0 && (
-        <ul className="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg">
+        <ul className="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
           {results.map((r, i) => (
             <li
               key={`${r.coordinates[0]}-${r.coordinates[1]}-${i}`}
               className={`cursor-pointer px-3 py-2 text-sm ${
-                i === activeIndex ? "bg-emerald-50 text-emerald-700" : "text-gray-700 hover:bg-gray-50"
+                i === activeIndex ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
               }`}
               onMouseDown={() => handleSelect(r)}
               onMouseEnter={() => setActiveIndex(i)}
@@ -202,7 +202,7 @@ export const AutocompleteInput = forwardRef<AutocompleteRef, AutocompleteInputPr
         </ul>
       )}
       {noResults && !isOpen && value.length >= 2 && (
-        <div className="absolute z-50 mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-400 shadow-lg">
+        <div className="absolute z-50 mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-400 shadow-lg dark:border-gray-700 dark:bg-gray-800">
           No results found
         </div>
       )}

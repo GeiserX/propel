@@ -12,8 +12,7 @@ import { GeolocateButton } from "./geolocate-button";
 import { PriceFilter } from "./price-filter";
 import { RouteLayer } from "./route-layer";
 import { useConvertedStations } from "@/lib/currency";
-
-const OPENFREEMAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
+import { useTheme } from "@/lib/theme";
 const DEBOUNCE_MS = 100;
 
 const EMPTY_COLLECTION: StationsGeoJSONCollection = {
@@ -43,6 +42,7 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
   { selectedFuel, center, zoom, clusterStations, corridorKm, routes, primaryRouteIndex, selectedStationId, onSelectStation, maxPrice, onMaxPriceChange, maxDetour, onMapMove, onSelectRoute, onPrimaryStationsChange },
   ref,
 ) {
+  const { mapStyle } = useTheme();
   const mapRef = useRef<MapRef | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const corridorDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -280,7 +280,7 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
         zoom,
       }}
       minZoom={5}
-      mapStyle={OPENFREEMAP_STYLE}
+      mapStyle={mapStyle}
       onLoad={handleLoad}
       onMoveEnd={handleMoveEnd}
       interactiveLayerIds={effectiveCluster ? ["clusters", "unclustered-point"] : ["unclustered-point"]}

@@ -313,14 +313,14 @@ export function SearchPanel({
   return (
     <div className="absolute left-2 right-2 top-2 z-10 sm:left-3 sm:right-auto sm:top-3 sm:w-[340px]">
       {/* Search card */}
-      <div className="rounded-xl border border-black/[0.08] bg-white/95 shadow-lg backdrop-blur-sm">
+      <div className="rounded-xl border border-black/[0.08] bg-white/95 shadow-lg backdrop-blur-sm dark:border-white/[0.08] dark:bg-gray-900/95">
         {/* Origin row */}
         <div className="flex items-center">
           <div className="flex w-10 shrink-0 items-center justify-center">
             {showDest ? (
               <div className="h-2.5 w-2.5 rounded-full border-2 border-gray-400" />
             ) : (
-              <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <svg className="h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
               </svg>
             )}
@@ -349,7 +349,7 @@ export function SearchPanel({
                 if (phase === "route") onClearRoute();
                 setPhase("search");
               }}
-              className="pr-3 text-gray-400 hover:text-gray-600"
+              className="pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -370,16 +370,16 @@ export function SearchPanel({
               {/* Connector */}
               <div className="flex h-3">
                 <div className="flex w-10 shrink-0 justify-center">
-                  <div className="h-full w-px border-l border-dashed border-gray-300" />
+                  <div className="h-full w-px border-l border-dashed border-gray-300 dark:border-gray-600" />
                 </div>
                 <div className="flex flex-1 items-center pr-3">
-                  <div className="w-full border-t border-gray-100" />
+                  <div className="w-full border-t border-gray-100 dark:border-gray-700" />
                 </div>
               </div>
               {/* Waypoint row */}
               <div className="flex items-center">
                 <div className="flex w-10 shrink-0 items-center justify-center">
-                  <div className="flex h-4 w-4 items-center justify-center rounded-full bg-gray-200 text-[10px] font-medium text-gray-600">
+                  <div className="flex h-4 w-4 items-center justify-center rounded-full bg-gray-200 text-[10px] font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
                     {idx + 1}
                   </div>
                 </div>
@@ -398,7 +398,7 @@ export function SearchPanel({
                 />
                 <button
                   onClick={() => removeWaypoint(wp.id)}
-                  className="pr-3 text-gray-400 hover:text-gray-600"
+                  className="pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -420,10 +420,10 @@ export function SearchPanel({
             {origin && destination && (
               <button
                 onClick={handleSwap}
-                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full border border-gray-200 bg-white p-1 shadow-sm hover:bg-gray-50"
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full border border-gray-200 bg-white p-1 shadow-sm hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700"
                 title={t("search.swap")}
               >
-                <svg className="h-3.5 w-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <svg className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 7.5 7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5" />
                 </svg>
               </button>
@@ -456,7 +456,7 @@ export function SearchPanel({
                     setPhase("destination");
                   }
                 }}
-                className="pr-3 text-gray-400 hover:text-gray-600"
+                className="pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -467,10 +467,10 @@ export function SearchPanel({
 
           {/* Add waypoint button */}
           {showDest && waypoints.length < MAX_WAYPOINTS && (
-            <div className="flex items-center border-t border-gray-100">
+            <div className="flex items-center border-t border-gray-100 dark:border-gray-700">
               <button
                 onClick={addWaypoint}
-                className="flex w-full items-center gap-2 px-4 py-1.5 text-xs text-gray-400 hover:text-gray-600"
+                className="flex w-full items-center gap-2 px-4 py-1.5 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
               >
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -485,7 +485,7 @@ export function SearchPanel({
         {isRouteMobile && (
           <button
             onClick={() => setCollapsed((v) => !v)}
-            className="flex w-full items-center justify-center border-t border-gray-100 py-1 text-gray-400 sm:hidden"
+            className="flex w-full items-center justify-center border-t border-gray-100 py-1 text-gray-400 dark:border-gray-700 sm:hidden"
           >
             <svg className={`h-4 w-4 transition-transform ${collapsed ? "" : "rotate-180"}`} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
@@ -496,7 +496,7 @@ export function SearchPanel({
 
       {/* Route info + alternatives — hidden when collapsed on mobile */}
       {primaryRoute && !(collapsed && isRouteMobile) && (
-        <div className="mt-2 rounded-xl border border-black/[0.08] bg-white/95 shadow-lg backdrop-blur-sm">
+        <div className="mt-2 rounded-xl border border-black/[0.08] bg-white/95 shadow-lg backdrop-blur-sm dark:border-white/[0.08] dark:bg-gray-900/95">
           {/* All routes — selected one is bold, others are clickable */}
           {routes && routes.map((route, i) => {
             const color = ROUTE_COLORS[i % ROUTE_COLORS.length];
@@ -505,16 +505,16 @@ export function SearchPanel({
               <button
                 key={i}
                 onClick={() => !isSelected && onSelectRoute?.(i)}
-                className={`flex w-full items-center justify-between px-4 py-2 ${i > 0 ? "border-t border-gray-100" : ""} ${isSelected ? "" : "hover:bg-gray-50 cursor-pointer"}`}
+                className={`flex w-full items-center justify-between px-4 py-2 ${i > 0 ? "border-t border-gray-100 dark:border-gray-700" : ""} ${isSelected ? "" : "hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"}`}
               >
                 <div className="flex items-center gap-2 text-sm">
                   <div className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-                  <span className={isSelected ? "text-gray-500" : "text-gray-400"}>{formatDistance(route.distance)}</span>
+                  <span className={isSelected ? "text-gray-500 dark:text-gray-400" : "text-gray-400"}>{formatDistance(route.distance)}</span>
                 </div>
                 {isSelected && isLoading ? (
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-400/30 border-t-emerald-400" />
                 ) : (
-                  <span className={`text-sm ${isSelected ? "font-semibold text-gray-800" : "text-gray-500"}`}>{formatDuration(route.duration)}</span>
+                  <span className={`text-sm ${isSelected ? "font-semibold text-gray-800 dark:text-gray-100" : "text-gray-500"}`}>{formatDuration(route.duration)}</span>
                 )}
               </button>
             );
@@ -524,9 +524,9 @@ export function SearchPanel({
 
       {/* Station list along route — hidden when collapsed on mobile */}
       {phase === "route" && allStationsWithPrice.length > 0 && !(collapsed && isRouteMobile) && (
-        <div className="mt-2 rounded-xl border border-black/[0.08] bg-white/95 shadow-lg backdrop-blur-sm">
-          <div className="flex items-center justify-between border-b border-gray-100 px-4 py-2">
-            <span className="text-xs font-medium text-gray-500">
+        <div className="mt-2 rounded-xl border border-black/[0.08] bg-white/95 shadow-lg backdrop-blur-sm dark:border-white/[0.08] dark:bg-gray-900/95">
+          <div className="flex items-center justify-between border-b border-gray-100 px-4 py-2 dark:border-gray-700">
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
               {t("stations.title")} ({stationList.length})
             </span>
             {avgPrice != null && (
@@ -536,7 +536,7 @@ export function SearchPanel({
             )}
           </div>
           {/* Sort + detour controls */}
-          <div className="border-b border-gray-100 px-4 py-2">
+          <div className="border-b border-gray-100 px-4 py-2 dark:border-gray-700">
             <div className="flex items-center gap-1">
               {(["price", "detour", "km"] as const).map((key) => (
                 <button
@@ -544,8 +544,8 @@ export function SearchPanel({
                   onClick={() => setSortBy(key)}
                   className={`rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors ${
                     sortBy === key
-                      ? "bg-gray-800 text-white"
-                      : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                      ? "bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900"
+                      : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
                   }`}
                 >
                   {key === "price" ? t("stations.sortPrice") : key === "detour" ? t("stations.sortDetour") : t("stations.sortKm")}
@@ -553,8 +553,8 @@ export function SearchPanel({
               ))}
             </div>
             <div className="mt-2 flex items-center justify-between">
-              <span className="text-[11px] text-gray-500">{t("stations.detourMax")}</span>
-              <span className="text-[11px] font-medium text-gray-700">
+              <span className="text-[11px] text-gray-500 dark:text-gray-400">{t("stations.detourMax")}</span>
+              <span className="text-[11px] font-medium text-gray-700 dark:text-gray-300">
                 {maxDetour == null ? t("stations.noLimit") : `${maxDetour} min`}
               </span>
             </div>
@@ -571,8 +571,8 @@ export function SearchPanel({
               className="mt-1 h-1 w-full cursor-pointer accent-emerald-500"
             />
             <div className="mt-2 flex items-center justify-between">
-              <span className="text-[11px] text-gray-500">{t("stations.corridor")}</span>
-              <span className="text-[11px] font-medium text-gray-700">{corridorKm} km</span>
+              <span className="text-[11px] text-gray-500 dark:text-gray-400">{t("stations.corridor")}</span>
+              <span className="text-[11px] font-medium text-gray-700 dark:text-gray-300">{corridorKm} km</span>
             </div>
             <input
               type="range"
@@ -598,17 +598,17 @@ export function SearchPanel({
               const isCheapest = sid === cheapestId;
               const isShortest = sid === shortestDetourId;
               const isBalanced = sid === balancedId;
-              const highlight = isCheapest ? "bg-emerald-50" : isShortest ? "bg-blue-50" : isBalanced ? "bg-amber-50" : "";
+              const highlight = isCheapest ? "bg-emerald-50 dark:bg-emerald-950/40" : isShortest ? "bg-blue-50 dark:bg-blue-950/40" : isBalanced ? "bg-amber-50 dark:bg-amber-950/40" : "";
               return (
                 <button
                   key={sid}
                   onClick={() => onFlyTo(station.geometry.coordinates, sid)}
-                  className={`flex w-full items-center justify-between border-b border-gray-50 px-4 py-2 text-left last:border-b-0 ${highlight || "hover:bg-gray-50"}`}
+                  className={`flex w-full items-center justify-between border-b border-gray-50 px-4 py-2 text-left last:border-b-0 dark:border-gray-800 ${highlight || "hover:bg-gray-50 dark:hover:bg-gray-800"}`}
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1">
                       {station.properties.brand && (
-                        <span className="text-xs font-semibold text-gray-700">{station.properties.brand}</span>
+                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">{station.properties.brand}</span>
                       )}
                       {isCheapest && (
                         <span className="rounded bg-emerald-500 px-1 py-0.5 text-[9px] font-bold leading-none text-white">{t("stations.cheapest")}</span>
@@ -620,7 +620,7 @@ export function SearchPanel({
                         <span className="rounded bg-amber-500 px-1 py-0.5 text-[9px] font-bold leading-none text-white">{t("stations.balanced")}</span>
                       )}
                     </div>
-                    <p className="truncate text-xs text-gray-500">{station.properties.name}</p>
+                    <p className="truncate text-xs text-gray-500 dark:text-gray-400">{station.properties.name}</p>
                   </div>
                   <div className="ml-3 shrink-0 text-right">
                     {station.properties.price != null && (() => {
@@ -628,7 +628,7 @@ export function SearchPanel({
                       const sym = sc?.symbol ?? station.properties.currency;
                       const dec = station.properties.originalCurrency ? undefined : sc?.decimals;
                       return (
-                        <span className="text-sm font-semibold text-gray-800">
+                        <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
                           {station.properties.originalCurrency && <span className="font-normal text-gray-400">≈ </span>}
                           {dec != null ? station.properties.price.toFixed(dec) : formatPrice(station.properties.price)} {sym}
                         </span>

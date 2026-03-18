@@ -53,30 +53,30 @@ export function StationPopup({ station, onClose }: StationPopupProps) {
       <div className="px-3 pt-2.5 pb-2">
         {/* Brand */}
         {properties.brand && (
-          <p className="text-[13px] font-bold text-gray-900 leading-tight">
+          <p className="text-[13px] font-bold text-gray-900 leading-tight dark:text-gray-100">
             {properties.brand}
           </p>
         )}
 
         {/* Address + city */}
-        <p className="mt-0.5 text-[11px] text-gray-500 leading-snug">
+        <p className="mt-0.5 text-[11px] text-gray-500 leading-snug dark:text-gray-400">
           {properties.address}
         </p>
-        <p className="text-[11px] text-gray-400">
+        <p className="text-[11px] text-gray-400 dark:text-gray-500">
           {properties.city}
         </p>
 
         {/* Price block */}
         {properties.price != null ? (
-          <div className="mt-2 rounded-lg bg-gray-50 px-3 py-2">
+          <div className="mt-2 rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-800">
             <div className="flex items-baseline gap-1">
               {isConverted && (
                 <span className="text-[15px] font-medium text-gray-400">≈</span>
               )}
-              <span className="text-[22px] font-bold tabular-nums leading-none text-gray-900">
+              <span className="text-[22px] font-bold tabular-nums leading-none text-gray-900 dark:text-gray-100">
                 {properties.price.toFixed(displayDecimals)}
               </span>
-              <span className="text-[11px] font-medium text-gray-500">
+              <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">
                 {displaySymbol}/L
               </span>
             </div>
@@ -90,7 +90,7 @@ export function StationPopup({ station, onClose }: StationPopupProps) {
             </p>
             {/* Conversion info */}
             {isConverted && properties.originalPrice != null && (
-              <p className="mt-1.5 border-t border-gray-200/60 pt-1.5 text-[9px] leading-tight text-gray-400">
+              <p className="mt-1.5 border-t border-gray-200/60 pt-1.5 text-[9px] leading-tight text-gray-400 dark:border-gray-700">
                 {properties.originalPrice.toFixed(CURRENCIES.find((c) => c.code === properties.originalCurrency)?.decimals ?? 3)} {symbolFor(properties.originalCurrency!)}/L
                 {conversionNote && (
                   <span className="ml-1">· {conversionNote}</span>
@@ -99,7 +99,7 @@ export function StationPopup({ station, onClose }: StationPopupProps) {
             )}
           </div>
         ) : (
-          <div className="mt-2 rounded-lg bg-gray-50 px-3 py-2.5 text-center">
+          <div className="mt-2 rounded-lg bg-gray-50 px-3 py-2.5 text-center dark:bg-gray-800">
             <span className="text-[11px] text-gray-400">
               {t("popup.noPrice")} {fuelInfo?.label ?? properties.fuelType}
             </span>
