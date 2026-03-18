@@ -5,42 +5,49 @@ import type { FuelType } from "../types/station";
 // Serbia — NIS Gazprom station map + cenagoriva.rs brand-level prices
 // ---------------------------------------------------------------------------
 // Station data: nisgazprom.rs/benzinske-stanice/mapa/ embeds all NIS/Gazprom
-// Petrol stations inline as `var bs = { items: "..." }` with lat/lon, address,
-// and fuel availability (Goriva array). ~300+ stations.
+// Petrol stations inline as `var bs = { items: "[...]" }` with lat/lon, address,
+// and fuel availability (Goriva array). ~327 stations as of Mar 2026.
 //
 // Price data: cenagoriva.rs provides brand-level prices (one price per chain
 // per fuel type) for all major Serbian brands. Since Serbian fuel prices are
-// government-regulated and uniform per brand, brand-level prices are accurate.
+// government-regulated and nearly uniform per brand, brand-level prices are
+// accurate enough for comparison.
+//
+// HTML structure on cenagoriva.rs:
+//   <th><img src="..." alt="nis pumpa logo" loading="lazy"></th>
+//   <td class="price" data-price="186">186.00</td>
+// Brand name extracted from img alt: "X pumpa logo" -> "X"
+// Price from data-price attribute (more reliable than displayed text).
 //
 // NOTE: Only NIS Petrol / Gazprom Petrol stations have per-station locations.
-// Other brands (OMV, MOL, EKO, Euro Petrol, Avia) are scraped as brand-level
-// prices applied to the NIS network stations that carry matching fuel types.
-// For non-NIS brands, we emit brand-level price entries without station data
-// (they won't match any station and will be filtered out by base.ts).
+// Both brands use "NIS" pricing on cenagoriva.rs.
 //
-// Currency: RSD (Serbian Dinar) — NOT in ECB rates, conversion handled separately.
+// Currency: RSD (Serbian Dinar) — NOT in ECB rates, conversion needs separate
+// source. Prices stored in RSD.
 // ---------------------------------------------------------------------------
 
 const MAP_URL = "https://www.nisgazprom.rs/benzinske-stanice/mapa/";
 
 // cenagoriva.rs fuel type pages and their harmonized mapping
 const CENA_FUEL_PAGES: ReadonlyArray<{ path: string; fuelType: FuelType; label: string }> = [
-  { path: "/",                   fuelType: "E5",         label: "BMB 95" },
-  { path: "/bmb-100",           fuelType: "E5_98",      label: "BMB 100" },
-  { path: "/bmb-premijum",      fuelType: "E5_PREMIUM", label: "BMB 95 Premium" },
-  { path: "/evro-dizel",        fuelType: "B7",         label: "Evro Dizel" },
+  { path: "/",                     fuelType: "E5",         label: "BMB 95" },
+  { path: "/bmb-100",             fuelType: "E5_98",      label: "BMB 100" },
+  { path: "/bmb-premijum",        fuelType: "E5_PREMIUM", label: "BMB 95 Premium" },
+  { path: "/evro-dizel",          fuelType: "B7",         label: "Evro Dizel" },
   { path: "/evro-dizel-premijum", fuelType: "B7_PREMIUM", label: "Evro Dizel Premium" },
-  { path: "/tng",               fuelType: "LPG",        label: "TNG/LPG" },
+  { path: "/tng",                 fuelType: "LPG",        label: "TNG/LPG" },
 ];
 
 // Map NIS Gazprom fuel names (from Goriva[].NazivRobe) to harmonized types
+// Note: NazivRobe has leading space for " AUTOGAS TNG" — trimmed before lookup
 const NIS_FUEL_MAP: ReadonlyMap<string, FuelType> = new Map([
   ["EVRO PREMIJUM BMB-95", "E5"],
   ["EBMB100 GDRIVE100", "E5_98"],
   ["G-DRIVE DIZEL", "B7_PREMIUM"],
   ["EVRO DIZEL", "B7"],
   ["AUTOGAS TNG", "LPG"],
-  ["METAN CNG", "CNG"],
+  ["CNG", "CNG"],
+  ["AdBlue BULK", "ADBLUE"],
 ]);
 
 // Serbia bounding box
@@ -111,17 +118,16 @@ export class SerbiaScraper extends BaseScraper {
       // Determine which fuel types this station carries
       const stationFuelTypes = new Set<FuelType>();
       for (const g of s.Goriva || []) {
-        const ft = NIS_FUEL_MAP.get(g.NazivRobe);
+        const ft = NIS_FUEL_MAP.get(g.NazivRobe.trim());
         if (ft) stationFuelTypes.add(ft);
       }
 
       // For each fuel type this station has, look up the brand-level price
-      // NIS brand on cenagoriva.rs corresponds to both "NIS Petrol" and "Gazprom Petrol"
       for (const fuelType of Array.from(stationFuelTypes)) {
         const fuelPrices = brandPrices.get(fuelType);
         if (!fuelPrices) continue;
 
-        // Try to find price for the station's brand
+        // NIS Petrol and Gazprom Petrol both use "NIS" pricing on cenagoriva.rs
         const price = this.findBrandPrice(fuelPrices, brand);
         if (price != null && price > 0) {
           prices.push({
@@ -226,50 +232,37 @@ export class SerbiaScraper extends BaseScraper {
 
   /**
    * Parse brand prices from a cenagoriva.rs fuel type page.
-   * Prices are in <td class="price" data-price="186.00"> elements,
-   * preceded by brand name cells.
+   *
+   * HTML structure (verified Mar 2026):
+   *   <th><img src="assets/nis.jpg" alt="nis pumpa logo" loading="lazy"></th>
+   *   <td class="price" data-price="186">186.00</td>
+   *
+   * Brand name: extracted from img alt attribute ("X pumpa logo" -> "X").
+   * Price: from data-price attribute (preferred over displayed text which can
+   * show 0.00 for brands with missing data).
    */
   private parseCenaGorivaPage(html: string): BrandPrice[] {
     const prices: BrandPrice[] = [];
 
-    // Match brand rows: look for brand name + price in the table
-    // Pattern: <td ...>BRAND_NAME</td> ... <td class="price" data-price="XXX.XX">
-    const rowRegex = /<tr[^>]*>[\s\S]*?<td[^>]*class="[^"]*brand[^"]*"[^>]*>[\s\S]*?(?:<a[^>]*>)?\s*([^<]+?)\s*(?:<\/a>)?[\s\S]*?<\/td>[\s\S]*?<td[^>]*class="[^"]*price[^"]*"[^>]*data-price="([^"]+)"[^>]*>/gi;
-    let match;
+    // Match <th> with brand logo followed by <td> with data-price
+    // Pattern handles multiline and whitespace variations
+    const pairRegex =
+      /<th>\s*<img[^>]*?alt="([^"]+?)"[^>]*?>\s*<\/th>\s*<td[^>]*?data-price="([^"]+?)"[^>]*?>/gi;
 
-    while ((match = rowRegex.exec(html)) !== null) {
-      const brand = match[1].trim();
-      const price = parseFloat(match[2]);
+    let match;
+    while ((match = pairRegex.exec(html)) !== null) {
+      const altText = match[1].trim();
+      const priceStr = match[2].trim();
+
+      // Extract brand name: "nis pumpa logo" -> "nis", "euro petrol pumpa logo" -> "euro petrol"
+      const brand = altText
+        .replace(/\s*pumpa\s*logo\s*$/i, "")
+        .trim();
+
+      const price = parseFloat(priceStr);
+
       if (brand && !isNaN(price) && price > 0) {
         prices.push({ brand, price });
-      }
-    }
-
-    // Fallback: simpler regex if the above doesn't match the exact structure
-    if (prices.length === 0) {
-      const simplePriceRegex = /data-price="(\d+(?:\.\d+)?)"/g;
-      const brandRegex = /<img[^>]*alt="([^"]+)"[^>]*class="[^"]*logo[^"]*"/gi;
-
-      const priceMatches: number[] = [];
-      let pm;
-      while ((pm = simplePriceRegex.exec(html)) !== null) {
-        const p = parseFloat(pm[1]);
-        if (!isNaN(p)) priceMatches.push(p);
-      }
-
-      const brandMatches: string[] = [];
-      let bm;
-      while ((bm = brandRegex.exec(html)) !== null) {
-        brandMatches.push(bm[1].trim());
-      }
-
-      // If we found equal numbers of brands and prices, pair them
-      if (brandMatches.length > 0 && brandMatches.length === priceMatches.length) {
-        for (let i = 0; i < brandMatches.length; i++) {
-          if (priceMatches[i] > 0) {
-            prices.push({ brand: brandMatches[i], price: priceMatches[i] });
-          }
-        }
       }
     }
 
@@ -288,7 +281,7 @@ export class SerbiaScraper extends BaseScraper {
       if (bp.brand.toLowerCase() === normalizedBrand) return bp.price;
     }
 
-    // NIS Petrol / Gazprom Petrol → "NIS" on cenagoriva.rs
+    // NIS Petrol / Gazprom Petrol -> "nis" on cenagoriva.rs
     if (normalizedBrand.includes("nis") || normalizedBrand.includes("gazprom")) {
       for (const bp of brandPrices) {
         if (bp.brand.toLowerCase() === "nis") return bp.price;
