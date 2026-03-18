@@ -111,7 +111,8 @@ export function StatsDropdown() {
                 {stats.countries.map((c) => (
                   <div key={c.code} className="flex items-center justify-between rounded-md px-2 py-1 text-sm hover:bg-gray-50 dark:hover:bg-gray-800">
                     <span className="flex items-center gap-1.5">
-                      <span className="text-xs">{FLAG[c.code] ?? "🏳️"}</span>
+                      <span className="w-5 text-center text-xs">{FLAG[c.code] ?? "🏳️"}</span>
+                      <span className="w-7 text-center text-[10px] font-medium text-gray-400 dark:text-gray-500">{c.code}</span>
                       <span className="text-gray-700 dark:text-gray-300">{c.name}</span>
                     </span>
                     <span className="flex items-center gap-2">
@@ -131,7 +132,7 @@ export function StatsDropdown() {
               <div className="flex flex-col items-center gap-2 text-center">
                 <p className="text-xs text-gray-400">
                   Made with <span className="text-red-400">♥</span> by{" "}
-                  <a href="https://geiser.cloud" target="_blank" rel="noopener noreferrer" className="text-gray-600 underline decoration-gray-300 underline-offset-2 transition-colors hover:text-gray-900 hover:decoration-gray-500">
+                  <a href="https://geiser.cloud" target="_blank" rel="noopener noreferrer" className="text-gray-600 underline decoration-gray-300 underline-offset-2 transition-colors hover:text-gray-900 hover:decoration-gray-500 dark:text-gray-400 dark:decoration-gray-600 dark:hover:text-gray-200">
                     Sergio Fernández
                   </a>
                 </p>
@@ -139,7 +140,7 @@ export function StatsDropdown() {
                   href="https://github.com/sponsors/GeiserX"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-full border border-pink-200 bg-pink-50 px-3 py-1 text-xs font-medium text-pink-600 transition-colors hover:border-pink-300 hover:bg-pink-100"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-pink-200 bg-pink-50 px-3 py-1 text-xs font-medium text-pink-600 transition-colors hover:border-pink-300 hover:bg-pink-100 dark:border-pink-800 dark:bg-pink-950 dark:text-pink-400 dark:hover:border-pink-700 dark:hover:bg-pink-900"
                 >
                   <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="currentColor">
                     <path d="M4.25 2.5c-1.336 0-2.75 1.164-2.75 3 0 2.15 1.58 4.144 3.365 5.682A20.6 20.6 0 008 13.393a20.6 20.6 0 003.135-2.211C12.92 9.644 14.5 7.65 14.5 5.5c0-1.836-1.414-3-2.75-3-1.373 0-2.609.986-3.029 2.456a.749.749 0 01-1.442 0C6.859 3.486 5.623 2.5 4.25 2.5z" />

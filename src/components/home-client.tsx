@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { FuelType, StationsGeoJSONCollection } from "@/types/station";
 import type { MapRef } from "react-map-gl/maplibre";
 import type { Route } from "@/components/map/route-layer";
@@ -38,8 +38,11 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations }: Props
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [maxDetour, setMaxDetour] = useState<number | null>(null);
 
-  // Reset filters when fuel type changes
-  useEffect(() => { setMaxPrice(null); setMaxDetour(null); }, [selectedFuel]);
+  const handleFuelChange = useCallback((fuel: FuelType) => {
+    setSelectedFuel(fuel);
+    setMaxPrice(null);
+    setMaxDetour(null);
+  }, []);
 
   const handleMapMove = useCallback((newCenter: [number, number]) => {
     setMapCenter(newCenter);
@@ -116,7 +119,7 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations }: Props
     <I18nProvider>
     <CurrencyProvider>
     <main className="flex h-screen w-screen flex-col overflow-hidden">
-      <Navbar selectedFuel={selectedFuel} onFuelChange={setSelectedFuel} />
+      <Navbar selectedFuel={selectedFuel} onFuelChange={handleFuelChange} />
       <div className="relative flex-1">
         <MapView
           ref={mapRef}
