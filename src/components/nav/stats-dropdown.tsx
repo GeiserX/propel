@@ -75,7 +75,7 @@ export function StatsDropdown() {
     <div className="relative" ref={ref}>
       <button
         onClick={toggle}
-        className="flex items-center gap-1.5 rounded-lg border border-black/[0.08] bg-white/90 px-2.5 py-1.5 text-[12px] font-medium text-gray-600 shadow-md backdrop-blur-sm transition-colors hover:bg-white dark:border-white/[0.08] dark:bg-gray-800/90 dark:text-gray-300 dark:hover:bg-gray-800"
+        className="flex h-7 items-center gap-1 rounded border border-white/[0.08] px-2 text-[12px] font-medium text-gray-400 transition-all hover:border-white/15 hover:bg-white/10 hover:text-gray-200"
       >
         <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <rect x="1" y="8" width="3" height="6" rx="0.5" />

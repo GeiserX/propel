@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { FuelType, StationsGeoJSONCollection } from "@/types/station";
 import type { MapRef } from "react-map-gl/maplibre";
 import type { Route } from "@/components/map/route-layer";
@@ -10,8 +10,6 @@ import { ThemeProvider } from "@/lib/theme";
 import { Navbar } from "@/components/nav/navbar";
 import { MapView } from "@/components/map/map-view";
 import { SearchPanel } from "@/components/search/search-panel";
-import { StatsDropdown } from "@/components/nav/stats-dropdown";
-import { ThemeToggle } from "@/components/nav/theme-toggle";
 
 interface Props {
   defaultFuel: string;
@@ -25,6 +23,8 @@ interface RouteState {
   primaryIndex: number;
 }
 
+type GeoState = "idle" | "loading" | "active" | "denied";
+
 export function HomeClient({ defaultFuel, center, zoom, clusterStations }: Props) {
   const [selectedFuel, setSelectedFuel] = useState<FuelType>(defaultFuel as FuelType);
   const [corridorKm, setCorridorKm] = useState(5);
@@ -37,6 +37,53 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations }: Props
   const [selectedStationId, setSelectedStationId] = useState<string | null>(null);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [maxDetour, setMaxDetour] = useState<number | null>(null);
+
+  // Geolocation state (lifted so navbar has the button, map has the marker)
+  const [geoState, setGeoState] = useState<GeoState>("idle");
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+
+  // Auto-detect location if permission already granted
+  useEffect(() => {
+    if (typeof window === "undefined" || !navigator.geolocation || !navigator.permissions) return;
+    navigator.permissions.query({ name: "geolocation" }).then((perm) => {
+      if (perm.state === "granted") {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            setUserLocation([pos.coords.longitude, pos.coords.latitude]);
+            setGeoState("active");
+          },
+          () => {},
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+        );
+      }
+    }).catch(() => {});
+  }, []);
+
+  // Watch position when active
+  useEffect(() => {
+    if (geoState !== "active" || !navigator.geolocation) return;
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => setUserLocation([pos.coords.longitude, pos.coords.latitude]),
+      () => {},
+      { enableHighAccuracy: true, maximumAge: 30000 },
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [geoState]);
+
+  const handleGeolocate = useCallback(() => {
+    if (!navigator.geolocation) { setGeoState("denied"); return; }
+    setGeoState("loading");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const coords: [number, number] = [pos.coords.longitude, pos.coords.latitude];
+        setUserLocation(coords);
+        setGeoState("active");
+        mapRef.current?.flyTo({ center: coords, zoom: 14, duration: 1500 });
+      },
+      () => { setGeoState("denied"); setTimeout(() => setGeoState("idle"), 3000); },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+    );
+  }, []);
 
   const handleFuelChange = useCallback((fuel: FuelType) => {
     setSelectedFuel(fuel);
@@ -63,7 +110,6 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations }: Props
 
         setRouteState({ routes: data.routes, primaryIndex: 0 });
 
-        // Fit map to primary route bounds
         const primary = data.routes[0];
         mapRef.current?.fitBounds(
           [
@@ -87,7 +133,6 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations }: Props
       const route = prev.routes[index];
       if (!route) return prev;
 
-      // Fit map to newly selected route
       mapRef.current?.fitBounds(
         [
           [route.bbox[0], route.bbox[1]],
@@ -119,7 +164,12 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations }: Props
     <I18nProvider>
     <CurrencyProvider>
     <main className="flex h-screen w-screen flex-col overflow-hidden">
-      <Navbar selectedFuel={selectedFuel} onFuelChange={handleFuelChange} />
+      <Navbar
+        selectedFuel={selectedFuel}
+        onFuelChange={handleFuelChange}
+        geoState={geoState}
+        onGeolocate={handleGeolocate}
+      />
       <div className="relative flex-1">
         <MapView
           ref={mapRef}
@@ -138,6 +188,7 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations }: Props
           onMapMove={handleMapMove}
           onSelectRoute={handleSelectRoute}
           onPrimaryStationsChange={handlePrimaryStationsChange}
+          userLocation={userLocation}
         />
         <SearchPanel
           mapCenter={mapCenter}
@@ -155,10 +206,6 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations }: Props
           corridorKm={corridorKm}
           onCorridorKmChange={setCorridorKm}
         />
-        <div className="absolute right-2 top-2 z-10 flex items-center gap-1.5 sm:right-3 sm:top-3">
-          <ThemeToggle />
-          <StatsDropdown />
-        </div>
       </div>
     </main>
     </CurrencyProvider>
