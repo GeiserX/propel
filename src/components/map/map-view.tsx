@@ -7,8 +7,8 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 import type { FuelType, StationsGeoJSONCollection, StationGeoJSON } from "@/types/station";
 import type { Route } from "./route-layer";
+import { Marker } from "react-map-gl/maplibre";
 import { StationLayer } from "./station-layer";
-import { GeolocateButton } from "./geolocate-button";
 import { PriceFilter } from "./price-filter";
 import { RouteLayer } from "./route-layer";
 import { useConvertedStations } from "@/lib/currency";
@@ -36,10 +36,11 @@ interface MapViewProps {
   onMapMove?: (center: [number, number]) => void;
   onSelectRoute?: (index: number) => void;
   onPrimaryStationsChange?: (stations: StationsGeoJSONCollection) => void;
+  userLocation?: [number, number] | null;
 }
 
 export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
-  { selectedFuel, center, zoom, clusterStations, corridorKm, routes, primaryRouteIndex, selectedStationId, onSelectStation, maxPrice, onMaxPriceChange, maxDetour, onMapMove, onSelectRoute, onPrimaryStationsChange },
+  { selectedFuel, center, zoom, clusterStations, corridorKm, routes, primaryRouteIndex, selectedStationId, onSelectStation, maxPrice, onMaxPriceChange, maxDetour, onMapMove, onSelectRoute, onPrimaryStationsChange, userLocation },
   ref,
 ) {
   const { mapStyle } = useTheme();
@@ -263,10 +264,6 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
     };
   }, []);
 
-  const handleGeolocate = useCallback((lon: number, lat: number) => {
-    mapRef.current?.flyTo({ center: [lon, lat], zoom: 12, duration: 1500 });
-  }, []);
-
   // Disable clustering when routes are active — individual stations matter for corridor view
   const effectiveCluster = clusterStations && !routes;
   const stationBeforeId = effectiveCluster ? "clusters" : "unclustered-point";
@@ -296,7 +293,14 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
         />
       )}
       <StationLayer stations={filteredStations} onPriceRange={handlePriceRange} cluster={effectiveCluster} selectedStationId={selectedStationId} onSelectStation={onSelectStation} />
-      <GeolocateButton onGeolocate={handleGeolocate} />
+      {userLocation && (
+        <Marker longitude={userLocation[0]} latitude={userLocation[1]} anchor="center">
+          <div className="relative flex items-center justify-center">
+            <div className="absolute h-6 w-6 animate-ping rounded-full bg-blue-400/30" />
+            <div className="h-3.5 w-3.5 rounded-full border-2 border-white bg-blue-500 shadow-md" />
+          </div>
+        </Marker>
+      )}
       <PriceFilter
         stations={displayStations}
         maxPrice={maxPrice}

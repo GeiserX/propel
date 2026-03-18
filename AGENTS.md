@@ -89,12 +89,14 @@ The closest analog is **A Better Route Planner (ABRP)** for EVs — Propel does 
 | Valhalla 3.5.1 | Self-hosted routing engine (`ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1`). 8-country merged PBF (17GB) built with osmium-tool. Multiple PBFs cause SIGABRT — always merge first. Needs 24GB RAM limit for tile build. |
 | Protomaps PMTiles | Self-hosted vector map tiles on NVMe |
 | OpenFreeMap | Primary tile provider (free, no API key, no rate limits) |
-| Photon 1.0.1 | Geocoding / address autocomplete. Runs on `eclipse-temurin:21-jre` with official JAR. Uses OpenSearch backend (NOT old Elasticsearch). Data imported from **per-country JSONL dumps** (8 countries: ES,FR,PT,IT,AT,DE,GB,SI). |
+| Photon 1.0.1 | Geocoding / address autocomplete. Runs on `eclipse-temurin:21-jre` with official JAR. Uses OpenSearch backend (NOT old Elasticsearch). Data imported from **per-country JSONL dumps** (31 countries). **Currently using public photon.komoot.io as fallback** while private Photon imports all 31 country dumps. Public API only supports `default,de,en,fr` languages (no `lang=es`). |
 | Caddy | Reverse proxy (existing on watchtower) |
 | Docker | Multi-stage builds, images on Docker Hub |
 | Portainer | Container management with GitOps |
 
 ### External Data Sources (All Free, No Auth Unless Noted)
+
+**Government / Official APIs (8 countries):**
 | Country | Source | Update Freq | Stations | Auth | Scraper Status |
 |---|---|---|---|---|---|
 | Spain | MITECO REST API | Daily | ~12,215 | None | ✅ Running |
@@ -105,6 +107,38 @@ The closest analog is **A Better Route Planner (ABRP)** for EVs — Propel does 
 | Germany | Tankerkoenig v4 API | Real-time | ~14,347 | Free API key | ✅ Running |
 | UK | CMA Open Data (13 retailer JSON feeds) | Near real-time | ~3,536 | None | ✅ Running |
 | Slovenia | goriva.si REST API | Real-time | ~551 | None | ✅ Running |
+| Denmark | fuelprices.dk API | Real-time | ~3,000+ | Free API key | ✅ Running |
+
+**Fuelo.net Scrapers (22 countries):**
+Two-phase HTML scraping: POST for station list → GET per-station info windows. Shared module in `src/scrapers/fuelo.ts`.
+| Country | Subdomain | Currency | Stations | Scraper Status |
+|---|---|---|---|---|
+| Netherlands | nl | EUR | ~4,154 | ✅ Running |
+| Belgium | be | EUR | ~3,000+ | ✅ Running |
+| Luxembourg | lu | EUR | ~200+ | ✅ Running |
+| Romania | ro | RON | ~3,000+ | ✅ Running |
+| Greece | gr | EUR | ~6,000+ | ✅ Running |
+| Ireland | ie | EUR | ~1,500+ | ✅ Running |
+| Croatia | hr | EUR | ~800+ | ✅ Running |
+| Switzerland | ch | CHF | ~3,000+ | ✅ Running |
+| Poland | pl | PLN | ~7,000+ | ✅ Running |
+| Czech Republic | cz | CZK | ~4,000+ | ✅ Running |
+| Hungary | hu | HUF | ~2,000+ | ✅ Running |
+| Bulgaria | bg | BGN | ~3,000+ | ✅ Running |
+| Slovakia | sk | EUR | ~1,500+ | ✅ Running |
+| Sweden | se | SEK | ~3,000+ | ✅ Running |
+| Norway | no | NOK | ~2,000+ | ✅ Running |
+| Serbia | rs | RSD | ~2,000+ | ✅ Running |
+| Finland | fi | EUR | ~2,000+ | ✅ Running |
+| Estonia | ee | EUR | ~522 | ✅ Running |
+| Latvia | lv | EUR | ~809 | ✅ Running |
+| Lithuania | lt | EUR | ~854 | ✅ Running |
+| Bosnia & Herzegovina | ba | BAM | ~436 | ✅ Running |
+| North Macedonia | mk | MKD | ~353 | ✅ Running |
+
+**Total: 31 countries, ~120K+ stations**
+
+**Fuelo Dependency Note**: Research (Mar 2026) confirmed no viable government API alternatives exist for most Fuelo countries. Only DE, ES, AT, FR, DK, IT, GB, PT, SI have true government/official APIs. The EU AFIR Delegated Regulation 2024/1557 should eventually require station-level price data from EU member states, but implementation is incomplete as of 2026. Bosnia's FMT EOPC API (`fmteopc.azurewebsites.net`) has full station-level data but requires authentication.
 
 ---
 
@@ -128,7 +162,7 @@ propel.geiser.cloud (Caddy reverse proxy on watchtower)
     +-- Photon (geocoding)                     [Port 2322, ~1GB RAM]
 ```
 
-**Steady-state: ~8-10GB RAM, ~60GB disk (8 countries: ES+FR+PT+IT+AT+DE+GB+SI).**
+**Steady-state: ~8-10GB RAM, ~60GB disk (31 countries).**
 **First-time build: needs ~24GB RAM limit** (Valhalla tile build from 17GB merged PBF). Run Valhalla and Photon builds sequentially to avoid memory pressure.
 **Disk breakdown**: Merged PBF ~17GB, Valhalla tiles ~10-15GB, Photon data ~15-20GB (8-country index), PostGIS ~3GB (~68K stations), app ~50MB.
 
@@ -199,14 +233,14 @@ Internal canonical IDs — display localized names per country/language:
 | `PROPEL_ENABLED_COUNTRIES` | Comma-separated ISO codes to enable (e.g. `ES,FR,DE`) | All countries with scrapers |
 | `PROPEL_DEFAULT_FUEL` | Override default fuel type | Per-country default |
 | `PROPEL_CLUSTER_STATIONS` | Enable station clustering at low zoom (`true`/`false`) | `true` |
-| `PROPEL_CORRIDOR_KM` | Station search corridor width in km around route | `5` (range: 0.5-50) |
+| ~~`PROPEL_CORRIDOR_KM`~~ | **REMOVED** — now a dynamic UI slider (1-25km, default 5km) | — |
 | `PROPEL_SCRAPE_INTERVAL_HOURS` | Global scrape interval override (0 = disabled) | Per-country defaults |
 | `PROPEL_SCRAPE_INTERVAL_XX` | Per-country interval, e.g. `PROPEL_SCRAPE_INTERVAL_FR=0.5` | See defaults below |
 | `TANKERKOENIG_API_KEY` | Germany Tankerkoenig API key (free registration) | — |
 | `VALHALLA_URL` | Valhalla routing engine URL | — |
 | `PHOTON_URL` | Photon geocoding service URL | — |
 
-**Per-country default scrape intervals**: ES=12h, FR=1h, PT=12h, IT=12h, AT=2h, DE=1h, GB=4h, SI=6h. Real-time sources (FR/DE/AT) scrape more frequently; daily sources (ES/PT/IT) scrape every 12h. Each country runs on its own timer with staggered startup (5s apart).
+**Per-country default scrape intervals**: ES=12h, FR=1h, PT=12h, IT=12h, AT=2h, DE=1h, GB=4h, SI=6h, DK=6h, all Fuelo countries=12h. Real-time sources (FR/DE/AT) scrape more frequently; daily sources (ES/PT/IT) scrape every 12h. Each country runs on its own timer with staggered startup (5s apart).
 
 These env vars allow self-hosters to scope the app to their country/region. For example, a French self-hoster can set `PROPEL_DEFAULT_COUNTRY=FR` and `PROPEL_ENABLED_COUNTRIES=FR` to show only France.
 
@@ -215,7 +249,9 @@ These env vars allow self-hosters to scope the app to their country/region. For 
 - **No timezone-based country detection** — use env vars for country config, not client TZ
 - **Navbar is dark** (`#0c111b`) — minimal height (44px), Propel logo on left, fuel selector on right
 - **Logo**: Emerald-to-cyan gradient rounded square with lightning bolt cutout. "Propel" wordmark in bold white
-- **Stats dropdown** next to logo (separated by divider) — shows station/price totals, per-country breakdown with flags, last update timestamp. Footer: "Made with ♥ by Sergio Fernández" + GitHub Sponsors button (same pattern as Telegram-Archive)
+- **Stats dropdown** in navbar (right side, icon buttons) — shows station/price totals, per-country breakdown with flags, last update timestamp. Footer: "Made with ♥ by Sergio Fernández" + GitHub Sponsors button
+- **Navbar right-side buttons**: geolocate, theme toggle (dark/light), stats, settings gear (mobile). All icon buttons with `border-white/[0.08]` styling matching the navbar
+- **Dark mode**: ThemeProvider in `src/lib/theme.tsx`. Uses Tailwind `@custom-variant dark` with class strategy. Map switches between OpenFreeMap `liberty` (light) and `dark` styles. Persists to localStorage, defaults to system preference
 - **Fuel selector** has optgroup categories (Diésel, Gasolina, Gas, Hidrógeno, Otros) with category icon
 - **Station popup layout** (top to bottom): brand name (bold, primary heading) → address + city (small gray) → price card (large 22px price + EUR/L, fuel type label + "· Actualizado hace Xh" below). "Sin precio para [fuel]" if no data. Brand comes from MITECO "Rótulo" field; `name` = brand + city (internal, not shown in popup)
 - **Map clustering**: Controlled by `PROPEL_CLUSTER_STATIONS` env var. When enabled, clusters only at zoom ≤7, radius 40px. Production instance has it disabled. 12K stations renders fine in MapLibre without clustering.
