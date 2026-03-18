@@ -12,7 +12,6 @@ export default function Home() {
       center={config.center}
       zoom={config.zoom}
       clusterStations={config.clusterStations}
-      corridorKm={config.corridorKm}
     />
   );
 }

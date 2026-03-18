@@ -41,7 +41,6 @@ export const COUNTRIES: Record<string, CountryConfig> = {
  * - PROPEL_DEFAULT_COUNTRY: ISO code for initial map view (default: ES)
  * - PROPEL_ENABLED_COUNTRIES: Comma-separated list of enabled countries (default: all with scrapers)
  * - PROPEL_DEFAULT_FUEL: Override default fuel type (default: per-country)
- * - PROPEL_CORRIDOR_KM: Station search corridor width in km (default: 5, range: 0.5-50)
  * - PROPEL_SCRAPE_INTERVAL_HOURS: Global scrape interval override (default: per-country defaults)
  * - PROPEL_SCRAPE_INTERVAL_XX: Per-country interval in hours, e.g. PROPEL_SCRAPE_INTERVAL_FR=0.5
  */
@@ -53,7 +52,6 @@ export function getConfig() {
     : Object.keys(COUNTRIES);
   const defaultFuelOverride = process.env.PROPEL_DEFAULT_FUEL || null;
   const clusterStations = (process.env.PROPEL_CLUSTER_STATIONS ?? "true").toLowerCase() === "true";
-  const corridorKm = Math.min(50, Math.max(0.5, parseFloat(process.env.PROPEL_CORRIDOR_KM ?? "5") || 5));
 
   const country = COUNTRIES[defaultCountry] ?? COUNTRIES.ES;
   const defaultFuel = defaultFuelOverride ?? country.defaultFuel;
@@ -65,6 +63,5 @@ export function getConfig() {
     center: country.center,
     zoom: country.zoom,
     clusterStations,
-    corridorKm,
   };
 }

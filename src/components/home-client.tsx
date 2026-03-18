@@ -15,7 +15,6 @@ interface Props {
   center: [number, number];
   zoom: number;
   clusterStations: boolean;
-  corridorKm: number;
 }
 
 interface RouteState {
@@ -23,9 +22,9 @@ interface RouteState {
   primaryIndex: number;
 }
 
-export function HomeClient({ defaultFuel, center, zoom, clusterStations, corridorKm: defaultCorridorKm }: Props) {
+export function HomeClient({ defaultFuel, center, zoom, clusterStations }: Props) {
   const [selectedFuel, setSelectedFuel] = useState<FuelType>(defaultFuel as FuelType);
-  const [corridorKm, setCorridorKm] = useState(defaultCorridorKm);
+  const [corridorKm, setCorridorKm] = useState(5);
   const [routeState, setRouteState] = useState<RouteState | null>(null);
   const [isRouteLoading, setIsRouteLoading] = useState(false);
   const [primaryStations, setPrimaryStations] = useState<StationsGeoJSONCollection>({ type: "FeatureCollection", features: [] });
