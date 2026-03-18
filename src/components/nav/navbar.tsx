@@ -3,7 +3,6 @@
 import { useState } from "react";
 import type { FuelType } from "@/types/station";
 import { FUEL_TYPES, FUEL_CATEGORIES, FUEL_TYPE_MAP } from "@/types/fuel";
-import { StatsDropdown } from "./stats-dropdown";
 import { useI18n, LOCALES, type Locale } from "@/lib/i18n";
 import { useCurrency, CURRENCIES, type Currency } from "@/lib/currency";
 
@@ -106,10 +105,6 @@ export function Navbar({ selectedFuel, onFuelChange }: NavbarProps) {
               </text>
             </svg>
           </a>
-
-          <div className="mx-1.5 h-4 w-px bg-white/[0.08]" />
-
-          <StatsDropdown />
         </div>
 
         {/* Right: Desktop shows all selectors, Mobile shows fuel + settings gear */}
