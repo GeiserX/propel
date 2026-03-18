@@ -69,15 +69,19 @@ export const AutocompleteInput = forwardRef<AutocompleteRef, AutocompleteInputPr
     },
   }), [doGeocode]);
 
+  const [noResults, setNoResults] = useState(false);
+
   const fetchResults = useCallback(
     async (query: string) => {
       if (query.length < 2) {
         setResults([]);
+        setNoResults(false);
         return;
       }
 
       const data = await doGeocode(query);
       setResults(data);
+      setNoResults(data.length === 0);
       setIsOpen(data.length > 0);
       setActiveIndex(-1);
     },
@@ -102,6 +106,7 @@ export const AutocompleteInput = forwardRef<AutocompleteRef, AutocompleteInputPr
       onChange(label);
       onSelect(result);
       setIsOpen(false);
+      setNoResults(false);
       setResults([]);
     },
     [onChange, onSelect],
@@ -195,6 +200,11 @@ export const AutocompleteInput = forwardRef<AutocompleteRef, AutocompleteInputPr
             </li>
           ))}
         </ul>
+      )}
+      {noResults && !isOpen && value.length >= 2 && (
+        <div className="absolute z-50 mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-400 shadow-lg">
+          No results found
+        </div>
       )}
     </div>
   );
