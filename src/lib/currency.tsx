@@ -7,33 +7,16 @@ import type { StationsGeoJSONCollection, StationGeoJSON } from "@/types/station"
 // Currency definitions — all major world currencies
 // ---------------------------------------------------------------------------
 
+// Only currencies with ECB daily exchange rates (+ EUR as base)
 export type Currency =
-  // Major reserve
   | "EUR" | "USD" | "GBP" | "CHF" | "JPY" | "CAD" | "AUD" | "NZD"
-  // Nordic
   | "SEK" | "NOK" | "DKK" | "ISK"
-  // Central & Eastern Europe
-  | "CZK" | "PLN" | "HUF" | "RON" | "BGN" | "UAH" | "RSD" | "GEL" | "MDL" | "ALL" | "BAM" | "MKD" | "BYN" | "RUB"
-  // Turkey
+  | "CZK" | "PLN" | "HUF" | "RON" | "BGN"
   | "TRY"
-  // East Asia
-  | "CNY" | "HKD" | "TWD" | "KRW" | "MNT"
-  // Southeast Asia
-  | "SGD" | "MYR" | "THB" | "IDR" | "PHP" | "VND" | "MMK" | "KHR" | "LAK" | "BND"
-  // South Asia
-  | "INR" | "PKR" | "BDT" | "LKR" | "NPR"
-  // Central Asia
-  | "KZT" | "UZS"
-  // Middle East
-  | "ILS" | "SAR" | "AED" | "QAR" | "KWD" | "BHD" | "OMR" | "JOD" | "IQD" | "LBP"
-  // North Africa
-  | "EGP" | "MAD" | "TND" | "DZD" | "LYD"
-  // Sub-Saharan Africa
-  | "ZAR" | "NGN" | "KES" | "GHS" | "TZS" | "UGX" | "ETB" | "XOF" | "XAF" | "RWF" | "MZN" | "AOA" | "ZMW" | "BWP" | "MUR" | "NAD"
-  // Americas
-  | "BRL" | "MXN" | "ARS" | "CLP" | "COP" | "PEN" | "UYU" | "PYG" | "BOB" | "CRC" | "GTQ" | "DOP" | "HNL" | "JMD" | "TTD"
-  // Oceania
-  | "FJD" | "PGK" | "XPF";
+  | "CNY" | "HKD" | "KRW"
+  | "SGD" | "MYR" | "THB" | "IDR" | "PHP"
+  | "INR" | "ILS"
+  | "ZAR" | "BRL" | "MXN";
 
 export interface CurrencyInfo {
   code: Currency;
@@ -43,8 +26,8 @@ export interface CurrencyInfo {
   decimals: number;
 }
 
+// Only currencies with ECB daily exchange rates (EUR is the base)
 export const CURRENCIES: CurrencyInfo[] = [
-  // ── Major reserve ──────────────────────────────────────────────────
   { code: "EUR", symbol: "€", label: "Euro", decimals: 3 },
   { code: "USD", symbol: "$", label: "US Dollar", decimals: 3 },
   { code: "GBP", symbol: "£", label: "British Pound", decimals: 3 },
@@ -53,108 +36,29 @@ export const CURRENCIES: CurrencyInfo[] = [
   { code: "CAD", symbol: "CA$", label: "Canadian Dollar", decimals: 3 },
   { code: "AUD", symbol: "A$", label: "Australian Dollar", decimals: 3 },
   { code: "NZD", symbol: "NZ$", label: "New Zealand Dollar", decimals: 3 },
-  // ── Nordic ─────────────────────────────────────────────────────────
   { code: "SEK", symbol: "kr", label: "Swedish Krona", decimals: 2 },
   { code: "NOK", symbol: "kr", label: "Norwegian Krone", decimals: 2 },
   { code: "DKK", symbol: "kr", label: "Danish Krone", decimals: 2 },
   { code: "ISK", symbol: "kr", label: "Icelandic Króna", decimals: 0 },
-  // ── Central & Eastern Europe ───────────────────────────────────────
   { code: "CZK", symbol: "Kč", label: "Czech Koruna", decimals: 2 },
   { code: "PLN", symbol: "zł", label: "Polish Złoty", decimals: 2 },
   { code: "HUF", symbol: "Ft", label: "Hungarian Forint", decimals: 0 },
   { code: "RON", symbol: "lei", label: "Romanian Leu", decimals: 3 },
   { code: "BGN", symbol: "лв", label: "Bulgarian Lev", decimals: 3 },
-  { code: "UAH", symbol: "₴", label: "Ukrainian Hryvnia", decimals: 2 },
-  { code: "RSD", symbol: "din", label: "Serbian Dinar", decimals: 0 },
-  { code: "GEL", symbol: "₾", label: "Georgian Lari", decimals: 2 },
-  { code: "MDL", symbol: "L", label: "Moldovan Leu", decimals: 2 },
-  { code: "ALL", symbol: "L", label: "Albanian Lek", decimals: 0 },
-  { code: "BAM", symbol: "KM", label: "Bosnia Conv. Mark", decimals: 3 },
-  { code: "MKD", symbol: "ден", label: "Macedonian Denar", decimals: 2 },
-  { code: "BYN", symbol: "Br", label: "Belarusian Ruble", decimals: 2 },
-  { code: "RUB", symbol: "₽", label: "Russian Ruble", decimals: 2 },
-  // ── Turkey ─────────────────────────────────────────────────────────
   { code: "TRY", symbol: "₺", label: "Turkish Lira", decimals: 2 },
-  // ── East Asia ──────────────────────────────────────────────────────
   { code: "CNY", symbol: "¥", label: "Chinese Yuan", decimals: 2 },
   { code: "HKD", symbol: "HK$", label: "Hong Kong Dollar", decimals: 2 },
-  { code: "TWD", symbol: "NT$", label: "New Taiwan Dollar", decimals: 2 },
   { code: "KRW", symbol: "₩", label: "South Korean Won", decimals: 0 },
-  { code: "MNT", symbol: "₮", label: "Mongolian Tugrik", decimals: 0 },
-  // ── Southeast Asia ─────────────────────────────────────────────────
   { code: "SGD", symbol: "S$", label: "Singapore Dollar", decimals: 3 },
   { code: "MYR", symbol: "RM", label: "Malaysian Ringgit", decimals: 2 },
   { code: "THB", symbol: "฿", label: "Thai Baht", decimals: 2 },
   { code: "IDR", symbol: "Rp", label: "Indonesian Rupiah", decimals: 0 },
   { code: "PHP", symbol: "₱", label: "Philippine Peso", decimals: 2 },
-  { code: "VND", symbol: "₫", label: "Vietnamese Dong", decimals: 0 },
-  { code: "MMK", symbol: "K", label: "Myanmar Kyat", decimals: 0 },
-  { code: "KHR", symbol: "៛", label: "Cambodian Riel", decimals: 0 },
-  { code: "LAK", symbol: "₭", label: "Lao Kip", decimals: 0 },
-  { code: "BND", symbol: "B$", label: "Brunei Dollar", decimals: 3 },
-  // ── South Asia ─────────────────────────────────────────────────────
   { code: "INR", symbol: "₹", label: "Indian Rupee", decimals: 2 },
-  { code: "PKR", symbol: "Rs", label: "Pakistani Rupee", decimals: 0 },
-  { code: "BDT", symbol: "৳", label: "Bangladeshi Taka", decimals: 0 },
-  { code: "LKR", symbol: "Rs", label: "Sri Lankan Rupee", decimals: 0 },
-  { code: "NPR", symbol: "Rs", label: "Nepalese Rupee", decimals: 0 },
-  // ── Central Asia ───────────────────────────────────────────────────
-  { code: "KZT", symbol: "₸", label: "Kazakh Tenge", decimals: 0 },
-  { code: "UZS", symbol: "сўм", label: "Uzbek Som", decimals: 0 },
-  // ── Middle East ────────────────────────────────────────────────────
   { code: "ILS", symbol: "₪", label: "Israeli Shekel", decimals: 2 },
-  { code: "SAR", symbol: "﷼", label: "Saudi Riyal", decimals: 2 },
-  { code: "AED", symbol: "د.إ", label: "UAE Dirham", decimals: 2 },
-  { code: "QAR", symbol: "﷼", label: "Qatari Riyal", decimals: 2 },
-  { code: "KWD", symbol: "د.ك", label: "Kuwaiti Dinar", decimals: 3 },
-  { code: "BHD", symbol: "BD", label: "Bahraini Dinar", decimals: 3 },
-  { code: "OMR", symbol: "﷼", label: "Omani Rial", decimals: 3 },
-  { code: "JOD", symbol: "JD", label: "Jordanian Dinar", decimals: 3 },
-  { code: "IQD", symbol: "ع.د", label: "Iraqi Dinar", decimals: 0 },
-  { code: "LBP", symbol: "ل.ل", label: "Lebanese Pound", decimals: 0 },
-  // ── North Africa ───────────────────────────────────────────────────
-  { code: "EGP", symbol: "E£", label: "Egyptian Pound", decimals: 2 },
-  { code: "MAD", symbol: "MAD", label: "Moroccan Dirham", decimals: 2 },
-  { code: "TND", symbol: "DT", label: "Tunisian Dinar", decimals: 3 },
-  { code: "DZD", symbol: "DA", label: "Algerian Dinar", decimals: 0 },
-  { code: "LYD", symbol: "LD", label: "Libyan Dinar", decimals: 3 },
-  // ── Sub-Saharan Africa ─────────────────────────────────────────────
   { code: "ZAR", symbol: "R", label: "South African Rand", decimals: 2 },
-  { code: "NGN", symbol: "₦", label: "Nigerian Naira", decimals: 0 },
-  { code: "KES", symbol: "KSh", label: "Kenyan Shilling", decimals: 0 },
-  { code: "GHS", symbol: "GH₵", label: "Ghanaian Cedi", decimals: 2 },
-  { code: "TZS", symbol: "TSh", label: "Tanzanian Shilling", decimals: 0 },
-  { code: "UGX", symbol: "USh", label: "Ugandan Shilling", decimals: 0 },
-  { code: "ETB", symbol: "Br", label: "Ethiopian Birr", decimals: 2 },
-  { code: "XOF", symbol: "CFA", label: "West African CFA", decimals: 0 },
-  { code: "XAF", symbol: "FCFA", label: "Central African CFA", decimals: 0 },
-  { code: "RWF", symbol: "FRw", label: "Rwandan Franc", decimals: 0 },
-  { code: "MZN", symbol: "MT", label: "Mozambican Metical", decimals: 2 },
-  { code: "AOA", symbol: "Kz", label: "Angolan Kwanza", decimals: 0 },
-  { code: "ZMW", symbol: "ZK", label: "Zambian Kwacha", decimals: 2 },
-  { code: "BWP", symbol: "P", label: "Botswana Pula", decimals: 2 },
-  { code: "MUR", symbol: "Rs", label: "Mauritian Rupee", decimals: 2 },
-  { code: "NAD", symbol: "N$", label: "Namibian Dollar", decimals: 2 },
-  // ── Americas ───────────────────────────────────────────────────────
   { code: "BRL", symbol: "R$", label: "Brazilian Real", decimals: 2 },
   { code: "MXN", symbol: "MX$", label: "Mexican Peso", decimals: 2 },
-  { code: "ARS", symbol: "AR$", label: "Argentine Peso", decimals: 0 },
-  { code: "CLP", symbol: "CL$", label: "Chilean Peso", decimals: 0 },
-  { code: "COP", symbol: "CO$", label: "Colombian Peso", decimals: 0 },
-  { code: "PEN", symbol: "S/", label: "Peruvian Sol", decimals: 2 },
-  { code: "UYU", symbol: "$U", label: "Uruguayan Peso", decimals: 2 },
-  { code: "PYG", symbol: "₲", label: "Paraguayan Guaraní", decimals: 0 },
-  { code: "BOB", symbol: "Bs", label: "Bolivian Boliviano", decimals: 2 },
-  { code: "CRC", symbol: "₡", label: "Costa Rican Colón", decimals: 0 },
-  { code: "GTQ", symbol: "Q", label: "Guatemalan Quetzal", decimals: 2 },
-  { code: "DOP", symbol: "RD$", label: "Dominican Peso", decimals: 2 },
-  { code: "HNL", symbol: "L", label: "Honduran Lempira", decimals: 2 },
-  { code: "JMD", symbol: "J$", label: "Jamaican Dollar", decimals: 0 },
-  { code: "TTD", symbol: "TT$", label: "Trinidad & Tobago Dollar", decimals: 2 },
-  // ── Oceania ────────────────────────────────────────────────────────
-  { code: "FJD", symbol: "FJ$", label: "Fijian Dollar", decimals: 2 },
-  { code: "PGK", symbol: "K", label: "Papua New Guinean Kina", decimals: 2 },
-  { code: "XPF", symbol: "F", label: "CFP Franc", decimals: 0 },
 ];
 
 const CURRENCY_MAP = new Map(CURRENCIES.map((c) => [c.code, c]));
@@ -164,32 +68,17 @@ const CURRENCY_MAP = new Map(CURRENCIES.map((c) => [c.code, c]));
 // ---------------------------------------------------------------------------
 
 const REGION_TO_CURRENCY: Record<string, Currency> = {
-  // Europe
   GB: "GBP", UK: "GBP",
   CH: "CHF", LI: "CHF",
   SE: "SEK", NO: "NOK", DK: "DKK", IS: "ISK",
   CZ: "CZK", PL: "PLN", HU: "HUF", RO: "RON", BG: "BGN",
-  UA: "UAH", RS: "RSD", GE: "GEL", MD: "MDL", AL: "ALL", BA: "BAM", MK: "MKD", BY: "BYN", RU: "RUB",
   TR: "TRY",
-  // Americas
-  US: "USD", CA: "CAD", MX: "MXN", BR: "BRL", AR: "ARS", CL: "CLP", CO: "COP", PE: "PEN", UY: "UYU",
-  PY: "PYG", BO: "BOB", CR: "CRC", GT: "GTQ", DO: "DOP", HN: "HNL", JM: "JMD", TT: "TTD",
-  // East Asia
-  JP: "JPY", CN: "CNY", HK: "HKD", TW: "TWD", KR: "KRW", MN: "MNT",
-  // Southeast Asia
-  SG: "SGD", MY: "MYR", TH: "THB", ID: "IDR", PH: "PHP", VN: "VND", MM: "MMK", KH: "KHR", LA: "LAK", BN: "BND",
-  // South Asia
-  IN: "INR", PK: "PKR", BD: "BDT", LK: "LKR", NP: "NPR",
-  // Central Asia
-  KZ: "KZT", UZ: "UZS",
-  // Middle East
-  IL: "ILS", SA: "SAR", AE: "AED", QA: "QAR", KW: "KWD", BH: "BHD", OM: "OMR", JO: "JOD", IQ: "IQD", LB: "LBP",
-  // North Africa
-  EG: "EGP", MA: "MAD", TN: "TND", DZ: "DZD", LY: "LYD",
-  // Sub-Saharan Africa
-  ZA: "ZAR", NG: "NGN", KE: "KES", GH: "GHS", TZ: "TZS", UG: "UGX", ET: "ETB", RW: "RWF", MZ: "MZN", AO: "AOA", ZM: "ZMW", BW: "BWP", MU: "MUR", NA: "NAD",
-  // Oceania
-  AU: "AUD", NZ: "NZD", FJ: "FJD", PG: "PGK",
+  US: "USD", CA: "CAD", MX: "MXN", BR: "BRL",
+  JP: "JPY", CN: "CNY", HK: "HKD", KR: "KRW",
+  SG: "SGD", MY: "MYR", TH: "THB", ID: "IDR", PH: "PHP",
+  IN: "INR", IL: "ILS",
+  ZA: "ZAR",
+  AU: "AUD", NZ: "NZD",
 };
 
 function detectBrowserCurrency(): Currency {
