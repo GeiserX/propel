@@ -10,7 +10,7 @@ import { useCurrency, CURRENCIES } from "@/lib/currency";
 
 type Phase = "search" | "destination" | "route";
 
-const ALT_COLORS = ["#8b5cf6", "#14b8a6", "#ec4899"];
+const ROUTE_COLORS = ["#3b82f6", "#8b5cf6", "#14b8a6", "#ec4899", "#f59e0b"];
 const MAX_WAYPOINTS = 5;
 
 interface SearchPanelProps {
@@ -58,6 +58,7 @@ export function SearchPanel({
   const { t } = useI18n();
   const { symbol: currencySymbol, formatPrice } = useCurrency();
   const [phase, setPhase] = useState<Phase>("search");
+  const [sortBy, setSortBy] = useState<"price" | "detour" | "km">("price");
   const [originText, setOriginText] = useState("");
   const [destText, setDestText] = useState("");
   const [origin, setOrigin] = useState<Location | null>(null);
@@ -259,11 +260,15 @@ export function SearchPanel({
     .filter((f) => f.properties.routeFraction != null && f.properties.price != null)
     ?? [];
 
-  // Station list: sorted by routeFraction, filtered by price and detour
+  // Station list: filtered by price and detour, sorted by user selection
   const stationList = allStationsWithPrice
     .filter((f) => (maxPrice == null || f.properties.price! <= maxPrice)
       && (maxDetour == null || (f.properties.detourMin ?? 0) <= maxDetour))
-    .sort((a, b) => (a.properties.routeFraction ?? 0) - (b.properties.routeFraction ?? 0));
+    .sort((a, b) => {
+      if (sortBy === "price") return a.properties.price! - b.properties.price!;
+      if (sortBy === "detour") return (a.properties.detourMin ?? 0) - (b.properties.detourMin ?? 0);
+      return (a.properties.routeFraction ?? 0) - (b.properties.routeFraction ?? 0);
+    });
 
   // Average price for savings comparison
   const avgPrice = stationList.length > 0
@@ -472,34 +477,25 @@ export function SearchPanel({
       {/* Route info + alternatives */}
       {primaryRoute && (
         <div className="mt-2 rounded-xl border border-black/[0.08] bg-white/95 shadow-lg backdrop-blur-sm">
-          {/* Primary route */}
-          <div className="flex items-center justify-between px-4 py-2.5">
-            <div className="flex items-center gap-2 text-sm">
-              <div className="h-2 w-2 rounded-full bg-blue-500" />
-              <span className="text-gray-500">{formatDistance(primaryRoute.distance)}</span>
-            </div>
-            {isLoading ? (
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-400/30 border-t-emerald-400" />
-            ) : (
-              <span className="text-sm font-semibold text-gray-800">{formatDuration(primaryRoute.duration)}</span>
-            )}
-          </div>
-
-          {/* Alternative routes */}
-          {routes && routes.length > 1 && routes.map((route, i) => {
-            if (i === primaryRouteIndex) return null;
-            const color = ALT_COLORS[i % ALT_COLORS.length];
+          {/* All routes — selected one is bold, others are clickable */}
+          {routes && routes.map((route, i) => {
+            const color = ROUTE_COLORS[i % ROUTE_COLORS.length];
+            const isSelected = i === primaryRouteIndex;
             return (
               <button
                 key={i}
-                onClick={() => onSelectRoute?.(i)}
-                className="flex w-full items-center justify-between border-t border-gray-100 px-4 py-2 hover:bg-gray-50"
+                onClick={() => !isSelected && onSelectRoute?.(i)}
+                className={`flex w-full items-center justify-between px-4 py-2 ${i > 0 ? "border-t border-gray-100" : ""} ${isSelected ? "" : "hover:bg-gray-50 cursor-pointer"}`}
               >
                 <div className="flex items-center gap-2 text-sm">
                   <div className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-                  <span className="text-gray-400">{formatDistance(route.distance)}</span>
+                  <span className={isSelected ? "text-gray-500" : "text-gray-400"}>{formatDistance(route.distance)}</span>
                 </div>
-                <span className="text-sm text-gray-500">{formatDuration(route.duration)}</span>
+                {isSelected && isLoading ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-400/30 border-t-emerald-400" />
+                ) : (
+                  <span className={`text-sm ${isSelected ? "font-semibold text-gray-800" : "text-gray-500"}`}>{formatDuration(route.duration)}</span>
+                )}
               </button>
             );
           })}
@@ -519,9 +515,24 @@ export function SearchPanel({
               </span>
             )}
           </div>
-          {/* Detour slider */}
+          {/* Sort + detour controls */}
           <div className="border-b border-gray-100 px-4 py-2">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              {(["price", "detour", "km"] as const).map((key) => (
+                <button
+                  key={key}
+                  onClick={() => setSortBy(key)}
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors ${
+                    sortBy === key
+                      ? "bg-gray-800 text-white"
+                      : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                  }`}
+                >
+                  {key === "price" ? t("stations.sortPrice") : key === "detour" ? t("stations.sortDetour") : t("stations.sortKm")}
+                </button>
+              ))}
+            </div>
+            <div className="mt-2 flex items-center justify-between">
               <span className="text-[11px] text-gray-500">{t("stations.detourMax")}</span>
               <span className="text-[11px] font-medium text-gray-700">
                 {maxDetour == null ? t("stations.noLimit") : `${maxDetour} min`}
@@ -530,12 +541,12 @@ export function SearchPanel({
             <input
               type="range"
               min={0}
-              max={15}
+              max={30}
               step={1}
-              value={maxDetour ?? 15}
+              value={maxDetour ?? 30}
               onChange={(e) => {
                 const v = parseInt(e.target.value);
-                onMaxDetourChange?.(v >= 15 ? null : v);
+                onMaxDetourChange?.(v >= 30 ? null : v);
               }}
               className="mt-1 h-1 w-full cursor-pointer accent-emerald-500"
             />

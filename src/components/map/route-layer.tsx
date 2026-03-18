@@ -11,8 +11,8 @@ export interface Route {
   bbox: [number, number, number, number];
 }
 
-// Alt route colors: violet, teal, pink
-const ALT_COLORS = ["#8b5cf6", "#14b8a6", "#ec4899"];
+// Fixed route colors by index — each route keeps its color regardless of selection
+const ROUTE_COLORS = ["#3b82f6", "#8b5cf6", "#14b8a6", "#ec4899", "#f59e0b"];
 
 interface RouteLayerProps {
   routes: Route[];
@@ -33,17 +33,15 @@ export function RouteLayer({ routes, primaryIndex, onSelectRoute, beforeLayerId 
     })),
   }), [routes]);
 
-  // Build color expression for alternative routes
-  const altColor: ExpressionSpecification = useMemo(() => {
+  // Build color expression — each route keeps its fixed color
+  const routeColor: ExpressionSpecification = useMemo(() => {
     const stops: (string | number)[] = [];
     for (let i = 0; i < routes.length; i++) {
-      if (i !== primaryIndex) {
-        stops.push(i, ALT_COLORS[i % ALT_COLORS.length]);
-      }
+      stops.push(i, ROUTE_COLORS[i % ROUTE_COLORS.length]);
     }
     if (stops.length === 0) return "#9ca3af" as unknown as ExpressionSpecification;
     return ["match", ["get", "routeIndex"], ...stops, "#9ca3af"] as unknown as ExpressionSpecification;
-  }, [routes.length, primaryIndex]);
+  }, [routes.length]);
 
   // Click handler: clicking an alternative route makes it primary
   useEffect(() => {
@@ -77,7 +75,7 @@ export function RouteLayer({ routes, primaryIndex, onSelectRoute, beforeLayerId 
 
   return (
     <Source id="routes" type="geojson" data={geojson}>
-      {/* Alternative routes (below primary) */}
+      {/* Alternative routes (below primary) — thinner, semi-transparent */}
       {routes.length > 1 && (
         <>
           <Layer
@@ -100,7 +98,7 @@ export function RouteLayer({ routes, primaryIndex, onSelectRoute, beforeLayerId 
             beforeId={beforeLayerId}
             filter={filterAlt}
             paint={{
-              "line-color": altColor,
+              "line-color": routeColor,
               "line-width": 3,
               "line-opacity": 0.6,
             }}
@@ -108,7 +106,7 @@ export function RouteLayer({ routes, primaryIndex, onSelectRoute, beforeLayerId 
           />
         </>
       )}
-      {/* Primary route (on top of alternatives) */}
+      {/* Primary/selected route (on top) — thicker, full opacity, keeps its color */}
       <Layer
         id="route-primary-outline"
         source="routes"
@@ -129,7 +127,7 @@ export function RouteLayer({ routes, primaryIndex, onSelectRoute, beforeLayerId 
         beforeId={beforeLayerId}
         filter={filterPrimary}
         paint={{
-          "line-color": "#3b82f6",
+          "line-color": routeColor,
           "line-width": 4,
           "line-opacity": 0.9,
         }}
