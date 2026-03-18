@@ -2,94 +2,148 @@ import { BaseScraper, type RawFuelPrice, type RawStation } from "./base";
 import type { FuelType } from "../types/station";
 
 // ---------------------------------------------------------------------------
-// Sweden — Bensinpriser.nu scraper
+// Sweden — DrivstoffAppen API v1 (drivstoffappen.no)
 // ---------------------------------------------------------------------------
-// Bensinpriser.nu is a community-driven Swedish fuel price comparison site.
-// No public JSON API — data is scraped from server-rendered HTML pages.
+// Same API as Norway (see norway.ts for full auth documentation).
+// Sweden is countryId=2 in the DrivstoffAppen system.
 //
-// List pages: /stationer/{fuel}/alla/alla/{page}  (14 stations per page)
-//   - Fuel slugs: 95 (E10), 98 (E5), diesel, etanol, fordonsgas, biodiesel
-//   - Pages: 0..~15 per fuel type (wraps around after last page)
+// API base: https://api.drivstoffappen.no/api/v1
+// Auth: Dynamic token-based (same as Norway — see norway.ts).
+//   1. GET /authorization-sessions → { token }
+//   2. Rotate token left by 1 char, MD5 hash → use as X-API-KEY
 //
-// Detail pages: /station/{county}/{municipality}/{slug}
-//   - Contains Google Maps link with lat/lon coordinates
-//   - Station name, brand, address, phone, all fuel prices
+// Endpoint: GET /stations?countryId=2 → all Swedish stations with prices
+// Returns ~3,900 stations in a single request, including EV chargers.
 //
-// Prices in SEK (Swedish Krona). User-reported (7-day expiry).
+// Fuel type IDs (same codes across all countries):
+//   1 = Diesel (FT_D)          → B7
+//   2 = 95 Oktan (FT_95)       → E5
+//   3 = 98 Oktan (FT_98)       → E5_98
+//   4 = Frigårdsdiesel (FT_FD) → B7 (duty-free diesel)
+//   7 = HVO 100 (FT_100)       → HVO
+//   8 = 92 Oktan (FT_92)       → E5  (lower octane, same ethanol spec)
+//   9 = E-85 (FT_E85)          → E10 (high ethanol blend; closest match)
+//
+// Prices in SEK (Swedish Krona). Currency field in API is "KR" (not "SEK").
+//
+// Previous approach (bensinpriser.nu HTML scraping) was replaced because:
+//   - Required ~3000+ HTTP requests per scrape (list + detail pages)
+//   - Fragile regex-based HTML parsing
+//   - User-reported prices with 7-day expiry (stale data)
+//   - DrivstoffAppen has better coverage (~3,900 vs ~2,700 stations)
+//   - Single API request vs thousands of page fetches
+//
+// Env: No env vars needed (auth is dynamic).
 // ---------------------------------------------------------------------------
 
-const BASE_URL = "https://bensinpriser.nu";
+const API_BASE = "https://api.drivstoffappen.no/api/v1";
+const CLIENT_ID = "com.raskebiler.drivstoff.appen.android";
+const COUNTRY_ID = 2; // Sweden
 
-// Sweden bounding box (focus on populated areas)
+// Sweden bounding box
 const LAT_MIN = 55.3;
 const LAT_MAX = 69.1;
 const LON_MIN = 11.0;
 const LON_MAX = 24.2;
 
-// Max pages to fetch per fuel type (stops when duplicates detected)
-const MAX_PAGES = 25;
-
-// Fuel type slugs used in bensinpriser.nu URLs
-const FUEL_SLUGS: ReadonlyArray<{ slug: string; fuelType: FuelType }> = [
-  { slug: "95", fuelType: "E10" }, // 95 is E10 in Sweden
-  { slug: "98", fuelType: "E5_98" },
-  { slug: "diesel", fuelType: "B7" },
-  // etanol (E85) and fordonsgas (CNG) are not in the FuelType enum
-  // biodiesel maps to HVO
-  { slug: "biodiesel", fuelType: "HVO" },
-];
+// DrivstoffAppen fuelTypeId → harmonized EU fuel type
+// Only fuel types (fuelKindId=1), not EV charger types (fuelKindId=2)
+const FUEL_TYPE_MAP: ReadonlyMap<number, FuelType> = new Map([
+  [1, "B7"],         // Diesel
+  [2, "E5"],         // 95 Oktan
+  [3, "E5_98"],      // 98 Oktan
+  [4, "B7"],         // Frigårdsdiesel (duty-free diesel)
+  [7, "HVO"],        // HVO 100
+  [8, "E5"],         // 92 Oktan (lower octane gasoline; E5 closest match)
+  [9, "E10"],        // E-85 (high ethanol blend)
+]);
 
 // ---------------------------------------------------------------------------
-// HTML parsing helpers (no DOM — regex-based for server-side Node.js)
+// API response types (shared structure with Norway — see norway.ts)
 // ---------------------------------------------------------------------------
 
-interface ListPageStation {
-  slug: string; // detail page path e.g. /station/kalmar-lan/vastervik/allen-54
-  brand: string;
-  city: string;
-  address: string;
-  price: number;
+interface AuthSession {
+  id: number;
+  authorizationId: number;
+  token: string;
+  createdAt: string;
+  expiresAt: string;
+  deleted: number;
 }
 
-/** Parse the station list page HTML and extract station rows. */
-function parseListPage(html: string): ListPageStation[] {
-  const stations: ListPageStation[] = [];
-  // Match table rows with data-href pointing to station detail pages
-  const rowRegex =
-    /data-href="(\/station\/[^"]+)"[\s\S]*?<b>([^<]*?)(?:\s*<small>([^<]*?)<\/small>)?<\/b>[\s\S]*?<br\s*\/?>([^<]*?)<\/td>[\s\S]*?<b[^>]*>([0-9]+,[0-9]+)kr<\/b>/g;
+interface StationPrice {
+  id: number;
+  fuelTypeId: number;
+  currency: string;
+  price: number;
+  deleted: number;
+  lastUpdated: number;
+  createdAt: string;
+  updatedAt: string;
+}
 
-  let match;
-  while ((match = rowRegex.exec(html)) !== null) {
-    const slug = match[1];
-    const brand = match[2].trim();
-    const city = (match[3] || "").trim();
-    const address = match[4].trim();
-    const priceStr = match[5].replace(",", ".");
-    const price = parseFloat(priceStr);
+interface StationBrand {
+  id: number;
+  name: string;
+  pictureUrl: string;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  deleted: number;
+  countryIds: number[];
+}
 
-    if (slug && !isNaN(price) && price > 0) {
-      stations.push({ slug, brand, city, address, price });
-    }
+interface APIStation {
+  id: number;
+  externalId?: string;
+  brandId: number;
+  countryId: number;
+  stationTypeId: number;
+  name: string;
+  location: string;
+  latitude: string;
+  longitude: string;
+  coordinates: {
+    latitude: number;
+    longitude: number;
+  };
+  deleted: number;
+  createdAt: string;
+  updatedAt: string;
+  prices: StationPrice[];
+  amenityIds?: number[];
+  brand: StationBrand;
+}
+
+// ---------------------------------------------------------------------------
+// Authentication helpers (identical to Norway)
+// ---------------------------------------------------------------------------
+
+async function getSessionToken(): Promise<string> {
+  const res = await fetch(`${API_BASE}/authorization-sessions`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      "User-Agent": "Propel/1.0",
+    },
+    signal: AbortSignal.timeout(15_000),
+  });
+
+  if (!res.ok) {
+    throw new Error(`DrivstoffAppen auth failed: HTTP ${res.status}`);
   }
 
-  return stations;
+  const session: AuthSession = await res.json();
+  return session.token;
 }
 
-/** Extract coordinates from a station detail page HTML. */
-function parseDetailCoords(
-  html: string,
-): { lat: number; lon: number } | null {
-  // Google Maps link: daddr=57.7596978, 16.6168694
-  const coordMatch = html.match(
-    /daddr=(-?[0-9]+\.[0-9]+),\s*(-?[0-9]+\.[0-9]+)/,
-  );
-  if (!coordMatch) return null;
+async function deriveApiKey(token: string): Promise<string> {
+  const shifted = token.slice(1) + token[0];
+  const encoder = new TextEncoder();
+  const data = encoder.encode(shifted);
 
-  const lat = parseFloat(coordMatch[1]);
-  const lon = parseFloat(coordMatch[2]);
-  if (isNaN(lat) || isNaN(lon)) return null;
-
-  return { lat, lon };
+  const { createHash } = await import("node:crypto");
+  return createHash("md5").update(data).digest("hex");
 }
 
 // ---------------------------------------------------------------------------
@@ -98,189 +152,127 @@ function parseDetailCoords(
 
 export class SwedenScraper extends BaseScraper {
   readonly country = "SE";
-  readonly source = "bensinpriser_nu";
+  readonly source = "drivstoffappen";
 
   async fetch(): Promise<{ stations: RawStation[]; prices: RawFuelPrice[] }> {
-    // Phase 1: Collect station slugs + prices from list pages
-    const stationPriceMap = new Map<
-      string,
-      {
-        brand: string;
-        city: string;
-        address: string;
-        prices: Map<FuelType, number>;
-      }
-    >();
+    // Step 1: Authenticate
+    console.log(`[${this.source}] Obtaining API session token...`);
+    const token = await getSessionToken();
+    const apiKey = await deriveApiKey(token);
 
-    for (const { slug: fuelSlug, fuelType } of FUEL_SLUGS) {
-      const seenSlugsThisFuel = new Set<string>();
-      let consecutiveDuplicatePages = 0;
+    const headers: Record<string, string> = {
+      Accept: "application/json",
+      "User-Agent": "Propel/1.0",
+      "X-API-KEY": apiKey,
+      "X-CLIENT-ID": CLIENT_ID,
+    };
 
-      for (let page = 0; page < MAX_PAGES; page++) {
-        const url = `${BASE_URL}/stationer/${fuelSlug}/alla/alla/${page}`;
+    // Step 2: Fetch all Swedish stations in a single request
+    console.log(`[${this.source}] Fetching all stations for Sweden...`);
+    const res = await fetch(`${API_BASE}/stations?countryId=${COUNTRY_ID}`, {
+      headers,
+      signal: AbortSignal.timeout(60_000),
+    });
 
-        try {
-          const res = await fetch(url, {
-            headers: {
-              Accept: "text/html",
-              "User-Agent": "Propel/1.0",
-            },
-            signal: AbortSignal.timeout(15_000),
-          });
-
-          if (!res.ok) break;
-          const html = await res.text();
-          const rows = parseListPage(html);
-
-          if (rows.length === 0) break;
-
-          // Check for page wrap-around (all slugs already seen)
-          let allSeen = true;
-          for (const row of rows) {
-            if (!seenSlugsThisFuel.has(row.slug)) {
-              allSeen = false;
-              seenSlugsThisFuel.add(row.slug);
-            }
-          }
-
-          if (allSeen) {
-            consecutiveDuplicatePages++;
-            if (consecutiveDuplicatePages >= 2) {
-              break; // Two consecutive duplicate pages → data has wrapped
-            }
-          } else {
-            consecutiveDuplicatePages = 0;
-          }
-
-          // Merge station data
-          for (const row of rows) {
-            let entry = stationPriceMap.get(row.slug);
-            if (!entry) {
-              entry = {
-                brand: row.brand,
-                city: row.city,
-                address: row.address,
-                prices: new Map(),
-              };
-              stationPriceMap.set(row.slug, entry);
-            }
-            // Keep the cheapest observed price per fuel type
-            const existing = entry.prices.get(fuelType);
-            if (!existing || row.price < existing) {
-              entry.prices.set(fuelType, row.price);
-            }
-          }
-        } catch {
-          // Skip failed page
-        }
-
-        // Rate limit: 100ms between list page requests
-        await new Promise((r) => setTimeout(r, 100));
-      }
-
-      console.log(
-        `[${this.source}] After ${fuelSlug}: ${seenSlugsThisFuel.size} stations found`,
+    if (!res.ok) {
+      throw new Error(
+        `DrivstoffAppen stations API returned HTTP ${res.status}: ${await res.text().catch(() => "")}`,
       );
     }
 
-    console.log(
-      `[${this.source}] Total unique station slugs: ${stationPriceMap.size}`,
-    );
+    const data: APIStation[] = await res.json();
+    console.log(`[${this.source}] Received ${data.length} raw stations`);
 
-    // Phase 2: Fetch detail pages for coordinates
-    // Batch detail fetches with rate limiting
-    const stationSlugs = Array.from(stationPriceMap.keys());
-    const coordsMap = new Map<string, { lat: number; lon: number }>();
-    let fetchedDetails = 0;
-    let failedDetails = 0;
-
-    for (const slug of stationSlugs) {
-      const url = `${BASE_URL}${slug}`;
-
-      try {
-        const res = await fetch(url, {
-          headers: {
-            Accept: "text/html",
-            "User-Agent": "Propel/1.0",
-          },
-          signal: AbortSignal.timeout(10_000),
-        });
-
-        if (res.ok) {
-          const html = await res.text();
-          const coords = parseDetailCoords(html);
-          if (coords) {
-            coordsMap.set(slug, coords);
-          }
-        }
-      } catch {
-        failedDetails++;
-      }
-
-      fetchedDetails++;
-      if (fetchedDetails % 50 === 0) {
-        console.log(
-          `[${this.source}] Detail progress: ${fetchedDetails}/${stationSlugs.length} ` +
-            `(${coordsMap.size} with coords, ${failedDetails} failed)`,
-        );
-      }
-
-      // Rate limit: 150ms between detail page requests
-      await new Promise((r) => setTimeout(r, 150));
-    }
-
-    console.log(
-      `[${this.source}] Detail pages: ${coordsMap.size}/${stationSlugs.length} with coordinates`,
-    );
-
-    // Phase 3: Build output (only stations with valid coordinates)
+    // Step 3: Process stations and prices
     const stations: RawStation[] = [];
     const prices: RawFuelPrice[] = [];
+    const stationMap = new Map<number, boolean>();
 
-    for (const [slug, entry] of stationPriceMap) {
-      const coords = coordsMap.get(slug);
-      if (!coords) continue; // Skip stations without coordinates
+    for (const s of data) {
+      const lat = s.coordinates?.latitude ?? parseFloat(s.latitude);
+      const lon = s.coordinates?.longitude ?? parseFloat(s.longitude);
+
+      if (!lat || !lon || isNaN(lat) || isNaN(lon)) continue;
 
       // Bounding-box filter
-      if (
-        coords.lat < LAT_MIN ||
-        coords.lat > LAT_MAX ||
-        coords.lon < LON_MIN ||
-        coords.lon > LON_MAX
-      ) {
+      if (lat < LAT_MIN || lat > LAT_MAX || lon < LON_MIN || lon > LON_MAX) {
         continue;
       }
 
-      // Use the slug as the external ID (stable, human-readable)
-      const externalId = slug.replace("/station/", "se-");
+      // Skip deleted stations
+      if (s.deleted !== 0) continue;
+
+      // Only process road stations (stationTypeId=1)
+      // Sweden doesn't have many marine stations in the API
+      if (s.stationTypeId !== 1) continue;
+
+      // Collect valid fuel prices
+      const validPrices: Array<{ fuelType: FuelType; price: number }> = [];
+      for (const p of s.prices) {
+        if (p.deleted !== 0) continue;
+        if (p.price <= 0) continue;
+
+        const fuelType = FUEL_TYPE_MAP.get(p.fuelTypeId);
+        if (!fuelType) continue;
+
+        validPrices.push({ fuelType, price: p.price });
+      }
+
+      if (validPrices.length === 0) continue;
+
+      // Dedup
+      if (stationMap.has(s.id)) continue;
+      stationMap.set(s.id, true);
+
+      const externalId = `se-${s.id}`;
+      const brandName = s.brand?.name?.trim() || null;
 
       stations.push({
         externalId,
-        name: entry.brand
-          ? `${entry.brand} ${entry.city}`.trim()
-          : entry.address || slug.split("/").pop() || "Unknown",
-        brand: entry.brand || null,
-        address: entry.address || "",
-        city: entry.city || "",
-        province: slug.split("/")[2]?.replace(/-/g, " ") || null, // county from URL
-        latitude: coords.lat,
-        longitude: coords.lon,
+        name: s.name?.trim() || `${brandName ?? ""} ${externalId}`.trim(),
+        brand: brandName,
+        address: s.location?.trim() || "",
+        city: extractCity(s.location),
+        province: null,
+        latitude: lat,
+        longitude: lon,
         stationType: "fuel",
       });
 
-      for (const [fuelType, price] of entry.prices) {
+      for (const vp of validPrices) {
         prices.push({
           stationExternalId: externalId,
-          fuelType,
-          price,
+          fuelType: vp.fuelType,
+          price: vp.price,
           currency: "SEK",
         });
       }
     }
 
     console.log(
-      `[${this.source}] Final: ${stations.length} stations, ${prices.length} prices`,
+      `[${this.source}] Processed ${stations.length} stations, ${prices.length} prices`,
     );
     return { stations, prices };
   }
+}
+
+/**
+ * Extract city from a Swedish address string.
+ * Common formats:
+ *   "Överbyn 18, 685 94 Torsby"           → "Torsby"
+ *   "Kiselvägen 2, 771 41 Ludvika, Sweden" → "Ludvika"
+ *   "E45 Munkedal"                          → "Munkedal"
+ */
+function extractCity(location: string | null): string {
+  if (!location) return "";
+  // Remove trailing country name
+  const cleaned = location
+    .replace(/,?\s*(Sweden|Sverige|Denmark|Danmark|Norway|Norge)$/i, "")
+    .trim();
+  // Split by comma, take last segment
+  const parts = cleaned.split(",").map((p) => p.trim());
+  const last = parts[parts.length - 1];
+  if (!last) return "";
+  // Remove leading postal code (Swedish: 3+2 digits with space, e.g. "685 94")
+  return last.replace(/^\d{3}\s*\d{2}\s*/, "").trim();
 }

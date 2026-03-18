@@ -5,7 +5,7 @@ import { fetchFueloCountry, type FueloConfig } from "./fuelo";
 // Bulgaria — Fuelo.net (bg.fuelo.net)
 // ---------------------------------------------------------------------------
 // Fuelo.net aggregates ~3,500 Bulgarian fuel stations with per-station prices.
-// Prices in BGN (Bulgarian Lev, pegged to EUR at 1.95583).
+// Prices in EUR (Bulgaria adopted the Euro on 1 Jan 2025).
 // Major brands: Lukoil, Shell, OMV, Petrol, EKO, Rompetrol, Gazprom.
 // Fuel types: Benzin A95H (E5), Super Diesel (B7), Propan Butan (LPG),
 //             ECTO 100 / A98 (E5_98), ECTO Diesel / Premium (B7_PREMIUM),
@@ -24,7 +24,7 @@ const FUELO_CONFIG: FueloConfig = {
     lonMin: 22.4,
     lonMax: 28.6,
   },
-  currency: "BGN",
+  currency: "EUR",
   delayMs: 100,
 };
 

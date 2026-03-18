@@ -20,6 +20,7 @@ const IMG_FUEL_MAP: ReadonlyMap<string, FuelType> = new Map([
   ["gasoline.png", "E5"],          // Super 95 / Unleaded 95
   ["diesel.png", "B7"],            // Diesel
   ["lpg.png", "LPG"],             // LPG / Autoplyn / Propan Butan
+  ["gasoline95plus.png", "E5_PREMIUM"], // Premium 95 (ECTO Plus 95, MaxxMotion A95, V-Power 95)
   ["gasoline98.png", "E5_98"],     // Gasoline 98 / Premium
   ["gasoline98plus.png", "E5_98"], // 100 octane (ECTO 100, V-Power 100)
   ["dieselplus.png", "B7_PREMIUM"],// Diesel Premium (ECTO Diesel, V-Power)
@@ -236,10 +237,41 @@ export async function fetchFueloCountry(
       gazprom: "Gazprom",
       "total-new": "TotalEnergies",
       total: "TotalEnergies",
+      totalerg: "TotalEnergies",
       agrola: "Agrola",
       socar: "SOCAR",
       "circle-k": "Circle K",
+      circlek: "Circle K",
       jet: "JET",
+      tamoil: "Tamoil",
+      esso: "Esso",
+      aral: "Aral",
+      q8: "Q8",
+      ip: "IP",
+      eleclerc: "E.Leclerc",
+      tankpool: "Tankpool24",
+      bft: "BFT",
+      righetti: "Righetti",
+      hem: "HEM",
+      ies: "IES",
+      oil: "OIL!",
+      repsol: "Repsol",
+      moya: "Moya",
+      lotos: "LOTOS",
+      amic: "AMIC",
+      lpg: "LPG",
+      bliska: "Bliska",
+      papoil: "PAP OIL",
+      viada: "Viada",
+      balticpetroleum: "Baltic Petroleum",
+      benzinol: "Benzinol",
+      emsi: "EMSI",
+      star: "Star",
+      gulf: "Gulf",
+      neste: "Neste",
+      q1: "Q1",
+      tam: "TAM",
+      tesla: "Tesla",
     };
     return map[logo] || logo.charAt(0).toUpperCase() + logo.slice(1);
   };
