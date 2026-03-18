@@ -26,6 +26,8 @@ interface SearchPanelProps {
   maxPrice?: number | null;
   maxDetour?: number | null;
   onMaxDetourChange?: (detour: number | null) => void;
+  corridorKm?: number;
+  onCorridorKmChange?: (km: number) => void;
 }
 
 interface Location {
@@ -54,6 +56,8 @@ export function SearchPanel({
   maxPrice,
   maxDetour,
   onMaxDetourChange,
+  corridorKm = 5,
+  onCorridorKmChange,
 }: SearchPanelProps) {
   const { t } = useI18n();
   const { symbol: currencySymbol, formatPrice } = useCurrency();
@@ -548,6 +552,19 @@ export function SearchPanel({
                 const v = parseInt(e.target.value);
                 onMaxDetourChange?.(v >= 30 ? null : v);
               }}
+              className="mt-1 h-1 w-full cursor-pointer accent-emerald-500"
+            />
+            <div className="mt-2 flex items-center justify-between">
+              <span className="text-[11px] text-gray-500">{t("stations.corridor")}</span>
+              <span className="text-[11px] font-medium text-gray-700">{corridorKm} km</span>
+            </div>
+            <input
+              type="range"
+              min={1}
+              max={25}
+              step={1}
+              value={corridorKm}
+              onChange={(e) => onCorridorKmChange?.(parseInt(e.target.value))}
               className="mt-1 h-1 w-full cursor-pointer accent-emerald-500"
             />
           </div>
