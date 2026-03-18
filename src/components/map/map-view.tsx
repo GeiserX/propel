@@ -45,7 +45,10 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
 ) {
   const mapRef = useRef<MapRef | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const corridorDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const corridorKmRef = useRef(corridorKm);
+  corridorKmRef.current = corridorKm;
 
   // Per-route corridor stations (with routeFraction)
   const [corridorPerRoute, setCorridorPerRoute] = useState<StationsGeoJSONCollection[]>([]);
@@ -111,12 +114,13 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
       abortRef.current = controller;
 
       try {
+        const km = corridorKmRef.current;
         const results = await Promise.all(
           routeList.map((r) =>
             fetch("/api/route-stations", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ geometry: r.geometry, fuel, corridorKm }),
+              body: JSON.stringify({ geometry: r.geometry, fuel, corridorKm: km }),
               signal: controller.signal,
             }).then((res) => (res.ok ? res.json() as Promise<StationsGeoJSONCollection> : EMPTY_COLLECTION)),
           ),
@@ -130,7 +134,7 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
         console.error("[map] Failed to fetch route stations:", err);
       }
     },
-    [corridorKm],
+    [],
   );
 
   const fetchStations = useCallback(
@@ -240,9 +244,21 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
     }
   }, [fetchStations, fetchAllRouteStations, selectedFuel, routes]);
 
+  // Debounced re-fetch when corridor slider changes (300ms after user stops dragging)
+  useEffect(() => {
+    if (!routes || routes.length === 0) return;
+    if (corridorDebounceRef.current) clearTimeout(corridorDebounceRef.current);
+    corridorDebounceRef.current = setTimeout(() => {
+      fetchAllRouteStations(selectedFuel, routes);
+    }, 300);
+    return () => { if (corridorDebounceRef.current) clearTimeout(corridorDebounceRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [corridorKm]);
+
   useEffect(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (corridorDebounceRef.current) clearTimeout(corridorDebounceRef.current);
       if (abortRef.current) abortRef.current.abort();
     };
   }, []);
