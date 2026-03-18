@@ -62,6 +62,7 @@ export function SearchPanel({
   const { t } = useI18n();
   const { symbol: currencySymbol, formatPrice } = useCurrency();
   const [phase, setPhase] = useState<Phase>("search");
+  const [collapsed, setCollapsed] = useState(false);
   const [sortBy, setSortBy] = useState<"price" | "detour" | "km">("price");
   const [originText, setOriginText] = useState("");
   const [destText, setDestText] = useState("");
@@ -306,6 +307,9 @@ export function SearchPanel({
     return (bestId !== cheapestId && bestId !== shortestDetourId) ? bestId : null;
   })() : null;
 
+  // Auto-collapse on mobile when route is calculated
+  const isRouteMobile = phase === "route" && primaryRoute;
+
   return (
     <div className="absolute left-2 right-2 top-2 z-10 sm:left-3 sm:right-auto sm:top-3 sm:w-[340px]">
       {/* Search card */}
@@ -354,11 +358,11 @@ export function SearchPanel({
           )}
         </div>
 
-        {/* Destination + waypoints — slides in */}
+        {/* Destination + waypoints — slides in, hidden when collapsed on mobile */}
         <div
           className={`transition-all duration-300 ease-out ${
-            showDest ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
-          } ${destVisible ? "overflow-visible" : "overflow-hidden"}`}
+            showDest && !(collapsed && isRouteMobile) ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+          } ${destVisible && !(collapsed && isRouteMobile) ? "overflow-visible" : "overflow-hidden"}`}
         >
           {/* Waypoints (between origin and destination) */}
           {waypoints.map((wp, idx) => (
@@ -476,10 +480,22 @@ export function SearchPanel({
             </div>
           )}
         </div>
+
+        {/* Mobile collapse toggle — only when route is active */}
+        {isRouteMobile && (
+          <button
+            onClick={() => setCollapsed((v) => !v)}
+            className="flex w-full items-center justify-center border-t border-gray-100 py-1 text-gray-400 sm:hidden"
+          >
+            <svg className={`h-4 w-4 transition-transform ${collapsed ? "" : "rotate-180"}`} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+            </svg>
+          </button>
+        )}
       </div>
 
-      {/* Route info + alternatives */}
-      {primaryRoute && (
+      {/* Route info + alternatives — hidden when collapsed on mobile */}
+      {primaryRoute && !(collapsed && isRouteMobile) && (
         <div className="mt-2 rounded-xl border border-black/[0.08] bg-white/95 shadow-lg backdrop-blur-sm">
           {/* All routes — selected one is bold, others are clickable */}
           {routes && routes.map((route, i) => {
@@ -506,8 +522,8 @@ export function SearchPanel({
         </div>
       )}
 
-      {/* Station list along route */}
-      {phase === "route" && allStationsWithPrice.length > 0 && (
+      {/* Station list along route — hidden when collapsed on mobile */}
+      {phase === "route" && allStationsWithPrice.length > 0 && !(collapsed && isRouteMobile) && (
         <div className="mt-2 rounded-xl border border-black/[0.08] bg-white/95 shadow-lg backdrop-blur-sm">
           <div className="flex items-center justify-between border-b border-gray-100 px-4 py-2">
             <span className="text-xs font-medium text-gray-500">

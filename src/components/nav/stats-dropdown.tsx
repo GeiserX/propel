@@ -33,6 +33,9 @@ function timeAgo(iso: string): string {
 const FLAG: Record<string, string> = {
   ES: "🇪🇸", FR: "🇫🇷", DE: "🇩🇪", IT: "🇮🇹", GB: "🇬🇧", AT: "🇦🇹", PT: "🇵🇹",
   SI: "🇸🇮", NL: "🇳🇱", BE: "🇧🇪", LU: "🇱🇺", RO: "🇷🇴", GR: "🇬🇷", IE: "🇮🇪", HR: "🇭🇷",
+  CH: "🇨🇭", PL: "🇵🇱", CZ: "🇨🇿", HU: "🇭🇺", BG: "🇧🇬", SK: "🇸🇰",
+  DK: "🇩🇰", SE: "🇸🇪", NO: "🇳🇴", RS: "🇷🇸", FI: "🇫🇮",
+  EE: "🇪🇪", LV: "🇱🇻", LT: "🇱🇹", BA: "🇧🇦", MK: "🇲🇰",
 };
 
 export function StatsDropdown() {
@@ -69,10 +72,10 @@ export function StatsDropdown() {
   }, [open]);
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="absolute right-2 top-2 z-10 sm:right-3 sm:top-3" ref={ref}>
       <button
         onClick={toggle}
-        className="flex items-center gap-1 rounded-md px-2 py-1 text-[13px] font-medium text-gray-400 transition-colors hover:bg-white/[0.06] hover:text-gray-200"
+        className="flex items-center gap-1.5 rounded-lg border border-black/[0.08] bg-white/90 px-2.5 py-1.5 text-[12px] font-medium text-gray-600 shadow-md backdrop-blur-sm transition-colors hover:bg-white"
       >
         <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <rect x="1" y="8" width="3" height="6" rx="0.5" />
@@ -83,38 +86,38 @@ export function StatsDropdown() {
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-1.5 w-72 rounded-xl border border-white/10 bg-[#0f1729] p-4 shadow-2xl">
+        <div className="absolute right-0 top-full mt-1.5 w-72 rounded-xl border border-black/[0.08] bg-white/95 p-4 shadow-2xl backdrop-blur-sm">
           {loading && !stats ? (
             <div className="flex justify-center py-6">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-emerald-400/30 border-t-emerald-400" />
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-emerald-500/30 border-t-emerald-500" />
             </div>
           ) : stats ? (
             <>
               {/* Totals */}
               <div className="mb-3 grid grid-cols-2 gap-2">
-                <div className="rounded-lg bg-white/[0.04] px-3 py-2">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-gray-500">Stations</p>
-                  <p className="text-lg font-bold tabular-nums text-white">{formatNumber(stats.totals.stations)}</p>
+                <div className="rounded-lg bg-gray-100 px-3 py-2">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">Stations</p>
+                  <p className="text-lg font-bold tabular-nums text-gray-800">{formatNumber(stats.totals.stations)}</p>
                 </div>
-                <div className="rounded-lg bg-white/[0.04] px-3 py-2">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-gray-500">Prices</p>
-                  <p className="text-lg font-bold tabular-nums text-white">{formatNumber(stats.totals.prices)}</p>
+                <div className="rounded-lg bg-gray-100 px-3 py-2">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">Prices</p>
+                  <p className="text-lg font-bold tabular-nums text-gray-800">{formatNumber(stats.totals.prices)}</p>
                 </div>
               </div>
 
               {/* Per-country breakdown */}
-              <div className="mb-3 space-y-1">
-                <p className="mb-1 text-[10px] font-medium uppercase tracking-wider text-gray-500">By country</p>
+              <div className="mb-3 max-h-[240px] space-y-0.5 overflow-y-auto">
+                <p className="mb-1 text-[10px] font-medium uppercase tracking-wider text-gray-400">By country</p>
                 {stats.countries.map((c) => (
-                  <div key={c.code} className="flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-white/[0.03]">
+                  <div key={c.code} className="flex items-center justify-between rounded-md px-2 py-1 text-sm hover:bg-gray-50">
                     <span className="flex items-center gap-1.5">
                       <span className="text-xs">{FLAG[c.code] ?? "🏳️"}</span>
-                      <span className="text-gray-300">{c.name}</span>
+                      <span className="text-gray-700">{c.name}</span>
                     </span>
                     <span className="flex items-center gap-2">
-                      <span className="tabular-nums text-gray-400">{formatNumber(c.stations)}</span>
+                      <span className="tabular-nums text-gray-500">{formatNumber(c.stations)}</span>
                       {c.lastUpdate && (
-                        <span className="text-[10px] text-gray-500">{timeAgo(c.lastUpdate)}</span>
+                        <span className="text-[10px] text-gray-400">{timeAgo(c.lastUpdate)}</span>
                       )}
                     </span>
                   </div>
@@ -122,13 +125,13 @@ export function StatsDropdown() {
               </div>
 
               {/* Divider */}
-              <div className="my-3 border-t border-white/[0.06]" />
+              <div className="my-3 border-t border-gray-200" />
 
               {/* Attribution */}
               <div className="flex flex-col items-center gap-2 text-center">
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-400">
                   Made with <span className="text-red-400">♥</span> by{" "}
-                  <a href="https://geiser.cloud" target="_blank" rel="noopener noreferrer" className="text-gray-300 underline decoration-gray-600 underline-offset-2 transition-colors hover:text-white hover:decoration-gray-400">
+                  <a href="https://geiser.cloud" target="_blank" rel="noopener noreferrer" className="text-gray-600 underline decoration-gray-300 underline-offset-2 transition-colors hover:text-gray-900 hover:decoration-gray-500">
                     Sergio Fernández
                   </a>
                 </p>
@@ -136,7 +139,7 @@ export function StatsDropdown() {
                   href="https://github.com/sponsors/GeiserX"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-full border border-pink-500/20 bg-pink-500/10 px-3 py-1 text-xs font-medium text-pink-300 transition-colors hover:border-pink-500/30 hover:bg-pink-500/15"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-pink-200 bg-pink-50 px-3 py-1 text-xs font-medium text-pink-600 transition-colors hover:border-pink-300 hover:bg-pink-100"
                 >
                   <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="currentColor">
                     <path d="M4.25 2.5c-1.336 0-2.75 1.164-2.75 3 0 2.15 1.58 4.144 3.365 5.682A20.6 20.6 0 008 13.393a20.6 20.6 0 003.135-2.211C12.92 9.644 14.5 7.65 14.5 5.5c0-1.836-1.414-3-2.75-3-1.373 0-2.609.986-3.029 2.456a.749.749 0 01-1.442 0C6.859 3.486 5.623 2.5 4.25 2.5z" />

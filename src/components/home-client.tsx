@@ -9,6 +9,7 @@ import { CurrencyProvider } from "@/lib/currency";
 import { Navbar } from "@/components/nav/navbar";
 import { MapView } from "@/components/map/map-view";
 import { SearchPanel } from "@/components/search/search-panel";
+import { StatsDropdown } from "@/components/nav/stats-dropdown";
 
 interface Props {
   defaultFuel: string;
@@ -148,6 +149,7 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations }: Props
           corridorKm={corridorKm}
           onCorridorKmChange={setCorridorKm}
         />
+        <StatsDropdown />
       </div>
     </main>
     </CurrencyProvider>
