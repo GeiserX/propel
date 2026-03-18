@@ -67,10 +67,10 @@ export function GeolocateButton({ onGeolocate }: GeolocateButtonProps) {
         onClick={handleClick}
         disabled={state === "loading"}
         title={state === "denied" ? t("geo.denied") : t("geo.center")}
-        className={`absolute top-14 right-2 z-10 flex h-9 w-9 items-center justify-center rounded-lg border shadow-md transition-all hover:bg-gray-50 active:scale-95 disabled:opacity-60 sm:top-3 sm:right-3 ${
+        className={`absolute top-14 right-2 z-10 flex h-9 w-9 items-center justify-center rounded-lg border shadow-md transition-all hover:bg-gray-50 active:scale-95 disabled:opacity-60 dark:hover:bg-gray-700 sm:top-3 sm:right-3 ${
           state === "active"
-            ? "border-blue-300 bg-blue-50"
-            : "border-black/10 bg-white"
+            ? "border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-950"
+            : "border-black/10 bg-white dark:border-white/10 dark:bg-gray-800"
         }`}
       >
         {state === "loading" ? (

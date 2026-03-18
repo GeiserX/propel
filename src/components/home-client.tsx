@@ -6,10 +6,12 @@ import type { MapRef } from "react-map-gl/maplibre";
 import type { Route } from "@/components/map/route-layer";
 import { I18nProvider } from "@/lib/i18n";
 import { CurrencyProvider } from "@/lib/currency";
+import { ThemeProvider } from "@/lib/theme";
 import { Navbar } from "@/components/nav/navbar";
 import { MapView } from "@/components/map/map-view";
 import { SearchPanel } from "@/components/search/search-panel";
 import { StatsDropdown } from "@/components/nav/stats-dropdown";
+import { ThemeToggle } from "@/components/nav/theme-toggle";
 
 interface Props {
   defaultFuel: string;
@@ -110,6 +112,7 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations }: Props
   }, []);
 
   return (
+    <ThemeProvider>
     <I18nProvider>
     <CurrencyProvider>
     <main className="flex h-screen w-screen flex-col overflow-hidden">
@@ -149,10 +152,14 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations }: Props
           corridorKm={corridorKm}
           onCorridorKmChange={setCorridorKm}
         />
-        <StatsDropdown />
+        <div className="absolute right-2 top-2 z-10 flex items-center gap-1.5 sm:right-3 sm:top-3">
+          <ThemeToggle />
+          <StatsDropdown />
+        </div>
       </div>
     </main>
     </CurrencyProvider>
     </I18nProvider>
+    </ThemeProvider>
   );
 }

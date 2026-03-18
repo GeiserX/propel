@@ -72,10 +72,10 @@ export function StatsDropdown() {
   }, [open]);
 
   return (
-    <div className="absolute right-2 top-2 z-10 sm:right-3 sm:top-3" ref={ref}>
+    <div className="relative" ref={ref}>
       <button
         onClick={toggle}
-        className="flex items-center gap-1.5 rounded-lg border border-black/[0.08] bg-white/90 px-2.5 py-1.5 text-[12px] font-medium text-gray-600 shadow-md backdrop-blur-sm transition-colors hover:bg-white"
+        className="flex items-center gap-1.5 rounded-lg border border-black/[0.08] bg-white/90 px-2.5 py-1.5 text-[12px] font-medium text-gray-600 shadow-md backdrop-blur-sm transition-colors hover:bg-white dark:border-white/[0.08] dark:bg-gray-800/90 dark:text-gray-300 dark:hover:bg-gray-800"
       >
         <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <rect x="1" y="8" width="3" height="6" rx="0.5" />
@@ -86,7 +86,7 @@ export function StatsDropdown() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 w-72 rounded-xl border border-black/[0.08] bg-white/95 p-4 shadow-2xl backdrop-blur-sm">
+        <div className="absolute right-0 top-full mt-1.5 w-72 rounded-xl border border-black/[0.08] bg-white/95 p-4 shadow-2xl backdrop-blur-sm dark:border-white/[0.08] dark:bg-gray-900/95">
           {loading && !stats ? (
             <div className="flex justify-center py-6">
               <div className="h-5 w-5 animate-spin rounded-full border-2 border-emerald-500/30 border-t-emerald-500" />
@@ -95,13 +95,13 @@ export function StatsDropdown() {
             <>
               {/* Totals */}
               <div className="mb-3 grid grid-cols-2 gap-2">
-                <div className="rounded-lg bg-gray-100 px-3 py-2">
+                <div className="rounded-lg bg-gray-100 px-3 py-2 dark:bg-gray-800">
                   <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">Stations</p>
-                  <p className="text-lg font-bold tabular-nums text-gray-800">{formatNumber(stats.totals.stations)}</p>
+                  <p className="text-lg font-bold tabular-nums text-gray-800 dark:text-gray-100">{formatNumber(stats.totals.stations)}</p>
                 </div>
-                <div className="rounded-lg bg-gray-100 px-3 py-2">
+                <div className="rounded-lg bg-gray-100 px-3 py-2 dark:bg-gray-800">
                   <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">Prices</p>
-                  <p className="text-lg font-bold tabular-nums text-gray-800">{formatNumber(stats.totals.prices)}</p>
+                  <p className="text-lg font-bold tabular-nums text-gray-800 dark:text-gray-100">{formatNumber(stats.totals.prices)}</p>
                 </div>
               </div>
 
@@ -109,10 +109,10 @@ export function StatsDropdown() {
               <div className="mb-3 max-h-[240px] space-y-0.5 overflow-y-auto">
                 <p className="mb-1 text-[10px] font-medium uppercase tracking-wider text-gray-400">By country</p>
                 {stats.countries.map((c) => (
-                  <div key={c.code} className="flex items-center justify-between rounded-md px-2 py-1 text-sm hover:bg-gray-50">
+                  <div key={c.code} className="flex items-center justify-between rounded-md px-2 py-1 text-sm hover:bg-gray-50 dark:hover:bg-gray-800">
                     <span className="flex items-center gap-1.5">
                       <span className="text-xs">{FLAG[c.code] ?? "🏳️"}</span>
-                      <span className="text-gray-700">{c.name}</span>
+                      <span className="text-gray-700 dark:text-gray-300">{c.name}</span>
                     </span>
                     <span className="flex items-center gap-2">
                       <span className="tabular-nums text-gray-500">{formatNumber(c.stations)}</span>
@@ -125,7 +125,7 @@ export function StatsDropdown() {
               </div>
 
               {/* Divider */}
-              <div className="my-3 border-t border-gray-200" />
+              <div className="my-3 border-t border-gray-200 dark:border-gray-700" />
 
               {/* Attribution */}
               <div className="flex flex-col items-center gap-2 text-center">

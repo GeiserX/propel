@@ -61,7 +61,7 @@ export function PriceFilter({
     : pricedCount;
 
   return (
-    <div className="absolute bottom-6 left-3 z-10 flex w-[184px] flex-col gap-2 rounded-lg border border-black/10 bg-white/90 px-3 py-2.5 shadow-md backdrop-blur-sm">
+    <div className="absolute bottom-6 left-3 z-10 flex w-[184px] flex-col gap-2 rounded-lg border border-black/10 bg-white/90 px-3 py-2.5 shadow-md backdrop-blur-sm dark:border-white/10 dark:bg-gray-900/90">
       {/* Color legend gradient */}
       {hasLegend && (
         <div>
@@ -69,7 +69,7 @@ export function PriceFilter({
             className="h-2 w-full rounded-full"
             style={{ background: `linear-gradient(to right, ${gradient})` }}
           />
-          <div className="mt-1 flex justify-between text-[10px] font-semibold tabular-nums text-gray-600">
+          <div className="mt-1 flex justify-between text-[10px] font-semibold tabular-nums text-gray-600 dark:text-gray-400">
             <span>{formatPrice(legendMin)} {currencySymbol}</span>
             <span>{formatPrice(legendMax)} {currencySymbol}</span>
           </div>
@@ -80,7 +80,7 @@ export function PriceFilter({
       {hasFilter && (
         <div>
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-semibold text-gray-600">{t("filter.maxPrice")}</span>
+            <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-400">{t("filter.maxPrice")}</span>
             {isActive && (
               <button
                 onClick={() => onMaxPriceChange(null)}
