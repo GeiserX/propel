@@ -12,6 +12,7 @@ export type Currency =
   | "EUR" | "USD" | "GBP" | "CHF" | "JPY" | "CAD" | "AUD" | "NZD"
   | "SEK" | "NOK" | "DKK" | "ISK"
   | "CZK" | "PLN" | "HUF" | "RON" | "BGN"
+  | "RSD" | "BAM" | "MKD"
   | "TRY"
   | "CNY" | "HKD" | "KRW"
   | "SGD" | "MYR" | "THB" | "IDR" | "PHP"
@@ -45,6 +46,9 @@ export const CURRENCIES: CurrencyInfo[] = [
   { code: "HUF", symbol: "Ft", label: "Hungarian Forint", decimals: 0 },
   { code: "RON", symbol: "lei", label: "Romanian Leu", decimals: 3 },
   { code: "BGN", symbol: "лв", label: "Bulgarian Lev", decimals: 3 },
+  { code: "RSD", symbol: "din", label: "Serbian Dinar", decimals: 0 },
+  { code: "BAM", symbol: "KM", label: "Bosnian Mark", decimals: 3 },
+  { code: "MKD", symbol: "ден", label: "Macedonian Denar", decimals: 0 },
   { code: "TRY", symbol: "₺", label: "Turkish Lira", decimals: 2 },
   { code: "CNY", symbol: "¥", label: "Chinese Yuan", decimals: 2 },
   { code: "HKD", symbol: "HK$", label: "Hong Kong Dollar", decimals: 2 },

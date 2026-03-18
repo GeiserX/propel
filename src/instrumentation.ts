@@ -30,6 +30,11 @@ const DEFAULT_INTERVALS: Record<string, number> = {
   NO: 6,    // Norway DrivstoffAppen — government-mandated, scrape every 6h
   RS: 12,   // Serbia NIS + cenagoriva — brand-level, scrape every 12h
   FI: 12,   // Finland polttoaine.net — community-sourced, scrape every 12h
+  EE: 12,   // Estonia Fuelo.net — community-sourced, scrape every 12h
+  LV: 12,   // Latvia Fuelo.net — community-sourced, scrape every 12h
+  LT: 12,   // Lithuania Fuelo.net — community-sourced, scrape every 12h
+  BA: 12,   // Bosnia Fuelo.net — community-sourced, scrape every 12h
+  MK: 12,   // North Macedonia Fuelo.net — community-sourced, scrape every 12h
 };
 
 export async function register() {
@@ -69,6 +74,11 @@ export async function register() {
   const { NorwayScraper } = await import("./scrapers/norway");
   const { SerbiaScraper } = await import("./scrapers/serbia");
   const { FinlandScraper } = await import("./scrapers/finland");
+  const { EstoniaScraper } = await import("./scrapers/estonia");
+  const { LatviaScraper } = await import("./scrapers/latvia");
+  const { LithuaniaScraper } = await import("./scrapers/lithuania");
+  const { BosniasScraper } = await import("./scrapers/bosnia");
+  const { NorthMacedoniaScraper } = await import("./scrapers/north-macedonia");
 
   const scraperFactories: Record<string, () => BaseScraper> = {
     ES: () => new SpainScraper(),
@@ -97,6 +107,11 @@ export async function register() {
     NO: () => new NorwayScraper(),
     RS: () => new SerbiaScraper(),
     FI: () => new FinlandScraper(),
+    EE: () => new EstoniaScraper(),
+    LV: () => new LatviaScraper(),
+    LT: () => new LithuaniaScraper(),
+    BA: () => new BosniasScraper(),
+    MK: () => new NorthMacedoniaScraper(),
   };
 
   // Determine which countries to scrape
