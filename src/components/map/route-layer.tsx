@@ -115,7 +115,7 @@ export function RouteLayer({ routes, primaryIndex, onSelectRoute, beforeLayerId 
         filter={filterPrimary}
         paint={{
           "line-color": "#ffffff",
-          "line-width": 7,
+          "line-width": 10,
           "line-opacity": 0.8,
         }}
         layout={{ "line-cap": "round", "line-join": "round" }}
@@ -128,7 +128,7 @@ export function RouteLayer({ routes, primaryIndex, onSelectRoute, beforeLayerId 
         filter={filterPrimary}
         paint={{
           "line-color": routeColor,
-          "line-width": 4,
+          "line-width": 6,
           "line-opacity": 0.9,
         }}
         layout={{ "line-cap": "round", "line-join": "round" }}
