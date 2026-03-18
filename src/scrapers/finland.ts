@@ -9,14 +9,33 @@ import type { FuelType } from "../types/station";
 //
 // Approach:
 // 1. Scrape city pages for station names, addresses, and prices
-//    (95E10, 98E, Diesel). Each station has a unique map ID.
+//    (95E10, 98E, Diesel). Each station has a unique map ID in a link:
+//      <a href="/index.php?cmd=map&id=XXXX">
 // 2. Fetch individual map pages to extract GPS coordinates from the
-//    Google Maps embed: new google.maps.LatLng(lat, lon).
+//    Google Maps embed: new google.maps.LatLng(lat, lon)
+//
+// HTML structure of city pages (verified Mar 2026):
+//   <tr class="bg1">
+//     <td> <a href="/index.php?cmd=map&id=2429" style="float: right;">&nbsp;
+//       <img src="/images/kartta_linkki.png" .../>
+//     </a>Station Name, Location Address</td>
+//     <td class="PvmTD Pvm">18.03.</td>
+//     <td title="95E10" class="Hinnat ...">1.959</td>
+//     <td class="Hinnat ...">2.069</td>    <!-- 98E -->
+//     <td class="Hinnat ...">2.109</td>    <!-- Diesel -->
+//   </tr>
+//
+// NOTE: Some rows lack a map link — those stations cannot be geocoded and
+// are skipped (~5-8% of total). The map link image floats right, station
+// name appears as text after the closing </a> tag.
+//
+// 98E prices may have a <span class="E99">*</span> prefix marking V-Power
+// or equivalent premium fuel. We strip the asterisk for parsing.
 //
 // Fuel type mapping:
-//   95E10 → E10 (contains up to 10% ethanol)
-//   98E   → E5_98 (98 octane, max 5% ethanol)
-//   Di    → B7 (standard diesel)
+//   95E10 -> E10 (contains up to 10% ethanol)
+//   98E   -> E5_98 (98 octane, max 5% ethanol)
+//   Di    -> B7 (standard diesel)
 //
 // Currency: EUR (Finland uses the Euro).
 // Finland bbox: lat 59.7-70.1, lon 20.5-31.6
@@ -30,9 +49,10 @@ const LAT_MAX = 70.1;
 const LON_MIN = 20.5;
 const LON_MAX = 31.6;
 
-// Major Finnish cities/municipalities to scrape — covers the populated areas.
-// Sourced from polttoaine.net's city listing. Using URL-encoded forms.
+// All cities from polttoaine.net dropdown, plus regional views and highways
+// for full coverage. Duplicates are deduplicated by station map ID.
 const CITY_PAGES: ReadonlyArray<string> = [
+  // Major cities
   "Helsinki", "Espoo", "Vantaa", "Tampere", "Turku", "Oulu",
   "Jyva_skyla_", "Kuopio", "Lahti", "Rovaniemi", "Kotka", "Kouvola",
   "Vaasa", "Salo", "Mikkeli", "Raahe", "Rauma", "Savonlinna",
@@ -41,12 +61,22 @@ const CITY_PAGES: ReadonlyArray<string> = [
   "Ja_rvenpa_a_", "Nurmija_rvi", "Tuusula", "Vihti", "Hollola",
   "Kangasala", "Pirkkala", "Lempa_a_la_", "Kaarina", "Raisio",
   "Naantali", "Lieto", "Kempele", "Liminka", "Ii",
-  "Kuusamo", "Tornio", "Kittila_", "Inari",
+  // Northern / rural towns
+  "Kuusamo", "Tornio", "Kittila_", "Inari", "Muonio", "Kolari",
+  // Mid-Finland
   "A_a_nekoski", "Varkaus", "Nurmes", "Ylivieska", "Oulainen",
   "Alavus", "Lapua", "Ikaalinen", "Parkano", "Uusikaupunki",
   "Laitila", "Hanko", "Raasepori", "Ma_ntsa_la_", "Ka_rko_la_",
   "Nastola", "Asikkala", "Orivesi", "Paimio", "Masku",
-  // Regional views (aggregated metro areas)
+  // Additional towns
+  "Hankasalmi", "Hyrynsalmi", "Iitti", "Isokyro_", "Juupajoki",
+  "Juva", "Kuhmoinen", "Kuortane", "Leppa_virta", "Luuma_ki",
+  "Ma_ntta_-Vilppula", "Muhos", "Outokumpu", "Parainen",
+  "Pederso_re", "Pielavesi", "Pihtipudas", "Pudasja_rvi",
+  "Pukkila", "Pyhta_a_", "Pyha_nta_", "Pa_lka_ne", "Po_ytya_",
+  "Ristiina", "Siikalatva", "Sulkava", "Suonenjoki",
+  "Tohmaja_rvi", "Utaja_rvi", "Valtimo", "Viitasaari", "Virrat",
+  // Regional views (metro areas)
   "index.php?t=PK-Seutu",
   "index.php?t=Turun_seutu",
   "index.php?t=Tampereen_seutu",
@@ -54,7 +84,7 @@ const CITY_PAGES: ReadonlyArray<string> = [
   "index.php?t=Jyva_skyla_n_seutu",
   "index.php?t=Porin_seutu",
   "index.php?t=Seina_joen_seutu",
-  // Major highways
+  // Major highways for inter-city coverage
   "1-tie", "3-tie", "4-tie", "5-tie", "7-tie", "8-tie", "9-tie",
 ];
 
@@ -134,9 +164,7 @@ export class FinlandScraper extends BaseScraper {
 
     for (const page of CITY_PAGES) {
       try {
-        const url = page.startsWith("index.php")
-          ? `${BASE_URL}/${page}`
-          : `${BASE_URL}/${page}`;
+        const url = `${BASE_URL}/${page}`;
 
         const res = await fetch(url, {
           headers: {
@@ -153,9 +181,7 @@ export class FinlandScraper extends BaseScraper {
         }
 
         const html = await res.text();
-        const cityName = page.includes("?")
-          ? page.split("=")[1]?.replace(/_/g, " ") || page
-          : page.replace(/_/g, " ").replace(/a_/g, "a").replace(/o_/g, "o");
+        const cityName = this.extractCityName(page);
 
         const parsed = this.parseCityPage(html, cityName);
 
@@ -179,7 +205,7 @@ export class FinlandScraper extends BaseScraper {
             `[${this.source}] Scraped ${pagesScraped}/${CITY_PAGES.length} pages, ${stationMap.size} unique stations`,
           );
         }
-      } catch (err) {
+      } catch {
         // Skip failed pages silently
       }
 
@@ -191,45 +217,76 @@ export class FinlandScraper extends BaseScraper {
   /**
    * Parse station data from a polttoaine.net city page.
    *
-   * HTML structure:
-   *   <tr>
-   *     <td>N.</td>
-   *     <td><a href="/index.php?cmd=map&id=XXXX">Station Name</a> Address</td>
-   *     <td>DD.MM.</td>
-   *     <td>1.234</td>  (95E10)
-   *     <td>1.234</td>  (98E)
-   *     <td>1.234</td>  (Diesel)
+   * Actual HTML structure (verified Mar 2026):
+   *   <tr class="bg1">
+   *     <td> <a href="/index.php?cmd=map&id=XXXX" style="float: right;">
+   *       &nbsp;<img ...class="karttaLinkki" /></a>
+   *       Station Brand, Location Address (optional notes)</td>
+   *     <td class="PvmTD Pvm">DD.MM.</td>
+   *     <td title="95E10" class="Hinnat ...">PRICE</td>
+   *     <td class="Hinnat ...">PRICE</td>
+   *     <td class="Hinnat ...">PRICE</td>
    *   </tr>
+   *
+   * Key observations:
+   * - No numbered first column; the station cell IS the first <td>
+   * - Map link is inside the station cell with float:right, followed by station name text
+   * - 5 columns total: station, date, 95E10, 98E, diesel
+   * - Some rows lack the map link (cannot geocode, skip these)
+   * - 98E prices may have <span class="E99">*</span> prefix (V-Power marker)
    */
   private parseCityPage(html: string, city: string): PolttoaineStation[] {
     const stations: PolttoaineStation[] = [];
 
-    // Match table rows containing station data with map links
-    // Pattern: <a href="/index.php?cmd=map&id=XXXX">NAME</a> ADDRESS ... prices
-    const rowRegex = /<tr[^>]*>\s*<td[^>]*>\s*\d+\.\s*<\/td>\s*<td[^>]*>([\s\S]*?)<\/td>\s*<td[^>]*>[^<]*<\/td>\s*<td[^>]*>([\s\S]*?)<\/td>\s*<td[^>]*>([\s\S]*?)<\/td>\s*<td[^>]*>([\s\S]*?)<\/td>/gi;
+    // Match table rows containing a map link with station data
+    // Captures: (1) station cell content, (2) date cell, (3) 95E10, (4) 98E, (5) diesel
+    const rowRegex =
+      /<tr[^>]*>\s*<td[^>]*>([\s\S]*?)<\/td>\s*<td[^>]*>[^<]*<\/td>\s*<td[^>]*>([\s\S]*?)<\/td>\s*<td[^>]*>([\s\S]*?)<\/td>\s*<td[^>]*>([\s\S]*?)<\/td>/gi;
 
     let match;
     while ((match = rowRegex.exec(html)) !== null) {
       const stationCell = match[1];
-      const price95 = this.extractPrice(match[2]);
-      const price98 = this.extractPrice(match[3]);
-      const priceDi = this.extractPrice(match[4]);
+      const price95Cell = match[2];
+      const price98Cell = match[3];
+      const priceDiCell = match[4];
 
-      // Extract map ID and station name from the station cell
+      // Extract map ID from the station cell link
       const linkMatch = stationCell.match(
-        /<a[^>]*href="[^"]*cmd=map&(?:amp;)?id=(\d+)"[^>]*>([^<]+)<\/a>/i,
+        /cmd=map&(?:amp;)?id=(\d+)/i,
       );
-      if (!linkMatch) continue;
+      if (!linkMatch) continue; // Skip rows without map link
 
       const mapId = linkMatch[1];
-      const name = linkMatch[2].trim();
 
-      // Extract address: text after the </a> tag
-      const afterLink = stationCell.replace(/<a[^>]*>[^<]*<\/a>/i, "").trim();
-      const address = afterLink
-        .replace(/<[^>]+>/g, "")  // strip remaining HTML
+      // Extract station name: the text content after stripping all HTML tags
+      // The name appears after the </a> tag in the cell
+      const nameText = stationCell
+        .replace(/<a[^>]*>[\s\S]*?<\/a>/i, "") // remove the map link + icon
+        .replace(/<[^>]+>/g, "")  // strip any remaining HTML
+        .replace(/&nbsp;/g, " ")
         .replace(/\s+/g, " ")
         .trim();
+
+      if (!nameText) continue;
+
+      // Parse the station name into brand + address
+      // Format: "Brand, Location Address" or "Brand, Location Address (notes)"
+      const name = nameText.replace(/\s*\([^)]*\)\s*$/, "").trim(); // strip trailing (notes)
+
+      // Split on first comma to get brand area vs address
+      const commaIdx = name.indexOf(",");
+      let address = "";
+      if (commaIdx > 0) {
+        // Everything after "Brand, Location " — extract the street address part
+        const afterComma = name.substring(commaIdx + 1).trim();
+        // Format is usually "Area Street N" — we use the full after-comma as address
+        address = afterComma;
+      }
+
+      // Parse prices
+      const price95 = this.extractPrice(price95Cell);
+      const price98 = this.extractPrice(price98Cell);
+      const priceDi = this.extractPrice(priceDiCell);
 
       const priceMap = new Map<FuelType, number>();
       if (price95 != null) priceMap.set("E10", price95);
@@ -251,16 +308,24 @@ export class FinlandScraper extends BaseScraper {
   }
 
   /**
-   * Extract a price from an HTML cell.
-   * Handles: "1.234", "*1.234" (V-Power marker), "-" or empty = no data.
+   * Extract a price from an HTML table cell.
+   * Handles:
+   *   "1.959"               -> 1.959
+   *   "*2.069"              -> 2.069 (V-Power prefix)
+   *   "<span ...>*</span>2.069" -> 2.069
+   *   "-"                   -> null (no data)
+   *   ""                    -> null
    */
   private extractPrice(cellHtml: string): number | null {
-    const text = cellHtml.replace(/<[^>]+>/g, "").trim();
+    const text = cellHtml
+      .replace(/<[^>]+>/g, "") // strip HTML tags
+      .replace(/&nbsp;/g, " ")
+      .replace(/^\*/, "")       // remove leading asterisk (V-Power marker)
+      .trim();
+
     if (!text || text === "-" || text === "") return null;
 
-    // Remove leading asterisk (marks V-Power/premium variant)
-    const cleaned = text.replace(/^\*/, "").trim();
-    const price = parseFloat(cleaned);
+    const price = parseFloat(text);
     if (isNaN(price) || price <= 0) return null;
 
     // Sanity check: Finnish fuel prices should be between 0.80 and 4.00 EUR
@@ -272,6 +337,8 @@ export class FinlandScraper extends BaseScraper {
   /**
    * Fetch GPS coordinates from individual station map pages.
    * Each map page contains: new google.maps.LatLng(LAT, LON)
+   * Also tried via AJAX POST to ajax.php with act=map, but that only
+   * returns station locations (id, name, lat, lon) without prices.
    */
   private async fetchCoordinates(
     mapIds: string[],
@@ -300,6 +367,7 @@ export class FinlandScraper extends BaseScraper {
         const html = await res.text();
 
         // Extract coordinates from Google Maps initialization
+        // Pattern: new google.maps.LatLng(60.203766, 24.873590)
         const coordMatch = html.match(
           /new\s+google\.maps\.LatLng\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)/,
         );
@@ -308,6 +376,17 @@ export class FinlandScraper extends BaseScraper {
           const lon = parseFloat(coordMatch[2]);
           if (!isNaN(lat) && !isNaN(lon) && lat !== 0 && lon !== 0) {
             coords.set(mapId, { lat, lon });
+          }
+        } else {
+          // Fallback: try lat/lon from AJAX data attributes
+          const latMatch = html.match(/lat:\s*'([-\d.]+)'/);
+          const lonMatch = html.match(/lon:\s*'([-\d.]+)'/);
+          if (latMatch && lonMatch) {
+            const lat = parseFloat(latMatch[1]);
+            const lon = parseFloat(lonMatch[1]);
+            if (!isNaN(lat) && !isNaN(lon) && lat !== 0 && lon !== 0) {
+              coords.set(mapId, { lat, lon });
+            }
           }
         }
       } catch {
@@ -330,31 +409,50 @@ export class FinlandScraper extends BaseScraper {
 
   /**
    * Extract brand name from station name.
-   * Finnish station names follow the pattern: "Brand, Location"
-   * or "Brand Station_Type, Location".
+   * Finnish station names follow the pattern: "Brand, Location Address"
+   * or "Brand Station_Type, Location Address".
    */
   private extractBrand(name: string): string | null {
-    // Known Finnish fuel station brands
+    // Known Finnish fuel station brands, ordered longest-first
+    // so "Neste Oil Express" matches before "Neste Oil" or "Neste"
     const brands = [
-      "ABC", "ABC Deli", "Neste Oil Express", "Neste Oil", "Neste Express",
-      "Neste", "Shell Express", "ShellExpress", "Shell", "St1", "Teboil Express",
-      "Teboil", "Seo", "Esso", "Gulf", "Futura", "Nex", "A24", "Ysi5", "Ritoil",
+      "ABC Deli", "ABC",
+      "Neste Oil Express", "Neste Oil", "Neste Express", "Neste K", "Neste",
+      "Shell Express", "ShellExpress", "Shell",
+      "Teboil Express", "Teboil",
+      "St1",
+      "Seo", "Esso", "Gulf", "Futura", "Nex", "A24", "Ysi5", "Ritoil",
     ];
 
     const nameLower = name.toLowerCase();
-    // Check longest brand names first (to match "Neste Oil Express" before "Neste")
     for (const brand of brands) {
       if (nameLower.startsWith(brand.toLowerCase())) {
         return brand;
       }
     }
 
-    // Fallback: take first word before comma
+    // Fallback: take text before first comma
     const commaIdx = name.indexOf(",");
     if (commaIdx > 0) {
       return name.substring(0, commaIdx).trim();
     }
 
     return null;
+  }
+
+  /**
+   * Extract a human-readable city name from the page path.
+   */
+  private extractCityName(page: string): string {
+    if (page.includes("?t=")) {
+      // Regional view: "index.php?t=PK-Seutu" -> "PK-Seutu"
+      return (page.split("=")[1] || page).replace(/_/g, " ");
+    }
+    if (page.includes("-tie")) {
+      // Highway: "4-tie" -> "4-tie"
+      return page;
+    }
+    // City name: "Ha_meenlinna" -> "Hameenlinna", "Jyva_skyla_" -> "Jyvaskyla"
+    return page.replace(/_/g, "");
   }
 }

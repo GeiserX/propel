@@ -2,355 +2,290 @@ import { BaseScraper, type RawFuelPrice, type RawStation } from "./base";
 import type { FuelType } from "../types/station";
 
 // ---------------------------------------------------------------------------
-// Norway — DrivstoffAppen API
+// Norway — DrivstoffAppen API v1 (drivstoffappen.no)
 // ---------------------------------------------------------------------------
-// API: api.drivstoffappen.no/api/v1
-// Authentication: API key required (returns 401 without one).
-// The API key is obtained via the DrivstoffAppen mobile app or business
-// contact (support@drivstoffappen.no).
+// The DrivstoffAppen is Norway's primary fuel price aggregator, built on top
+// of the government-mandated real-time fuel price reporting system (2023).
 //
-// Norwegian fuel price transparency is government-mandated (since 2023).
-// The DrivstoffAppen is the primary aggregator. Their Nuxt SSR output
-// exposes brand-level pricing, but per-station data requires API auth.
+// API base: https://api.drivstoffappen.no/api/v1
+// Auth: Dynamic token-based. No static API key needed.
+//   1. POST /authorization-sessions → returns { token, expiresAt }
+//   2. Shift the token string by 1 character (rotate left), MD5-hash the result
+//   3. Use the hash as X-API-KEY header + X-CLIENT-ID header
 //
-// Observed fuel type codes (from SSR data):
-//   FT_95 = Bensin 95 (maps to E5)
-//   FT_98 = Bensin 98 (maps to E5_98)
-//   FT_D  = Diesel    (maps to B7)
+// Endpoints used:
+//   GET /stations?countryId=1       → all Norwegian stations with prices
+//   GET /brands                      → brand name/logo lookup
+//   GET /fuel-types                  → fuel type code/name lookup
 //
-// Prices in NOK (Norwegian Krone).
+// Fuel type IDs (fuelKindId=1 = fuel, fuelKindId=2 = EV):
+//   1 = Diesel (FT_D)          → B7
+//   2 = 95 Oktan (FT_95)       → E5
+//   3 = 98 Oktan (FT_98)       → E5_98
+//   4 = Frigårdsdiesel (FT_FD) → B7 (duty-free diesel, same spec)
+//   7 = HVO 100 (FT_100)       → HVO
+//   9 = E-85 (FT_E85)          → E10 (high ethanol, closest match)
 //
-// Env: DRIVSTOFFAPPEN_API_KEY — required for station-level data.
+// stationTypeId: 1 = road stations (fuel + EV), 2 = marine stations
+// countryId: 1 = Norway, 2 = Sweden, 3 = Denmark, 4 = Finland
 //
-// Fallback: If no API key, scrapes average brand-level prices from the
-// DrivstoffAppen Nuxt SSR payload at /drivstoffpriser. This yields brand
-// aggregates (no per-station data), which still provides useful price
-// signals per fuel type.
+// Prices in NOK. A single request returns all ~4000 stations.
+// No rate limiting observed, but we keep requests minimal (1-2 per scrape).
+//
+// Env: No env vars needed (auth is dynamic).
 // ---------------------------------------------------------------------------
 
 const API_BASE = "https://api.drivstoffappen.no/api/v1";
-const WEBSITE_URL = "https://drivstoffappen.no/drivstoffpriser";
+const CLIENT_ID = "com.raskebiler.drivstoff.appen.android";
 
-// Norway bounding box (focus on populated areas 58-70)
+// Norway bounding box
 const LAT_MIN = 57.9;
 const LAT_MAX = 71.2;
 const LON_MIN = 4.5;
 const LON_MAX = 31.2;
 
-// API fuel type codes → harmonized
-const FUEL_TYPE_MAP: ReadonlyMap<string, FuelType> = new Map([
-  ["FT_95", "E5"],
-  ["FT_98", "E5_98"],
-  ["FT_D", "B7"],
-  // Additional codes that may appear in the full API
-  ["FT_LPG", "LPG"],
-  ["FT_CNG", "CNG"],
-  ["FT_E85", "E10"], // E85 closest match
+// DrivstoffAppen fuelTypeId → harmonized EU fuel type
+// Only fuel types (fuelKindId=1), not EV charger types (fuelKindId=2)
+const FUEL_TYPE_MAP: ReadonlyMap<number, FuelType> = new Map([
+  [1, "B7"],         // Diesel
+  [2, "E5"],         // 95 Oktan
+  [3, "E5_98"],      // 98 Oktan
+  [4, "B7"],         // Frigårdsdiesel (duty-free diesel, same fuel spec as B7)
+  [7, "HVO"],        // HVO 100
+  [9, "E10"],        // E-85 (high ethanol blend; closest standard type)
+]);
+
+// Marine fuel types (stationTypeId=2) — included for completeness
+const MARINE_FUEL_MAP: ReadonlyMap<number, FuelType> = new Map([
+  [5, "B7"],         // EN590 (marine diesel)
+  [6, "B7"],         // MGO (marine gas oil)
 ]);
 
 // ---------------------------------------------------------------------------
-// API response types (based on observed 401 structure and SSR data)
+// API response types (verified against live API 2026-03-18)
 // ---------------------------------------------------------------------------
 
-interface APIStation {
-  id: string | number;
-  name: string;
-  brand: string;
-  address: string;
-  city: string;
-  county?: string;
-  latitude: number;
-  longitude: number;
-  fuelPrices?: Array<{
-    fuelType: string;
-    price: number;
-    date?: string;
-  }>;
+interface AuthSession {
+  id: number;
+  authorizationId: number;
+  token: string;
+  createdAt: string;
+  expiresAt: string;
+  deleted: number;
 }
 
-// Brand-level price from SSR payload
-interface BrandPrice {
-  brandName: string;
-  brandLogo?: string;
-  fuelType: string;
+interface StationPrice {
+  id: number;
+  fuelTypeId: number;
+  currency: string;           // "KR" or "Kr"
   price: number;
-  priceOld?: number;
-  date: string;
+  deleted: number;            // 0 = active, 1 = deleted
+  lastUpdated: number;        // epoch milliseconds
+  createdAt: string;
+  updatedAt: string;
 }
+
+interface StationBrand {
+  id: number;
+  name: string;
+  pictureUrl: string;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  deleted: number;
+  countryIds: number[];
+}
+
+interface APIStation {
+  id: number;
+  externalId?: string;
+  brandId: number;
+  countryId: number;
+  stationTypeId: number;      // 1 = road, 2 = marine
+  name: string;
+  location: string;           // full address string
+  latitude: string;           // string, needs parseFloat
+  longitude: string;          // string, needs parseFloat
+  coordinates: {
+    latitude: number;
+    longitude: number;
+  };
+  deleted: number;
+  createdAt: string;
+  updatedAt: string;
+  prices: StationPrice[];
+  amenityIds?: number[];
+  brand: StationBrand;
+}
+
+// ---------------------------------------------------------------------------
+// Authentication helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Get a session token from the DrivstoffAppen API.
+ * The token is valid for 6 hours (expiresAt is ~6h from creation).
+ */
+async function getSessionToken(): Promise<string> {
+  const res = await fetch(`${API_BASE}/authorization-sessions`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      "User-Agent": "Propel/1.0",
+    },
+    signal: AbortSignal.timeout(15_000),
+  });
+
+  if (!res.ok) {
+    throw new Error(`DrivstoffAppen auth failed: HTTP ${res.status}`);
+  }
+
+  const session: AuthSession = await res.json();
+  return session.token;
+}
+
+/**
+ * Derive the API key from the session token.
+ * Algorithm: rotate the token string left by 1 character, then MD5 hash it.
+ * Source: reverse-engineered from Home Assistant integrations using this API.
+ */
+async function deriveApiKey(token: string): Promise<string> {
+  const shifted = token.slice(1) + token[0];
+  const encoder = new TextEncoder();
+  const data = encoder.encode(shifted);
+
+  // Use Node.js crypto for MD5 (not available in Web Crypto API)
+  const { createHash } = await import("node:crypto");
+  return createHash("md5").update(data).digest("hex");
+}
+
+// ---------------------------------------------------------------------------
+// Scraper
+// ---------------------------------------------------------------------------
 
 export class NorwayScraper extends BaseScraper {
   readonly country = "NO";
   readonly source = "drivstoffappen";
 
   async fetch(): Promise<{ stations: RawStation[]; prices: RawFuelPrice[] }> {
-    const apiKey = process.env.DRIVSTOFFAPPEN_API_KEY;
+    // Step 1: Authenticate
+    console.log(`[${this.source}] Obtaining API session token...`);
+    const token = await getSessionToken();
+    const apiKey = await deriveApiKey(token);
 
-    if (apiKey) {
-      return this.fetchFromAPI(apiKey);
-    }
-
-    console.log(
-      `[${this.source}] No DRIVSTOFFAPPEN_API_KEY set — falling back to SSR brand-level scraping`,
-    );
-    return this.fetchFromSSR();
-  }
-
-  // ---------------------------------------------------------------------------
-  // Primary: Station-level data from the authenticated API
-  // ---------------------------------------------------------------------------
-
-  private async fetchFromAPI(
-    apiKey: string,
-  ): Promise<{ stations: RawStation[]; prices: RawFuelPrice[] }> {
-    const stations: RawStation[] = [];
-    const prices: RawFuelPrice[] = [];
-
-    const baseHeaders: Record<string, string> = {
+    const headers: Record<string, string> = {
       Accept: "application/json",
       "User-Agent": "Propel/1.0",
+      "X-API-KEY": apiKey,
+      "X-CLIENT-ID": CLIENT_ID,
     };
 
-    // Try different auth header formats since the exact one is unknown
-    const authVariants: Array<Record<string, string>> = [
-      { Authorization: `Bearer ${apiKey}` },
-      { "X-API-KEY": apiKey },
-      { apiKey: apiKey },
-    ];
+    // Step 2: Fetch all Norwegian stations (countryId=1) in a single request
+    console.log(`[${this.source}] Fetching all stations for Norway...`);
+    const res = await fetch(`${API_BASE}/stations?countryId=1`, {
+      headers,
+      signal: AbortSignal.timeout(60_000),
+    });
 
-    let data: APIStation[] | null = null;
-
-    for (const authHeader of authVariants) {
-      try {
-        const res = await fetch(`${API_BASE}/stations`, {
-          headers: { ...baseHeaders, ...authHeader },
-          signal: AbortSignal.timeout(30_000),
-        });
-
-        if (res.ok) {
-          data = await res.json();
-          break;
-        }
-
-        if (res.status !== 401) {
-          console.log(
-            `[${this.source}] API returned ${res.status} with auth header: ${JSON.stringify(authHeader)}`,
-          );
-        }
-      } catch {
-        // Try next auth format
-      }
-      await new Promise((r) => setTimeout(r, 200));
-    }
-
-    if (!data) {
-      console.log(
-        `[${this.source}] API auth failed with all header formats — falling back to SSR`,
+    if (!res.ok) {
+      throw new Error(
+        `DrivstoffAppen stations API returned HTTP ${res.status}: ${await res.text().catch(() => "")}`,
       );
-      return this.fetchFromSSR();
     }
+
+    const data: APIStation[] = await res.json();
+    console.log(`[${this.source}] Received ${data.length} raw stations`);
+
+    // Step 3: Process stations and prices
+    const stations: RawStation[] = [];
+    const prices: RawFuelPrice[] = [];
+    const stationMap = new Map<number, boolean>(); // dedup by station id
 
     for (const s of data) {
-      if (!s.latitude || !s.longitude) continue;
+      // Use coordinates object (numeric) over string lat/lng
+      const lat = s.coordinates?.latitude ?? parseFloat(s.latitude);
+      const lon = s.coordinates?.longitude ?? parseFloat(s.longitude);
+
+      if (!lat || !lon || isNaN(lat) || isNaN(lon)) continue;
 
       // Bounding-box filter
-      if (
-        s.latitude < LAT_MIN ||
-        s.latitude > LAT_MAX ||
-        s.longitude < LON_MIN ||
-        s.longitude > LON_MAX
-      ) {
+      if (lat < LAT_MIN || lat > LAT_MAX || lon < LON_MIN || lon > LON_MAX) {
         continue;
       }
 
+      // Skip deleted stations
+      if (s.deleted !== 0) continue;
+
+      // Determine which fuel map to use based on station type
+      const fuelMap = s.stationTypeId === 2 ? MARINE_FUEL_MAP : FUEL_TYPE_MAP;
+
+      // Only include stations that have at least one valid fuel price
+      const validPrices: Array<{ fuelType: FuelType; price: number }> = [];
+      for (const p of s.prices) {
+        if (p.deleted !== 0) continue;
+        if (p.price <= 0) continue;
+
+        const fuelType = fuelMap.get(p.fuelTypeId);
+        if (!fuelType) continue; // Skip EV charger prices and unknown types
+
+        validPrices.push({ fuelType, price: p.price });
+      }
+
+      if (validPrices.length === 0) continue;
+
+      // Dedup by station id (API can return duplicates in edge cases)
+      if (stationMap.has(s.id)) continue;
+      stationMap.set(s.id, true);
+
       const externalId = `no-${s.id}`;
+      const brandName = s.brand?.name?.trim() || null;
 
       stations.push({
         externalId,
-        name: s.name?.trim() || `${s.brand ?? ""} ${s.city ?? ""}`.trim(),
-        brand: s.brand?.trim() || null,
-        address: s.address?.trim() || "",
-        city: s.city?.trim() || "",
-        province: s.county?.trim() || null,
-        latitude: s.latitude,
-        longitude: s.longitude,
+        name: s.name?.trim() || `${brandName ?? ""} ${externalId}`.trim(),
+        brand: brandName,
+        address: s.location?.trim() || "",
+        city: extractCity(s.location),
+        province: null,
+        latitude: lat,
+        longitude: lon,
         stationType: "fuel",
       });
 
-      if (s.fuelPrices) {
-        for (const fp of s.fuelPrices) {
-          const fuelType = FUEL_TYPE_MAP.get(fp.fuelType);
-          if (!fuelType) continue;
-          if (fp.price <= 0) continue;
-
-          prices.push({
-            stationExternalId: externalId,
-            fuelType,
-            price: fp.price,
-            currency: "NOK",
-          });
-        }
-      }
-    }
-
-    console.log(
-      `[${this.source}] API: ${stations.length} stations, ${prices.length} prices`,
-    );
-    return { stations, prices };
-  }
-
-  // ---------------------------------------------------------------------------
-  // Fallback: Scrape brand-level averages from Nuxt SSR payload
-  // ---------------------------------------------------------------------------
-  // NOTE: This provides brand-level aggregate prices, not per-station data.
-  // Stations are created as one virtual station per brand with a central
-  // coordinate in Norway. This is a degraded mode for when no API key is
-  // available. The data is still useful for average price comparisons.
-  // ---------------------------------------------------------------------------
-
-  private async fetchFromSSR(): Promise<{
-    stations: RawStation[];
-    prices: RawFuelPrice[];
-  }> {
-    const stations: RawStation[] = [];
-    const prices: RawFuelPrice[] = [];
-
-    try {
-      const res = await fetch(WEBSITE_URL, {
-        headers: {
-          Accept: "text/html",
-          "User-Agent": "Propel/1.0",
-        },
-        signal: AbortSignal.timeout(30_000),
-      });
-
-      if (!res.ok) {
-        throw new Error(`DrivstoffAppen website returned HTTP ${res.status}`);
-      }
-
-      const html = await res.text();
-
-      // Extract the __NUXT__ SSR payload
-      const nuxtMatch = html.match(
-        /window\.__NUXT__\s*=\s*(\{[\s\S]*?\})\s*<\/script>/,
-      );
-      if (!nuxtMatch) {
-        throw new Error("Could not extract __NUXT__ payload from page");
-      }
-
-      // The NUXT payload is JavaScript — try to extract the brand prices data
-      // It's stored under a key like "statistics-fuel-prices-by-brand-data"
-      const brandPrices = this.extractBrandPrices(nuxtMatch[1]);
-
-      if (brandPrices.length === 0) {
-        throw new Error("No brand prices found in SSR payload");
-      }
-
-      console.log(
-        `[${this.source}] SSR: Found ${brandPrices.length} brand price entries`,
-      );
-
-      // Group by brand
-      const brandGroups = new Map<string, BrandPrice[]>();
-      for (const bp of brandPrices) {
-        const existing = brandGroups.get(bp.brandName) || [];
-        existing.push(bp);
-        brandGroups.set(bp.brandName, existing);
-      }
-
-      // Known brand headquarters / representative coordinates in Norway
-      const BRAND_COORDS: ReadonlyMap<
-        string,
-        { lat: number; lon: number; city: string }
-      > = new Map([
-        ["Shell", { lat: 59.912, lon: 10.752, city: "Oslo" }],
-        ["Esso", { lat: 59.912, lon: 10.752, city: "Oslo" }],
-        ["Circle K", { lat: 59.912, lon: 10.752, city: "Oslo" }],
-        ["Uno-X", { lat: 58.969, lon: 5.732, city: "Stavanger" }],
-        ["Best", { lat: 60.392, lon: 5.324, city: "Bergen" }],
-        ["YX", { lat: 63.431, lon: 10.395, city: "Trondheim" }],
-        ["ST1", { lat: 59.912, lon: 10.752, city: "Oslo" }],
-        ["Automat 1", { lat: 59.912, lon: 10.752, city: "Oslo" }],
-      ]);
-      const DEFAULT_COORD = { lat: 59.912, lon: 10.752, city: "Oslo" };
-
-      for (const [brandName, brandEntries] of brandGroups) {
-        const coord = BRAND_COORDS.get(brandName) || DEFAULT_COORD;
-        const externalId = `no-brand-${brandName.toLowerCase().replace(/\s+/g, "-")}`;
-
-        stations.push({
-          externalId,
-          name: `${brandName} (avg)`,
-          brand: brandName,
-          address: "",
-          city: coord.city,
-          province: null,
-          latitude: coord.lat,
-          longitude: coord.lon,
-          stationType: "fuel",
-        });
-
-        for (const bp of brandEntries) {
-          const fuelType = FUEL_TYPE_MAP.get(bp.fuelType);
-          if (!fuelType) continue;
-          if (bp.price <= 0) continue;
-
-          prices.push({
-            stationExternalId: externalId,
-            fuelType,
-            price: bp.price,
-            currency: "NOK",
-          });
-        }
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error(`[${this.source}] SSR scrape failed: ${msg}`);
-    }
-
-    console.log(
-      `[${this.source}] SSR fallback: ${stations.length} brand entries, ${prices.length} prices`,
-    );
-    return { stations, prices };
-  }
-
-  /**
-   * Extract brand-level price data from the NUXT SSR payload string.
-   *
-   * The payload is a JS object literal. Brand prices are nested under a key
-   * containing "fuel-prices-by-brand". We parse it heuristically since
-   * full JS evaluation is not safe.
-   */
-  private extractBrandPrices(payload: string): BrandPrice[] {
-    const results: BrandPrice[] = [];
-
-    // Look for the brand-prices data array patterns in the payload
-    // Pattern: brandName:"Shell",fuelType:"FT_D",price:26.15,...
-    const entryRegex =
-      /brandName:\s*"([^"]+)"[^}]*?fuelType:\s*"([^"]+)"[^}]*?price:\s*([0-9.]+)/g;
-    let match;
-
-    while ((match = entryRegex.exec(payload)) !== null) {
-      const brandName = match[1];
-      const fuelType = match[2];
-      const price = parseFloat(match[3]);
-
-      if (brandName && fuelType && !isNaN(price) && price > 0) {
-        results.push({
-          brandName,
-          fuelType,
-          price,
-          date: new Date().toISOString().slice(0, 10),
+      for (const vp of validPrices) {
+        prices.push({
+          stationExternalId: externalId,
+          fuelType: vp.fuelType,
+          price: vp.price,
+          currency: "NOK",
         });
       }
     }
 
-    // Deduplicate: keep the latest entry per brand + fuelType
-    const deduped = new Map<string, BrandPrice>();
-    for (const bp of results) {
-      const key = `${bp.brandName}:${bp.fuelType}`;
-      deduped.set(key, bp);
-    }
-
-    return Array.from(deduped.values());
+    console.log(
+      `[${this.source}] Processed ${stations.length} stations, ${prices.length} prices`,
+    );
+    return { stations, prices };
   }
+}
+
+/**
+ * Extract city from a Norwegian address string.
+ * Common formats:
+ *   "Morgedalvegen 134, 3848 Morgedal"  → "Morgedal"
+ *   "E6 , 2660 Dombås"                   → "Dombås"
+ *   "Sekundær Fylkesvei 4 242, "         → ""
+ */
+function extractCity(location: string | null): string {
+  if (!location) return "";
+  // Try: last part after comma, strip postal code
+  const parts = location.split(",").map((p) => p.trim());
+  const last = parts[parts.length - 1];
+  if (!last) return "";
+  // Remove leading postal code (4-digit Norwegian)
+  const withoutPostal = last.replace(/^\d{4}\s*/, "").trim();
+  // Remove trailing country name
+  return withoutPostal
+    .replace(/,?\s*(Norge|Norway|Danmark|Sweden|Sverige)$/i, "")
+    .trim();
 }
