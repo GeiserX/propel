@@ -208,6 +208,7 @@ export class SwedenScraper extends BaseScraper {
 
       // Collect valid fuel prices
       const validPrices: Array<{ fuelType: FuelType; price: number }> = [];
+      if (!Array.isArray(s.prices)) continue;
       for (const p of s.prices) {
         if (p.deleted !== 0) continue;
         if (p.price <= 0) continue;
