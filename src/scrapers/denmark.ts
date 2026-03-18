@@ -321,7 +321,7 @@ export class DenmarkScraper extends BaseScraper {
       }
 
       // Parse prices (keys are product names, values are price strings)
-      for (const [product, priceStr] of Object.entries(entry.prices)) {
+      for (const [product, priceStr] of Object.entries(entry.prices ?? {})) {
         const price = parseFloat(priceStr);
         if (isNaN(price) || price <= 0) continue;
 
@@ -394,6 +394,7 @@ export class DenmarkScraper extends BaseScraper {
       if (s.stationTypeId !== 1) continue; // Road stations only
 
       const validPrices: Array<{ fuelType: FuelType; price: number }> = [];
+      if (!Array.isArray(s.prices)) continue;
       for (const p of s.prices) {
         if (p.deleted !== 0) continue;
         if (p.price <= 0) continue;
