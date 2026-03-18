@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { FuelType } from "@/types/station";
 import { FUEL_TYPES, FUEL_CATEGORIES, FUEL_TYPE_MAP } from "@/types/fuel";
 import { StatsDropdown } from "./stats-dropdown";
@@ -10,6 +11,14 @@ interface NavbarProps {
   selectedFuel: FuelType;
   onFuelChange: (fuel: FuelType) => void;
 }
+
+const selectChevron = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`;
+
+const selectStyle = {
+  backgroundImage: selectChevron,
+  backgroundRepeat: "no-repeat" as const,
+  backgroundPosition: "right 0.2rem center",
+};
 
 function CategoryIcon({ category }: { category: string }) {
   const cls = "h-3.5 w-3.5";
@@ -44,100 +53,143 @@ function CategoryIcon({ category }: { category: string }) {
   );
 }
 
+function FuelSelect({ selectedFuel, onFuelChange, className }: { selectedFuel: FuelType; onFuelChange: (fuel: FuelType) => void; className?: string }) {
+  const { t } = useI18n();
+  return (
+    <select
+      value={selectedFuel}
+      onChange={(e) => onFuelChange(e.target.value as FuelType)}
+      className={className}
+      style={{ ...selectStyle, backgroundPosition: "right 0.35rem center" }}
+    >
+      {FUEL_CATEGORIES.map((cat) => {
+        const fuels = FUEL_TYPES.filter((f) => f.category === cat.key);
+        if (fuels.length === 0) return null;
+        return (
+          <optgroup key={cat.key} label={t(`fuel.${cat.key}`)}>
+            {fuels.map((fuel) => (
+              <option key={fuel.code} value={fuel.code}>
+                {fuel.label}
+              </option>
+            ))}
+          </optgroup>
+        );
+      })}
+    </select>
+  );
+}
+
 export function Navbar({ selectedFuel, onFuelChange }: NavbarProps) {
   const currentFuel = FUEL_TYPE_MAP.get(selectedFuel);
-  const { locale, setLocale, t } = useI18n();
+  const { locale, setLocale } = useI18n();
   const currentLocale = LOCALES.find((l) => l.code === locale);
   const { currency, setCurrency } = useCurrency();
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
-    <nav className="relative z-20 flex h-11 shrink-0 items-center justify-between bg-[#0c111b] px-3.5">
-      {/* Left: Logo + Stats */}
-      <div className="flex items-center gap-1">
-        <a href="/" className="flex items-center gap-0">
-          <svg viewBox="0 0 140 32" className="h-6" aria-label="Propel">
-            <defs>
-              <linearGradient id="plogo" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#34d399" />
-                <stop offset="1" stopColor="#22d3ee" />
-              </linearGradient>
-            </defs>
-            <rect x="0" y="2" width="28" height="28" rx="7" fill="url(#plogo)" />
-            <path d="M17.5 6L10 17h5l-2.5 9L20 15h-5l2.5-9z" fill="#0c111b" />
-            <text x="35" y="23.5" fontFamily="system-ui, -apple-system, 'Segoe UI', sans-serif" fontSize="20" fontWeight="700" letterSpacing="-0.5" fill="white">
-              Propel
-            </text>
-          </svg>
-        </a>
+    <>
+      <nav className="relative z-20 flex h-11 shrink-0 items-center justify-between bg-[#0c111b] px-3.5">
+        {/* Left: Logo + Stats */}
+        <div className="flex items-center gap-1">
+          <a href="/" className="flex items-center gap-0">
+            <svg viewBox="0 0 140 32" className="h-6" aria-label="Propel">
+              <defs>
+                <linearGradient id="plogo" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#34d399" />
+                  <stop offset="1" stopColor="#22d3ee" />
+                </linearGradient>
+              </defs>
+              <rect x="0" y="2" width="28" height="28" rx="7" fill="url(#plogo)" />
+              <path d="M17.5 6L10 17h5l-2.5 9L20 15h-5l2.5-9z" fill="#0c111b" />
+              <text x="35" y="23.5" fontFamily="system-ui, -apple-system, 'Segoe UI', sans-serif" fontSize="20" fontWeight="700" letterSpacing="-0.5" fill="white">
+                Propel
+              </text>
+            </svg>
+          </a>
 
-        <div className="mx-1.5 h-4 w-px bg-white/[0.08]" />
+          <div className="mx-1.5 h-4 w-px bg-white/[0.08]" />
 
-        <StatsDropdown />
-      </div>
+          <StatsDropdown />
+        </div>
 
-      {/* Right: Language + Fuel type selector */}
-      <div className="flex items-center gap-1.5">
-        <select
-          value={locale}
-          onChange={(e) => setLocale(e.target.value as Locale)}
-          className="h-7 cursor-pointer appearance-none rounded border border-white/[0.08] bg-[#0c111b] py-0 pr-5 pl-2 text-[13px] font-medium text-gray-200 transition-all hover:border-white/15 hover:bg-white/10 focus:border-emerald-400/40 focus:bg-white/10 focus:ring-1 focus:ring-emerald-400/20 focus:outline-none [&_option]:bg-[#0c111b] [&_option]:text-gray-200"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "right 0.2rem center",
-          }}
-          title={currentLocale?.label}
-        >
-          {LOCALES.map((l) => (
-            <option key={l.code} value={l.code}>{l.label}</option>
-          ))}
-        </select>
+        {/* Right: Desktop shows all selectors, Mobile shows fuel + settings gear */}
+        <div className="flex items-center gap-1.5">
+          {/* Language + Currency — hidden on mobile, shown on sm+ */}
+          <div className="hidden items-center gap-1.5 sm:flex">
+            <select
+              value={locale}
+              onChange={(e) => setLocale(e.target.value as Locale)}
+              className="h-7 cursor-pointer appearance-none rounded border border-white/[0.08] bg-[#0c111b] py-0 pr-5 pl-2 text-[13px] font-medium text-gray-200 transition-all hover:border-white/15 hover:bg-white/10 focus:border-emerald-400/40 focus:bg-white/10 focus:ring-1 focus:ring-emerald-400/20 focus:outline-none [&_option]:bg-[#0c111b] [&_option]:text-gray-200"
+              style={selectStyle}
+              title={currentLocale?.label}
+            >
+              {LOCALES.map((l) => (
+                <option key={l.code} value={l.code}>{l.label}</option>
+              ))}
+            </select>
 
-        <select
-          value={currency}
-          onChange={(e) => setCurrency(e.target.value as Currency)}
-          className="h-7 cursor-pointer appearance-none rounded border border-white/[0.08] bg-[#0c111b] py-0 pr-5 pl-2 text-[13px] font-medium text-gray-200 transition-all hover:border-white/15 hover:bg-white/10 focus:border-emerald-400/40 focus:bg-white/10 focus:ring-1 focus:ring-emerald-400/20 focus:outline-none [&_option]:bg-[#0c111b] [&_option]:text-gray-200"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "right 0.2rem center",
-          }}
-        >
-          {CURRENCIES.map((c) => (
-            <option key={c.code} value={c.code}>{c.symbol} {c.code}</option>
-          ))}
-        </select>
+            <select
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value as Currency)}
+              className="h-7 cursor-pointer appearance-none rounded border border-white/[0.08] bg-[#0c111b] py-0 pr-5 pl-2 text-[13px] font-medium text-gray-200 transition-all hover:border-white/15 hover:bg-white/10 focus:border-emerald-400/40 focus:bg-white/10 focus:ring-1 focus:ring-emerald-400/20 focus:outline-none [&_option]:bg-[#0c111b] [&_option]:text-gray-200"
+              style={selectStyle}
+            >
+              {CURRENCIES.map((c) => (
+                <option key={c.code} value={c.code}>{c.symbol} {c.code}</option>
+              ))}
+            </select>
 
-        <div className="h-4 w-px bg-white/[0.08]" />
+            <div className="h-4 w-px bg-white/[0.08]" />
+          </div>
 
-        <span className="text-emerald-400/80">
-          {currentFuel && <CategoryIcon category={currentFuel.category} />}
-        </span>
-        <select
-          value={selectedFuel}
-          onChange={(e) => onFuelChange(e.target.value as FuelType)}
-          className="h-7 cursor-pointer appearance-none rounded border border-white/[0.08] bg-[#0c111b] py-0 pr-6 pl-2 text-[13px] font-medium text-gray-200 transition-all hover:border-white/15 hover:bg-white/10 focus:border-emerald-400/40 focus:bg-white/10 focus:ring-1 focus:ring-emerald-400/20 focus:outline-none [&_option]:bg-[#0c111b] [&_option]:text-gray-200 [&_optgroup]:bg-[#0c111b] [&_optgroup]:text-gray-400"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "right 0.35rem center",
-          }}
-        >
-          {FUEL_CATEGORIES.map((cat) => {
-            const fuels = FUEL_TYPES.filter((f) => f.category === cat.key);
-            if (fuels.length === 0) return null;
-            return (
-              <optgroup key={cat.key} label={t(`fuel.${cat.key}`)}>
-                {fuels.map((fuel) => (
-                  <option key={fuel.code} value={fuel.code}>
-                    {fuel.label}
-                  </option>
-                ))}
-              </optgroup>
-            );
-          })}
-        </select>
-      </div>
-    </nav>
+          {/* Fuel selector — always visible */}
+          <span className="text-emerald-400/80">
+            {currentFuel && <CategoryIcon category={currentFuel.category} />}
+          </span>
+          <FuelSelect
+            selectedFuel={selectedFuel}
+            onFuelChange={onFuelChange}
+            className="h-7 max-w-[140px] cursor-pointer appearance-none rounded border border-white/[0.08] bg-[#0c111b] py-0 pr-6 pl-2 text-[13px] font-medium text-gray-200 transition-all hover:border-white/15 hover:bg-white/10 focus:border-emerald-400/40 focus:bg-white/10 focus:ring-1 focus:ring-emerald-400/20 focus:outline-none sm:max-w-none [&_option]:bg-[#0c111b] [&_option]:text-gray-200 [&_optgroup]:bg-[#0c111b] [&_optgroup]:text-gray-400"
+          />
+
+          {/* Settings gear — mobile only */}
+          <button
+            onClick={() => setSettingsOpen((v) => !v)}
+            className="flex h-7 w-7 items-center justify-center rounded border border-white/[0.08] text-gray-400 transition-all hover:border-white/15 hover:bg-white/10 hover:text-gray-200 sm:hidden"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0Z" />
+            </svg>
+          </button>
+        </div>
+      </nav>
+
+      {/* Mobile settings dropdown */}
+      {settingsOpen && (
+        <div className="absolute right-2 top-12 z-30 flex flex-col gap-2 rounded-lg border border-black/10 bg-[#0c111b] p-3 shadow-xl sm:hidden">
+          <select
+            value={locale}
+            onChange={(e) => { setLocale(e.target.value as Locale); setSettingsOpen(false); }}
+            className="h-8 cursor-pointer appearance-none rounded border border-white/[0.08] bg-[#0c111b] py-0 pr-5 pl-2 text-[13px] font-medium text-gray-200 focus:outline-none [&_option]:bg-[#0c111b] [&_option]:text-gray-200"
+            style={selectStyle}
+          >
+            {LOCALES.map((l) => (
+              <option key={l.code} value={l.code}>{l.label}</option>
+            ))}
+          </select>
+          <select
+            value={currency}
+            onChange={(e) => { setCurrency(e.target.value as Currency); setSettingsOpen(false); }}
+            className="h-8 cursor-pointer appearance-none rounded border border-white/[0.08] bg-[#0c111b] py-0 pr-5 pl-2 text-[13px] font-medium text-gray-200 focus:outline-none [&_option]:bg-[#0c111b] [&_option]:text-gray-200"
+            style={selectStyle}
+          >
+            {CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code}>{c.symbol} {c.code}</option>
+            ))}
+          </select>
+        </div>
+      )}
+    </>
   );
 }
