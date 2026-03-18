@@ -95,19 +95,19 @@ export abstract class BaseScraper {
 
       // ------------------------------------------------------------------
       // 0a. Reject obviously bad prices (placeholders, wrong units)
-      //     Standard fuels: 0.10–5.00 EUR/GBP, 1.00–50.00 for other currencies
-      //     Alternative fuels (H2, CNG, LNG, ADBLUE): wider range allowed
+      //     Bounds configurable via PROPEL_PRICE_MIN / PROPEL_PRICE_MAX
+      //     (applied to EUR/GBP/CHF; other currencies use 10x wider range)
       // ------------------------------------------------------------------
+      const priceMin = parseFloat(process.env.PROPEL_PRICE_MIN ?? "0.30");
+      const priceMax = parseFloat(process.env.PROPEL_PRICE_MAX ?? "4.00");
       const ALT_FUELS = new Set(["H2", "CNG", "LNG", "ADBLUE"]);
       const badPriceBefore = prices.length;
       const validPrices = prices.filter((p) => {
         if (p.price <= 0) return false;
-        if (ALT_FUELS.has(p.fuelType)) return p.price < 100;
-        // Standard liquid fuels — generous bounds per currency
+        if (ALT_FUELS.has(p.fuelType)) return p.price >= 0.05 && p.price < 100;
         if (p.currency === "EUR" || p.currency === "GBP" || p.currency === "CHF")
-          return p.price >= 0.10 && p.price <= 5.00;
-        // Other currencies (RON, etc.) — wider range
-        return p.price >= 0.10 && p.price <= 100;
+          return p.price >= priceMin && p.price <= priceMax;
+        return p.price >= priceMin && p.price <= priceMax * 25;
       });
       const badPrices = badPriceBefore - validPrices.length;
       if (badPrices > 0) {
