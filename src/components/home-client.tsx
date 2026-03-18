@@ -23,8 +23,9 @@ interface RouteState {
   primaryIndex: number;
 }
 
-export function HomeClient({ defaultFuel, center, zoom, clusterStations, corridorKm }: Props) {
+export function HomeClient({ defaultFuel, center, zoom, clusterStations, corridorKm: defaultCorridorKm }: Props) {
   const [selectedFuel, setSelectedFuel] = useState<FuelType>(defaultFuel as FuelType);
+  const [corridorKm, setCorridorKm] = useState(defaultCorridorKm);
   const [routeState, setRouteState] = useState<RouteState | null>(null);
   const [isRouteLoading, setIsRouteLoading] = useState(false);
   const [primaryStations, setPrimaryStations] = useState<StationsGeoJSONCollection>({ type: "FeatureCollection", features: [] });
@@ -145,6 +146,8 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, corrido
           maxPrice={maxPrice}
           maxDetour={maxDetour}
           onMaxDetourChange={setMaxDetour}
+          corridorKm={corridorKm}
+          onCorridorKmChange={setCorridorKm}
         />
       </div>
     </main>
