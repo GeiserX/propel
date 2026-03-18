@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
         COALESCE(fp.currency, 'EUR') AS currency,
         fp.reported_at
       FROM stations s
-      LEFT JOIN LATERAL (
+      JOIN LATERAL (
         SELECT price, currency, reported_at
         FROM fuel_prices
         WHERE station_id = s.id
