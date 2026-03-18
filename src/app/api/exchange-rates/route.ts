@@ -23,6 +23,11 @@ async function fetchRates(): Promise<{ rates: Record<string, number>; date: stri
     rates[match[1]] = parseFloat(match[2]);
   }
 
+  // Currencies not published by ECB — add fixed/approximate rates
+  if (!rates.BAM) rates.BAM = 1.95583; // Bosnia — pegged to EUR via currency board
+  if (!rates.MKD) rates.MKD = 61.5;    // North Macedonia — approximate, managed float
+  if (!rates.RSD) rates.RSD = 117.0;   // Serbia — approximate, managed float
+
   return { rates, date };
 }
 

@@ -34,6 +34,11 @@ export const COUNTRIES: Record<string, CountryConfig> = {
   NO: { code: "NO", name: "Norge", center: [8.47, 60.47], zoom: 5, defaultFuel: "E5" },
   RS: { code: "RS", name: "Srbija", center: [21.01, 44.02], zoom: 7, defaultFuel: "E5" },
   FI: { code: "FI", name: "Suomi", center: [25.75, 61.92], zoom: 5, defaultFuel: "E10" },
+  EE: { code: "EE", name: "Eesti", center: [24.75, 58.60], zoom: 7, defaultFuel: "E5" },
+  LV: { code: "LV", name: "Latvija", center: [24.10, 56.95], zoom: 7, defaultFuel: "E5" },
+  LT: { code: "LT", name: "Lietuva", center: [23.88, 55.17], zoom: 7, defaultFuel: "E5" },
+  BA: { code: "BA", name: "Bosna i Hercegovina", center: [17.68, 43.92], zoom: 7, defaultFuel: "B7" },
+  MK: { code: "MK", name: "Северна Македонија", center: [21.75, 41.60], zoom: 8, defaultFuel: "B7" },
 };
 
 /**

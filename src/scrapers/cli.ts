@@ -26,6 +26,11 @@ import { SwedenScraper } from "./sweden";
 import { NorwayScraper } from "./norway";
 import { SerbiaScraper } from "./serbia";
 import { FinlandScraper } from "./finland";
+import { EstoniaScraper } from "./estonia";
+import { LatviaScraper } from "./latvia";
+import { LithuaniaScraper } from "./lithuania";
+import { BosniasScraper } from "./bosnia";
+import { NorthMacedoniaScraper } from "./north-macedonia";
 
 // ---------------------------------------------------------------------------
 // Scraper CLI
@@ -67,6 +72,11 @@ const SCRAPERS: Record<string, () => BaseScraper> = {
   NO: () => new NorwayScraper(),
   RS: () => new SerbiaScraper(),
   FI: () => new FinlandScraper(),
+  EE: () => new EstoniaScraper(),
+  LV: () => new LatviaScraper(),
+  LT: () => new LithuaniaScraper(),
+  BA: () => new BosniasScraper(),
+  MK: () => new NorthMacedoniaScraper(),
 };
 
 function usage(): never {
