@@ -34,7 +34,7 @@ export async function geocode(
 ): Promise<PhotonResult[]> {
   if (!PHOTON_URL) return [];
 
-  const params = new URLSearchParams({ q: query, lang: "es", limit: "5" });
+  const params = new URLSearchParams({ q: query, limit: "5" });
   if (lat != null && lon != null) {
     params.set("lat", String(lat));
     params.set("lon", String(lon));
