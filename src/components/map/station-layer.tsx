@@ -87,13 +87,14 @@ export function StationLayer({ stations, onPriceRange, cluster = true, selectedS
   }, [colorStops]);
 
   // Cluster color: use avgPrice (aggregated by clusterProperties) with same scale
+  // Guard against countPrice=0 to avoid division-by-zero → null
   const clusterColor = useMemo((): ExpressionSpecification => {
     if (!colorStops) return PRICE_COLORS[3] as unknown as ExpressionSpecification;
     return [
-      "interpolate",
-      ["linear"],
-      ["/", ["get", "sumPrice"], ["get", "countPrice"]],
-      ...colorStops,
+      "case",
+      [">", ["get", "countPrice"], 0],
+      ["interpolate", ["linear"], ["/", ["get", "sumPrice"], ["get", "countPrice"]], ...colorStops],
+      "#9ca3af",
     ] as ExpressionSpecification;
   }, [colorStops]);
 

@@ -136,13 +136,14 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
   const fetchStations = useCallback(
     async (fuel: FuelType) => {
       const map = mapRef.current;
-      if (!map) {
-        console.warn("[map] fetchStations: map ref not ready");
-        return;
-      }
+      if (!map) return;
 
       const bounds = map.getBounds();
       if (!bounds) return;
+
+      // Skip fetch at very low zoom — minZoom on the map should prevent this,
+      // but guard anyway to avoid massive queries
+      if (map.getZoom() < 5) return;
 
       const bbox = [
         bounds.getWest(),
@@ -262,6 +263,7 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
         latitude: center[1],
         zoom,
       }}
+      minZoom={5}
       mapStyle={OPENFREEMAP_STYLE}
       onLoad={handleLoad}
       onMoveEnd={handleMoveEnd}
