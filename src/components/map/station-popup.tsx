@@ -28,12 +28,17 @@ function symbolFor(code: string): string {
 
 export function StationPopup({ station, onClose }: StationPopupProps) {
   const { t } = useI18n();
-  const { symbol, formatPrice, rateInfo } = useCurrency();
+  const { decimals: userDecimals, rateInfo } = useCurrency();
   const { properties, geometry } = station;
   const fuelInfo = FUEL_TYPE_MAP.get(properties.fuelType as Parameters<typeof FUEL_TYPE_MAP.get>[0]);
 
   const isConverted = properties.originalCurrency != null;
   const conversionNote = isConverted ? rateInfo(properties.originalCurrency!) : null;
+
+  // Derive display symbol & decimals from station's actual currency (post-conversion or native)
+  const stationCurrency = CURRENCIES.find((c) => c.code === properties.currency);
+  const displaySymbol = stationCurrency?.symbol ?? properties.currency;
+  const displayDecimals = isConverted ? userDecimals : (stationCurrency?.decimals ?? 3);
 
   return (
     <Popup
@@ -69,10 +74,10 @@ export function StationPopup({ station, onClose }: StationPopupProps) {
                 <span className="text-[15px] font-medium text-gray-400">≈</span>
               )}
               <span className="text-[22px] font-bold tabular-nums leading-none text-gray-900">
-                {formatPrice(properties.price)}
+                {properties.price.toFixed(displayDecimals)}
               </span>
               <span className="text-[11px] font-medium text-gray-500">
-                {symbol}/L
+                {displaySymbol}/L
               </span>
             </div>
             <p className="mt-1 text-[10px] text-gray-400">
@@ -86,7 +91,7 @@ export function StationPopup({ station, onClose }: StationPopupProps) {
             {/* Conversion info */}
             {isConverted && properties.originalPrice != null && (
               <p className="mt-1.5 border-t border-gray-200/60 pt-1.5 text-[9px] leading-tight text-gray-400">
-                {properties.originalPrice.toFixed(3)} {symbolFor(properties.originalCurrency!)}/L
+                {properties.originalPrice.toFixed(CURRENCIES.find((c) => c.code === properties.originalCurrency)?.decimals ?? 3)} {symbolFor(properties.originalCurrency!)}/L
                 {conversionNote && (
                   <span className="ml-1">· {conversionNote}</span>
                 )}
