@@ -15,6 +15,23 @@ export function GeolocateButton({ onGeolocate }: GeolocateButtonProps) {
   const [state, setState] = useState<GeoState>("idle");
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
 
+  // Auto-detect location if permission already granted
+  useEffect(() => {
+    if (!navigator.geolocation || !navigator.permissions) return;
+    navigator.permissions.query({ name: "geolocation" }).then((perm) => {
+      if (perm.state === "granted") {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            setUserLocation([pos.coords.longitude, pos.coords.latitude]);
+            setState("active");
+          },
+          () => {},
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+        );
+      }
+    }).catch(() => {});
+  }, []);
+
   // Watch position when active
   useEffect(() => {
     if (state !== "active" || !navigator.geolocation) return;
