@@ -217,38 +217,46 @@ export class FinlandScraper extends BaseScraper {
   /**
    * Parse station data from a polttoaine.net city page.
    *
-   * Actual HTML structure (verified Mar 2026):
-   *   <tr class="bg1">
-   *     <td> <a href="/index.php?cmd=map&id=XXXX" style="float: right;">
-   *       &nbsp;<img ...class="karttaLinkki" /></a>
-   *       Station Brand, Location Address (optional notes)</td>
-   *     <td class="PvmTD Pvm">DD.MM.</td>
-   *     <td title="95E10" class="Hinnat ...">PRICE</td>
-   *     <td class="Hinnat ...">PRICE</td>
-   *     <td class="Hinnat ...">PRICE</td>
-   *   </tr>
+   * Actual HTML structure (single-line per row, verified Mar 2026):
+   *   <tr class=" bg1 E10"><td> <a href="/index.php?cmd=map&id=XXXX" style="float: right;">&nbsp;<img .../></a>Station Name</td><td class="PvmTD Pvm">DD.MM.</td><td title="95E10" class="Hinnat ...">PRICE</td><td class="Hinnat ...">PRICE</td><td class="Hinnat ...">PRICE</td></tr>
    *
-   * Key observations:
-   * - No numbered first column; the station cell IS the first <td>
-   * - Map link is inside the station cell with float:right, followed by station name text
-   * - 5 columns total: station, date, 95E10, 98E, diesel
-   * - Some rows lack the map link (cannot geocode, skip these)
+   * Parsing strategy:
+   * - First isolate each <tr>...</tr> block, then extract <td> cells within it
+   * - Station rows have exactly 5 cells: station, date, 95E10, 98E, diesel
+   * - Map link is inside the station cell with float:right, station name as text after </a>
+   * - Rows without map link are skipped (cannot geocode)
    * - 98E prices may have <span class="E99">*</span> prefix (V-Power marker)
+   * - Regional view pages (PK-Seutu etc.) omit the E10 class from <tr>
    */
   private parseCityPage(html: string, city: string): PolttoaineStation[] {
     const stations: PolttoaineStation[] = [];
 
-    // Match table rows containing a map link with station data
-    // Captures: (1) station cell content, (2) date cell, (3) 95E10, (4) 98E, (5) diesel
-    const rowRegex =
-      /<tr[^>]*>\s*<td[^>]*>([\s\S]*?)<\/td>\s*<td[^>]*>[^<]*<\/td>\s*<td[^>]*>([\s\S]*?)<\/td>\s*<td[^>]*>([\s\S]*?)<\/td>\s*<td[^>]*>([\s\S]*?)<\/td>/gi;
+    // Two-step parsing: first isolate each <tr>...</tr> block, then
+    // extract <td> cells within it. This avoids the previous single-pass
+    // regex whose [\s\S]*? groups could bleed across row boundaries when
+    // the header row (with <a> tags in the date cell) broke the [^<]* gate.
+    const trRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+    const tdRegex = /<td[^>]*>([\s\S]*?)<\/td>/gi;
 
-    let match;
-    while ((match = rowRegex.exec(html)) !== null) {
-      const stationCell = match[1];
-      const price95Cell = match[2];
-      const price98Cell = match[3];
-      const priceDiCell = match[4];
+    let trMatch;
+    while ((trMatch = trRegex.exec(html)) !== null) {
+      const rowHtml = trMatch[1];
+
+      // Extract all <td> cells from this row
+      const cells: string[] = [];
+      tdRegex.lastIndex = 0;
+      let tdMatch;
+      while ((tdMatch = tdRegex.exec(rowHtml)) !== null) {
+        cells.push(tdMatch[1]);
+      }
+
+      // Station rows have exactly 5 cells: station, date, 95E10, 98E, diesel
+      if (cells.length !== 5) continue;
+
+      const stationCell = cells[0];
+      const price95Cell = cells[2];
+      const price98Cell = cells[3];
+      const priceDiCell = cells[4];
 
       // Extract map ID from the station cell link
       const linkMatch = stationCell.match(

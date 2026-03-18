@@ -14,9 +14,11 @@ import type { FuelType } from "../types/station";
 // accurate enough for comparison.
 //
 // HTML structure on cenagoriva.rs:
-//   <th><img src="..." alt="nis pumpa logo" loading="lazy"></th>
+//   <th|td><img src="..." alt="nis pumpa logo" loading="lazy"></th|td>
 //   <td class="price" data-price="186">186.00</td>
-// Brand name extracted from img alt: "X pumpa logo" -> "X"
+// Brand image cell uses <th> on most pages but <td> on some (e.g. bmb-premijum).
+// Alt text format varies: "brand pumpa logo" OR just "brand logo".
+// Brand name extracted from img alt, stripping "pumpa" and/or "logo" suffix.
 // Price from data-price attribute (more reliable than displayed text).
 //
 // NOTE: Only NIS Petrol / Gazprom Petrol stations have per-station locations.
@@ -237,27 +239,34 @@ export class SerbiaScraper extends BaseScraper {
    *   <th><img src="assets/nis.jpg" alt="nis pumpa logo" loading="lazy"></th>
    *   <td class="price" data-price="186">186.00</td>
    *
-   * Brand name: extracted from img alt attribute ("X pumpa logo" -> "X").
+   * Some pages use <td> instead of <th> for the brand image cell, and the alt
+   * text format varies: "brand pumpa logo" OR just "brand logo".
+   *
+   * Brand name: extracted from img alt, stripping "pumpa" and/or "logo" suffix.
    * Price: from data-price attribute (preferred over displayed text which can
    * show 0.00 for brands with missing data).
    */
   private parseCenaGorivaPage(html: string): BrandPrice[] {
     const prices: BrandPrice[] = [];
 
-    // Match <th> with brand logo followed by <td> with data-price
-    // Pattern handles multiline and whitespace variations
+    // Match <th> or <td> with brand logo followed by <td> with data-price.
+    // Some pages wrap brand images in <td> instead of <th> (e.g. bmb-premijum).
     const pairRegex =
-      /<th>\s*<img[^>]*?alt="([^"]+?)"[^>]*?>\s*<\/th>\s*<td[^>]*?data-price="([^"]+?)"[^>]*?>/gi;
+      /<t[hd]>\s*<img[^>]*?alt="([^"]+?)"[^>]*?>\s*<\/t[hd]>\s*<td[^>]*?data-price="([^"]+?)"[^>]*?>/gi;
 
     let match;
     while ((match = pairRegex.exec(html)) !== null) {
       const altText = match[1].trim();
       const priceStr = match[2].trim();
 
-      // Extract brand name: "nis pumpa logo" -> "nis", "euro petrol pumpa logo" -> "euro petrol"
+      // Extract brand name from alt text variants:
+      //   "nis pumpa logo" -> "nis"
+      //   "euro petrol logo" -> "euro petrol"
+      //   "mol logo" -> "mol"
       const brand = altText
-        .replace(/\s*pumpa\s*logo\s*$/i, "")
-        .trim();
+        .replace(/\s*(pumpa\s+)?logo\s*$/i, "")
+        .trim()
+        .toLowerCase();
 
       const price = parseFloat(priceStr);
 
