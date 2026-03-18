@@ -250,7 +250,9 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
     mapRef.current?.flyTo({ center: [lon, lat], zoom: 12, duration: 1500 });
   }, []);
 
-  const stationBeforeId = clusterStations ? "clusters" : "unclustered-point";
+  // Disable clustering when routes are active — individual stations matter for corridor view
+  const effectiveCluster = clusterStations && !routes;
+  const stationBeforeId = effectiveCluster ? "clusters" : "unclustered-point";
 
   return (
     <Map
@@ -263,7 +265,7 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
       mapStyle={OPENFREEMAP_STYLE}
       onLoad={handleLoad}
       onMoveEnd={handleMoveEnd}
-      interactiveLayerIds={clusterStations ? ["clusters", "unclustered-point"] : ["unclustered-point"]}
+      interactiveLayerIds={effectiveCluster ? ["clusters", "unclustered-point"] : ["unclustered-point"]}
       attributionControl={{ compact: true }}
       style={{ width: "100%", height: "100%" }}
     >
@@ -275,7 +277,7 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
           beforeLayerId={stationBeforeId}
         />
       )}
-      <StationLayer stations={filteredStations} onPriceRange={handlePriceRange} cluster={clusterStations} selectedStationId={selectedStationId} onSelectStation={onSelectStation} />
+      <StationLayer stations={filteredStations} onPriceRange={handlePriceRange} cluster={effectiveCluster} selectedStationId={selectedStationId} onSelectStation={onSelectStation} />
       <GeolocateButton onGeolocate={handleGeolocate} />
       <PriceFilter
         stations={displayStations}

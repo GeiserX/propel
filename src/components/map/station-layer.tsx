@@ -60,26 +60,42 @@ export function StationLayer({ stations, onPriceRange, cluster = true, selectedS
     onPriceRange?.(min, max);
   }, [min, max, onPriceRange]);
 
-  // Build dynamic color interpolation expression using percentile range
-  // Guard against null/missing price to avoid "Expected value to be of type number, but found null"
-  const circleColor = useMemo((): ExpressionSpecification => {
-    if (min == null || max == null) {
-      return ["case", ["!", ["has", "price"]], "#9ca3af", PRICE_COLORS[3]] as ExpressionSpecification;
-    }
-
+  // Build color stops from percentile range — reused for both points and clusters
+  const colorStops = useMemo(() => {
+    if (min == null || max == null) return null;
     const stops: (string | number)[] = [];
     for (let i = 0; i < PRICE_COLORS.length; i++) {
       const price = min + (i / (PRICE_COLORS.length - 1)) * (max - min);
       stops.push(price, PRICE_COLORS[i]);
     }
+    return stops;
+  }, [min, max]);
+
+  // Build dynamic color interpolation expression using percentile range
+  // Guard against null/missing price to avoid "Expected value to be of type number, but found null"
+  const circleColor = useMemo((): ExpressionSpecification => {
+    if (!colorStops) {
+      return ["case", ["!", ["has", "price"]], "#9ca3af", PRICE_COLORS[3]] as ExpressionSpecification;
+    }
 
     return [
       "case",
       ["all", ["has", "price"], ["!=", ["get", "price"], null]],
-      ["interpolate", ["linear"], ["get", "price"], ...stops],
+      ["interpolate", ["linear"], ["get", "price"], ...colorStops],
       "#9ca3af",
     ] as ExpressionSpecification;
-  }, [min, max]);
+  }, [colorStops]);
+
+  // Cluster color: use avgPrice (aggregated by clusterProperties) with same scale
+  const clusterColor = useMemo((): ExpressionSpecification => {
+    if (!colorStops) return PRICE_COLORS[3] as unknown as ExpressionSpecification;
+    return [
+      "interpolate",
+      ["linear"],
+      ["/", ["get", "sumPrice"], ["get", "countPrice"]],
+      ...colorStops,
+    ] as ExpressionSpecification;
+  }, [colorStops]);
 
   const handleClick = useCallback(
     (e: MapLayerMouseEvent) => {
@@ -152,6 +168,12 @@ export function StationLayer({ stations, onPriceRange, cluster = true, selectedS
     "circle-stroke-color": "#ffffff",
   };
 
+  // Cluster properties: accumulate sum and count of prices for average calculation
+  const clusterProperties = useMemo(() => ({
+    sumPrice: ["+", ["case", ["all", ["has", "price"], ["!=", ["get", "price"], null]], ["get", "price"], 0]] as ExpressionSpecification,
+    countPrice: ["+", ["case", ["all", ["has", "price"], ["!=", ["get", "price"], null]], 1, 0]] as ExpressionSpecification,
+  }), []);
+
   return (
     <>
       {cluster ? (
@@ -160,8 +182,9 @@ export function StationLayer({ stations, onPriceRange, cluster = true, selectedS
           type="geojson"
           data={stations}
           cluster
-          clusterMaxZoom={7}
-          clusterRadius={40}
+          clusterMaxZoom={11}
+          clusterRadius={50}
+          clusterProperties={clusterProperties}
         >
           <Layer
             id="clusters"
@@ -169,17 +192,7 @@ export function StationLayer({ stations, onPriceRange, cluster = true, selectedS
             type="circle"
             filter={["has", "point_count"]}
             paint={{
-              "circle-color": [
-                "step",
-                ["get", "point_count"],
-                "#60a5fa",
-                50,
-                "#3b82f6",
-                200,
-                "#2563eb",
-                500,
-                "#1d4ed8",
-              ],
+              "circle-color": clusterColor,
               "circle-radius": [
                 "step",
                 ["get", "point_count"],
