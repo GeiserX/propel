@@ -93,16 +93,47 @@ export abstract class BaseScraper {
 
       const { stations, prices } = await this.fetch();
 
+      // ------------------------------------------------------------------
+      // 0a. Reject obviously bad prices (placeholders, wrong units)
+      //     Standard fuels: 0.10–5.00 EUR/GBP, 1.00–50.00 for other currencies
+      //     Alternative fuels (H2, CNG, LNG, ADBLUE): wider range allowed
+      // ------------------------------------------------------------------
+      const ALT_FUELS = new Set(["H2", "CNG", "LNG", "ADBLUE"]);
+      const badPriceBefore = prices.length;
+      const validPrices = prices.filter((p) => {
+        if (p.price <= 0) return false;
+        if (ALT_FUELS.has(p.fuelType)) return p.price < 100;
+        // Standard liquid fuels — generous bounds per currency
+        if (p.currency === "EUR" || p.currency === "GBP" || p.currency === "CHF")
+          return p.price >= 0.10 && p.price <= 5.00;
+        // Other currencies (RON, etc.) — wider range
+        return p.price >= 0.10 && p.price <= 100;
+      });
+      const badPrices = badPriceBefore - validPrices.length;
+      if (badPrices > 0) {
+        console.log(`[${this.source}] Filtered out ${badPrices} invalid prices`);
+      }
+
+      // ------------------------------------------------------------------
+      // 0b. Drop fuel-only stations that have no valid prices (keep EV chargers)
+      // ------------------------------------------------------------------
+      const stationsWithPrices = new Set(validPrices.map((p) => p.stationExternalId));
+      const filteredStations = stations.filter(
+        (s) => stationsWithPrices.has(s.externalId) || s.stationType !== "fuel",
+      );
+      const dropped = stations.length - filteredStations.length;
+
       console.log(
-        `[${this.source}] Fetched ${stations.length} stations, ${prices.length} price rows`,
+        `[${this.source}] Fetched ${stations.length} stations, ${prices.length} price rows` +
+          (dropped > 0 ? ` (dropped ${dropped} with no prices)` : ""),
       );
 
       // ------------------------------------------------------------------
       // 1. Upsert stations in batches
       // ------------------------------------------------------------------
       const STATION_BATCH = 500;
-      for (let i = 0; i < stations.length; i += STATION_BATCH) {
-        const batch = stations.slice(i, i + STATION_BATCH);
+      for (let i = 0; i < filteredStations.length; i += STATION_BATCH) {
+        const batch = filteredStations.slice(i, i + STATION_BATCH);
         try {
           stationsUpserted += await this.upsertStationBatch(prisma, batch);
         } catch (err) {
@@ -129,7 +160,7 @@ export abstract class BaseScraper {
       const extToId = new Map(stationRows.map((r) => [r.external_id, r.id]));
 
       // Resolve prices
-      const resolvedPrices = prices.flatMap((p) => {
+      const resolvedPrices = validPrices.flatMap((p) => {
         const stationId = extToId.get(p.stationExternalId);
         if (!stationId) return [];
         return [
@@ -166,6 +197,24 @@ export abstract class BaseScraper {
       );
 
       console.log(`[${this.source}] Inserted ${pricesUpserted} prices`);
+
+      // ------------------------------------------------------------------
+      // 3. Clean up orphaned fuel stations (no prices from any source)
+      // ------------------------------------------------------------------
+      const cleaned: Array<{ count: bigint }> = await prisma.$queryRawUnsafe(
+        `WITH deleted AS (
+           DELETE FROM stations
+           WHERE country = $1
+             AND station_type = 'fuel'
+             AND id NOT IN (SELECT DISTINCT station_id FROM fuel_prices)
+           RETURNING id
+         ) SELECT count(*) FROM deleted`,
+        this.country,
+      );
+      const cleanedCount = Number(cleaned[0]?.count ?? 0);
+      if (cleanedCount > 0) {
+        console.log(`[${this.source}] Cleaned up ${cleanedCount} stations with no prices`);
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       errors.push(`Fatal: ${msg}`);
