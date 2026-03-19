@@ -313,7 +313,7 @@ export function SearchPanel({
   return (
     <div className="absolute left-2 right-2 top-2 z-10 flex max-h-[calc(100dvh-4rem)] flex-col sm:left-3 sm:right-auto sm:top-3 sm:w-[340px]">
       {/* Search card */}
-      <div className="shrink-0 rounded-xl border border-black/[0.08] bg-white/95 shadow-lg backdrop-blur-sm dark:border-white/[0.08] dark:bg-gray-900/95">
+      <div className="shrink-0 rounded-xl border border-black/[0.08] bg-white/75 shadow-lg backdrop-blur-md dark:border-white/[0.08] dark:bg-gray-900/75">
         {/* Origin row */}
         <div className="flex items-center">
           <div className="flex w-10 shrink-0 items-center justify-center">
@@ -502,7 +502,7 @@ export function SearchPanel({
 
       {/* Route info + alternatives — hidden when collapsed on mobile */}
       {primaryRoute && !(collapsed && isRouteMobile) && (
-        <div className="mt-2 shrink-0 rounded-xl border border-black/[0.08] bg-white/95 shadow-lg backdrop-blur-sm dark:border-white/[0.08] dark:bg-gray-900/95">
+        <div className="mt-2 shrink-0 rounded-xl border border-black/[0.08] bg-white/75 shadow-lg backdrop-blur-md dark:border-white/[0.08] dark:bg-gray-900/75">
           {/* All routes — selected one is bold, others are clickable */}
           {routes && routes.map((route, i) => {
             const color = ROUTE_COLORS[i % ROUTE_COLORS.length];
@@ -530,7 +530,7 @@ export function SearchPanel({
 
       {/* Station list along route — hidden when collapsed on mobile */}
       {phase === "route" && allStationsWithPrice.length > 0 && !(collapsed && isRouteMobile) && (
-        <div className="mt-2 flex min-h-0 flex-1 flex-col rounded-xl border border-black/[0.08] bg-white/95 shadow-lg backdrop-blur-sm dark:border-white/[0.08] dark:bg-gray-900/95">
+        <div className="mt-2 flex min-h-0 flex-1 flex-col rounded-xl border border-black/[0.08] bg-white/75 shadow-lg backdrop-blur-md dark:border-white/[0.08] dark:bg-gray-900/75">
           <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-2 dark:border-gray-700">
             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
               {t("stations.title")} ({stationList.length})
