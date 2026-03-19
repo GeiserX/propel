@@ -31,6 +31,9 @@ import { LatviaScraper } from "./latvia";
 import { LithuaniaScraper } from "./lithuania";
 import { BosniasScraper } from "./bosnia";
 import { NorthMacedoniaScraper } from "./north-macedonia";
+import { TurkeyScraper } from "./turkey";
+import { MoldovaScraper } from "./moldova";
+import { AustraliaScraper } from "./australia";
 
 // ---------------------------------------------------------------------------
 // Scraper CLI
@@ -77,6 +80,9 @@ const SCRAPERS: Record<string, () => BaseScraper> = {
   LT: () => new LithuaniaScraper(),
   BA: () => new BosniasScraper(),
   MK: () => new NorthMacedoniaScraper(),
+  TR: () => new TurkeyScraper(),
+  MD: () => new MoldovaScraper(),
+  AU: () => new AustraliaScraper(),
 };
 
 function usage(): never {
