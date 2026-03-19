@@ -307,9 +307,6 @@ export function SearchPanel({
     return (bestId !== cheapestId && bestId !== shortestDetourId) ? bestId : null;
   })() : null;
 
-  // Auto-collapse on mobile when route is calculated
-  const isRouteMobile = phase === "route" && primaryRoute;
-
   return (
     <div className="absolute left-2 right-2 top-2 z-10 flex max-h-[calc(100dvh-4rem)] flex-col sm:left-3 sm:right-auto sm:top-3 sm:w-[340px]">
       {/* Search card */}
@@ -358,11 +355,11 @@ export function SearchPanel({
           )}
         </div>
 
-        {/* Destination + waypoints — slides in, hidden when collapsed on mobile */}
+        {/* Destination + waypoints — slides in, hidden when collapsed */}
         <div
           className={`transition-all duration-300 ease-out ${
-            showDest && !(collapsed && isRouteMobile) ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
-          } ${destVisible && !(collapsed && isRouteMobile) ? "overflow-visible" : "overflow-hidden"}`}
+            showDest && !collapsed ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+          } ${destVisible && !collapsed ? "overflow-visible" : "overflow-hidden"}`}
         >
           {/* Waypoints (between origin and destination) */}
           {waypoints.map((wp, idx) => (
@@ -481,11 +478,11 @@ export function SearchPanel({
           )}
         </div>
 
-        {/* Mobile collapse toggle — only when route is active */}
-        {isRouteMobile && (
+        {/* Collapse toggle — when route is active */}
+        {phase === "route" && primaryRoute && (
           <button
             onClick={() => setCollapsed((v) => !v)}
-            className="flex w-full items-center justify-between border-t border-gray-100 bg-gray-50 px-4 py-2 dark:border-gray-700 dark:bg-gray-800/60 sm:hidden"
+            className="flex w-full items-center justify-between rounded-b-xl border-t border-gray-100 bg-gray-50 px-4 py-2 dark:border-gray-700 dark:bg-gray-800/60"
           >
             <div className="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-300">
               <div className="h-2 w-2 rounded-full bg-blue-500" />
@@ -500,8 +497,8 @@ export function SearchPanel({
         )}
       </div>
 
-      {/* Route info + alternatives — hidden when collapsed on mobile */}
-      {primaryRoute && !(collapsed && isRouteMobile) && (
+      {/* Route info + alternatives — hidden when collapsed */}
+      {primaryRoute && !collapsed && (
         <div className="mt-2 shrink-0 rounded-xl border border-black/[0.08] bg-white/75 shadow-lg backdrop-blur-md dark:border-white/[0.08] dark:bg-gray-900/75">
           {/* All routes — selected one is bold, others are clickable */}
           {routes && routes.map((route, i) => {
@@ -528,8 +525,8 @@ export function SearchPanel({
         </div>
       )}
 
-      {/* Station list along route — hidden when collapsed on mobile */}
-      {phase === "route" && allStationsWithPrice.length > 0 && !(collapsed && isRouteMobile) && (
+      {/* Station list along route — hidden when collapsed */}
+      {phase === "route" && allStationsWithPrice.length > 0 && !collapsed && (
         <div className="mt-2 flex min-h-0 flex-1 flex-col rounded-xl border border-black/[0.08] bg-white/75 shadow-lg backdrop-blur-md dark:border-white/[0.08] dark:bg-gray-900/75">
           <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-2 dark:border-gray-700">
             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
