@@ -205,7 +205,7 @@ function extractCity(address: string | null): string {
 
 async function getDrivstoffApiKey(): Promise<string> {
   const res = await fetch(`${DRIVSTOFF_API_BASE}/authorization-sessions`, {
-    headers: { Accept: "application/json", "User-Agent": "Propel/1.0" },
+    headers: { Accept: "application/json", "User-Agent": "Pumperly/1.0" },
     signal: AbortSignal.timeout(15_000),
   });
 
@@ -263,7 +263,7 @@ export class DenmarkScraper extends BaseScraper {
       headers: {
         Accept: "application/json",
         "X-API-KEY": apiKey,
-        "User-Agent": "Propel/1.0",
+        "User-Agent": "Pumperly/1.0",
       },
       signal: AbortSignal.timeout(60_000),
     });
@@ -359,7 +359,7 @@ export class DenmarkScraper extends BaseScraper {
 
     const headers: Record<string, string> = {
       Accept: "application/json",
-      "User-Agent": "Propel/1.0",
+      "User-Agent": "Pumperly/1.0",
       "X-API-KEY": apiKey,
       "X-CLIENT-ID": DRIVSTOFF_CLIENT_ID,
     };

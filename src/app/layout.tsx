@@ -2,13 +2,13 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Propel - Energy Route Planner",
+  title: "Pumperly - Energy Route Planner",
   description:
     "Find the cheapest fuel and EV charging stations along your route. Real-time prices, smart detour calculations, and range-aware recommendations.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Propel",
+    title: "Pumperly",
   },
 };
 

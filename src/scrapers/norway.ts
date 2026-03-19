@@ -131,7 +131,7 @@ async function getSessionToken(): Promise<string> {
     method: "GET",
     headers: {
       Accept: "application/json",
-      "User-Agent": "Propel/1.0",
+      "User-Agent": "Pumperly/1.0",
     },
     signal: AbortSignal.timeout(15_000),
   });
@@ -295,7 +295,7 @@ export class NorwayScraper extends BaseScraper {
 
     const headers: Record<string, string> = {
       Accept: "application/json",
-      "User-Agent": "Propel/1.0",
+      "User-Agent": "Pumperly/1.0",
       "X-API-KEY": apiKey,
       "X-CLIENT-ID": CLIENT_ID,
     };
@@ -408,7 +408,7 @@ export class NorwayScraper extends BaseScraper {
     const res = await fetch(SSR_URL, {
       headers: {
         Accept: "text/html",
-        "User-Agent": "Propel/1.0",
+        "User-Agent": "Pumperly/1.0",
       },
       signal: AbortSignal.timeout(30_000),
     });

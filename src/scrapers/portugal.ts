@@ -65,7 +65,7 @@ export class PortugalScraper extends BaseScraper {
       while ((page - 1) * 500 < total) {
         const url = `${BASE_URL}?idsTiposComb=${fuelId}&qtdPorPagina=500&pagina=${page}`;
         const res = await fetch(url, {
-          headers: { Accept: "application/json", "User-Agent": "Propel/1.0" },
+          headers: { Accept: "application/json", "User-Agent": "Pumperly/1.0" },
           signal: AbortSignal.timeout(30_000),
         });
 

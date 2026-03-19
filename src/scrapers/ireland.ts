@@ -75,7 +75,7 @@ export class IrelandScraper extends BaseScraper {
         const res = await fetch(url, {
           headers: {
             Accept: "application/json",
-            "User-Agent": "Mozilla/5.0 (compatible; Propel/1.0)",
+            "User-Agent": "Mozilla/5.0 (compatible; Pumperly/1.0)",
             Origin: "https://pickapump.com",
           },
           signal: AbortSignal.timeout(15_000),

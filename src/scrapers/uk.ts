@@ -62,7 +62,7 @@ export class UKScraper extends BaseScraper {
     for (const retailer of RETAILER_URLS) {
       try {
         const res = await fetch(retailer.url, {
-          headers: { Accept: "application/json", "User-Agent": "Propel/1.0" },
+          headers: { Accept: "application/json", "User-Agent": "Pumperly/1.0" },
           signal: AbortSignal.timeout(30_000),
         });
 

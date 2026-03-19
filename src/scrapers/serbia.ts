@@ -154,7 +154,7 @@ export class SerbiaScraper extends BaseScraper {
     const res = await fetch(MAP_URL, {
       headers: {
         Accept: "text/html",
-        "User-Agent": "Mozilla/5.0 (compatible; Propel/1.0)",
+        "User-Agent": "Mozilla/5.0 (compatible; Pumperly/1.0)",
         "Accept-Language": "sr-RS,sr;q=0.9",
       },
       signal: AbortSignal.timeout(30_000),
@@ -202,7 +202,7 @@ export class SerbiaScraper extends BaseScraper {
         const res = await fetch(url, {
           headers: {
             Accept: "text/html",
-            "User-Agent": "Mozilla/5.0 (compatible; Propel/1.0)",
+            "User-Agent": "Mozilla/5.0 (compatible; Pumperly/1.0)",
             "Accept-Language": "sr-RS,sr;q=0.9",
           },
           signal: AbortSignal.timeout(15_000),

@@ -24,14 +24,14 @@ const ThemeContext = createContext<ThemeContextValue>({
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window === "undefined") return "light";
-    const stored = localStorage.getItem("propel-theme") as Theme | null;
+    const stored = localStorage.getItem("pumperly-theme") as Theme | null;
     if (stored === "light" || stored === "dark") return stored;
     return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   });
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
-    localStorage.setItem("propel-theme", theme);
+    localStorage.setItem("pumperly-theme", theme);
   }, [theme]);
 
   const toggleTheme = useCallback(() => {

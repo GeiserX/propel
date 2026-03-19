@@ -36,11 +36,11 @@ export class MexicoScraper extends BaseScraper {
     // Fetch both endpoints in parallel
     const [placesRes, pricesRes] = await Promise.all([
       fetch(PLACES_URL, {
-        headers: { "User-Agent": "Propel/1.0" },
+        headers: { "User-Agent": "Pumperly/1.0" },
         signal: AbortSignal.timeout(60_000),
       }),
       fetch(PRICES_URL, {
-        headers: { "User-Agent": "Propel/1.0" },
+        headers: { "User-Agent": "Pumperly/1.0" },
         signal: AbortSignal.timeout(60_000),
       }),
     ]);

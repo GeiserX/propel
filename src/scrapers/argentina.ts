@@ -109,7 +109,7 @@ export class ArgentinaScraper extends BaseScraper {
 
   async fetch(): Promise<{ stations: RawStation[]; prices: RawFuelPrice[] }> {
     const res = await fetch(CSV_URL, {
-      headers: { "User-Agent": "Propel/1.0" },
+      headers: { "User-Agent": "Pumperly/1.0" },
       signal: AbortSignal.timeout(60_000),
     });
 

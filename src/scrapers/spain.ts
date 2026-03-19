@@ -119,7 +119,7 @@ export class SpainScraper extends BaseScraper {
     const response = await fetch(MITECO_URL, {
       headers: {
         Accept: "application/json",
-        "User-Agent": "Propel/1.0 (https://propel.geiser.cloud)",
+        "User-Agent": "Pumperly/1.0 (https://pumperly.com)",
       },
       // 60-second timeout — the endpoint can be slow
       signal: AbortSignal.timeout(60_000),

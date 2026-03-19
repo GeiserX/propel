@@ -42,7 +42,7 @@ export class FranceScraper extends BaseScraper {
 
   async fetch(): Promise<{ stations: RawStation[]; prices: RawFuelPrice[] }> {
     const res = await fetch(EXPORT_URL, {
-      headers: { Accept: "application/json", "User-Agent": "Propel/1.0" },
+      headers: { Accept: "application/json", "User-Agent": "Pumperly/1.0" },
       signal: AbortSignal.timeout(120_000),
     });
 

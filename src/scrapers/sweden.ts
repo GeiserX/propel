@@ -124,7 +124,7 @@ async function getSessionToken(): Promise<string> {
     method: "GET",
     headers: {
       Accept: "application/json",
-      "User-Agent": "Propel/1.0",
+      "User-Agent": "Pumperly/1.0",
     },
     signal: AbortSignal.timeout(15_000),
   });
@@ -162,7 +162,7 @@ export class SwedenScraper extends BaseScraper {
 
     const headers: Record<string, string> = {
       Accept: "application/json",
-      "User-Agent": "Propel/1.0",
+      "User-Agent": "Pumperly/1.0",
       "X-API-KEY": apiKey,
       "X-CLIENT-ID": CLIENT_ID,
     };

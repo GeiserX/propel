@@ -1,5 +1,5 @@
 {
-  "name": "propel",
+  "name": "pumperly",
   "version": "1.0.0",
   "description": "Open-source energy route planner for fuel and electric vehicles. Self-hostable.",
   "private": true,
@@ -12,13 +12,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/GeiserX/propel.git"
+    "url": "git+https://github.com/GeiserX/pumperly.git"
   },
   "license": "GPL-3.0-only",
   "bugs": {
-    "url": "https://github.com/GeiserX/propel/issues"
+    "url": "https://github.com/GeiserX/pumperly/issues"
   },
-  "homepage": "https://github.com/GeiserX/propel#readme",
+  "homepage": "https://github.com/GeiserX/pumperly#readme",
   "dependencies": {
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",

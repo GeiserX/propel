@@ -142,7 +142,7 @@ const CurrencyContext = createContext<CurrencyContextValue>({
 export function CurrencyProvider({ children }: { children: ReactNode }) {
   const [currency, setCurrencyState] = useState<Currency>(() => {
     if (typeof window === "undefined") return "EUR";
-    const stored = localStorage.getItem("propel-currency") as Currency | null;
+    const stored = localStorage.getItem("pumperly-currency") as Currency | null;
     if (stored && CURRENCY_MAP.has(stored)) return stored;
     return detectBrowserCurrency();
   });
@@ -160,7 +160,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
 
   const setCurrency = useCallback((c: Currency) => {
     setCurrencyState(c);
-    localStorage.setItem("propel-currency", c);
+    localStorage.setItem("pumperly-currency", c);
   }, []);
 
   const info = CURRENCY_MAP.get(currency) ?? CURRENCIES[0];

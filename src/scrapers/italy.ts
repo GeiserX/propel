@@ -53,11 +53,11 @@ export class ItalyScraper extends BaseScraper {
     // Fetch both CSVs in parallel
     const [stationsText, pricesText] = await Promise.all([
       fetch(STATIONS_URL, {
-        headers: { "User-Agent": "Propel/1.0" },
+        headers: { "User-Agent": "Pumperly/1.0" },
         signal: AbortSignal.timeout(60_000),
       }).then((r) => { if (!r.ok) throw new Error(`MIMIT stations CSV HTTP ${r.status}`); return r.text(); }),
       fetch(PRICES_URL, {
-        headers: { "User-Agent": "Propel/1.0" },
+        headers: { "User-Agent": "Pumperly/1.0" },
         signal: AbortSignal.timeout(60_000),
       }).then((r) => { if (!r.ok) throw new Error(`MIMIT prices CSV HTTP ${r.status}`); return r.text(); }),
     ]);

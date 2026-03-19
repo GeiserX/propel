@@ -699,14 +699,14 @@ function detectBrowserLocale(): Locale | null {
 export function I18nProvider({ defaultLocale = "es", children }: { defaultLocale?: Locale; children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(() => {
     if (typeof window === "undefined") return defaultLocale;
-    const stored = localStorage.getItem("propel-locale") as Locale | null;
+    const stored = localStorage.getItem("pumperly-locale") as Locale | null;
     if (stored && stored in translations) return stored;
     return detectBrowserLocale() ?? defaultLocale;
   });
 
   const setLocale = useCallback((l: Locale) => {
     setLocaleState(l);
-    localStorage.setItem("propel-locale", l);
+    localStorage.setItem("pumperly-locale", l);
   }, []);
 
   const t = useCallback((key: string) => {

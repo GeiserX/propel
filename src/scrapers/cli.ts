@@ -147,7 +147,7 @@ function formatResult(r: ScraperResult): string {
 async function main(): Promise<void> {
   const { countries } = parseArgs(process.argv.slice(2));
 
-  console.log(`Propel scraper starting — countries: ${countries.join(", ")}`);
+  console.log(`Pumperly scraper starting — countries: ${countries.join(", ")}`);
   console.log("---");
 
   const results: ScraperResult[] = [];

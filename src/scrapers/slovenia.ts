@@ -63,7 +63,7 @@ export class SloveniaScraper extends BaseScraper {
 
     while (url) {
       const res = await fetch(url, {
-        headers: { Accept: "application/json", "User-Agent": "Propel/1.0" },
+        headers: { Accept: "application/json", "User-Agent": "Pumperly/1.0" },
         signal: AbortSignal.timeout(30_000),
       });
 

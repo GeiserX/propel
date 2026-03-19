@@ -137,7 +137,7 @@ async function fetchStationList(
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
-      "User-Agent": "Mozilla/5.0 (compatible; Propel/1.0)",
+      "User-Agent": "Mozilla/5.0 (compatible; Pumperly/1.0)",
     },
     body: body.toString(),
     signal: AbortSignal.timeout(60_000),
@@ -309,7 +309,7 @@ export async function fetchFueloCountry(
     try {
       const res = await fetch(`${baseInfoUrl}/${s.id}?lang=en`, {
         headers: {
-          "User-Agent": "Mozilla/5.0 (compatible; Propel/1.0)",
+          "User-Agent": "Mozilla/5.0 (compatible; Pumperly/1.0)",
           Accept: "application/json",
         },
         signal: AbortSignal.timeout(15_000),

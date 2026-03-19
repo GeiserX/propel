@@ -79,7 +79,7 @@ export class AustriaScraper extends BaseScraper {
           const res = await fetch(url, {
             headers: {
               Accept: "application/json",
-              "User-Agent": "Propel/1.0",
+              "User-Agent": "Pumperly/1.0",
             },
             signal: AbortSignal.timeout(15_000),
           });

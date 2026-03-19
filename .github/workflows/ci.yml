@@ -90,7 +90,7 @@ jobs:
           context: .
           file: docker/Dockerfile
           push: false
-          tags: propel:${{ github.sha }}
+          tags: pumperly:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

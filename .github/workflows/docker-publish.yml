@@ -21,7 +21,7 @@ on:
         type: string
 
 env:
-  DOCKER_IMAGE: drumsergio/propel
+  DOCKER_IMAGE: drumsergio/pumperly
 
 jobs:
   build-and-push:

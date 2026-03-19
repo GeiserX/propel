@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { FuelType } from "@/types/station";
 import { FUEL_TYPES, FUEL_CATEGORIES, FUEL_TYPE_MAP } from "@/types/fuel";
 import { useI18n, LOCALES, type Locale } from "@/lib/i18n";
 import { useCurrency, CURRENCIES, type Currency } from "@/lib/currency";
 import { useTheme } from "@/lib/theme";
 import { StatsDropdown } from "./stats-dropdown";
+import { LegalModal } from "./legal-modal";
 
 type GeoState = "idle" | "loading" | "active" | "denied";
 
@@ -86,13 +87,29 @@ function FuelSelect({ selectedFuel, onFuelChange, className }: { selectedFuel: F
 
 const navBtnCls = "flex h-7 w-7 items-center justify-center rounded border border-white/[0.08] transition-all hover:border-white/15 hover:bg-white/10";
 
+type LegalPage = "privacy" | "terms" | "sources" | null;
+
 export function Navbar({ selectedFuel, onFuelChange, geoState, onGeolocate }: NavbarProps) {
   const currentFuel = FUEL_TYPE_MAP.get(selectedFuel);
   const { locale, setLocale } = useI18n();
   const currentLocale = LOCALES.find((l) => l.code === locale);
   const { currency, setCurrency } = useCurrency();
   const { theme, toggleTheme } = useTheme();
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [legalPage, setLegalPage] = useState<LegalPage>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) closeMenu();
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [menuOpen, closeMenu]);
 
   return (
     <>
@@ -100,7 +117,7 @@ export function Navbar({ selectedFuel, onFuelChange, geoState, onGeolocate }: Na
         {/* Left: Logo */}
         <div className="flex items-center gap-1">
           <a href="/" className="flex items-center gap-0">
-            <svg viewBox="0 0 140 32" className="h-6" aria-label="Propel">
+            <svg viewBox="0 0 168 32" className="h-6" aria-label="Pumperly">
               <defs>
                 <linearGradient id="plogo" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
                   <stop stopColor="#34d399" />
@@ -110,7 +127,7 @@ export function Navbar({ selectedFuel, onFuelChange, geoState, onGeolocate }: Na
               <rect x="0" y="2" width="28" height="28" rx="7" fill="url(#plogo)" />
               <path d="M17.5 6L10 17h5l-2.5 9L20 15h-5l2.5-9z" fill="#0c111b" />
               <text x="35" y="23.5" fontFamily="system-ui, -apple-system, 'Segoe UI', sans-serif" fontSize="20" fontWeight="700" letterSpacing="-0.5" fill="white">
-                Propel
+                Pumperly
               </text>
             </svg>
           </a>
@@ -202,59 +219,95 @@ export function Navbar({ selectedFuel, onFuelChange, geoState, onGeolocate }: Na
             <StatsDropdown />
           </div>
 
-          {/* Settings gear — mobile only */}
-          <button
-            onClick={() => setSettingsOpen((v) => !v)}
-            className={`${navBtnCls} text-gray-400 hover:text-gray-200 sm:hidden`}
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0Z" />
-            </svg>
-          </button>
+          {/* Hamburger menu — always visible */}
+          <div ref={menuRef} className="relative">
+            <button
+              onClick={() => setMenuOpen((v) => !v)}
+              className={`${navBtnCls} text-gray-400 hover:text-gray-200`}
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+              </svg>
+            </button>
+
+            {menuOpen && (
+              <div className="absolute right-0 top-9 z-30 w-56 rounded-lg border border-white/10 bg-[#0c111b] py-1 shadow-xl">
+                {/* Language + Currency — mobile only */}
+                <div className="flex flex-col gap-2 border-b border-white/[0.06] px-3 py-2 sm:hidden">
+                  <select
+                    value={locale}
+                    onChange={(e) => { setLocale(e.target.value as Locale); closeMenu(); }}
+                    className="h-8 cursor-pointer appearance-none rounded border border-white/[0.08] bg-[#0c111b] py-0 pr-5 pl-2 text-[13px] font-medium text-gray-200 focus:outline-none [&_option]:bg-[#0c111b] [&_option]:text-gray-200"
+                    style={selectStyle}
+                  >
+                    {LOCALES.map((l) => (
+                      <option key={l.code} value={l.code}>{l.label}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={currency}
+                    onChange={(e) => { setCurrency(e.target.value as Currency); closeMenu(); }}
+                    className="h-8 cursor-pointer appearance-none rounded border border-white/[0.08] bg-[#0c111b] py-0 pr-5 pl-2 text-[13px] font-medium text-gray-200 focus:outline-none [&_option]:bg-[#0c111b] [&_option]:text-gray-200"
+                    style={selectStyle}
+                  >
+                    {CURRENCIES.map((c) => (
+                      <option key={c.code} value={c.code}>{c.symbol} {c.code}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Theme toggle */}
+                <button
+                  onClick={() => { toggleTheme(); closeMenu(); }}
+                  className="flex w-full items-center gap-3 px-3 py-2 text-[13px] text-gray-300 hover:bg-white/5 sm:hidden"
+                >
+                  {theme === "light" ? (
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" /></svg>
+                  ) : (
+                    <svg className="h-4 w-4 text-amber-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" /></svg>
+                  )}
+                  {theme === "light" ? "Dark mode" : "Light mode"}
+                </button>
+
+                <div className="border-t border-white/[0.06] sm:border-t-0" />
+
+                {/* Legal + contact links */}
+                <a
+                  href="mailto:support@pumperly.com"
+                  className="flex w-full items-center gap-3 px-3 py-2 text-[13px] text-gray-300 hover:bg-white/5"
+                  onClick={closeMenu}
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" /></svg>
+                  Support
+                </a>
+                <button
+                  onClick={() => { setLegalPage("privacy"); closeMenu(); }}
+                  className="flex w-full items-center gap-3 px-3 py-2 text-[13px] text-gray-300 hover:bg-white/5"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" /></svg>
+                  Privacy Policy
+                </button>
+                <button
+                  onClick={() => { setLegalPage("terms"); closeMenu(); }}
+                  className="flex w-full items-center gap-3 px-3 py-2 text-[13px] text-gray-300 hover:bg-white/5"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
+                  Terms of Service
+                </button>
+                <button
+                  onClick={() => { setLegalPage("sources"); closeMenu(); }}
+                  className="flex w-full items-center gap-3 px-3 py-2 text-[13px] text-gray-300 hover:bg-white/5"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" /></svg>
+                  Data Sources
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </nav>
 
-      {/* Mobile settings dropdown */}
-      {settingsOpen && (
-        <div className="absolute right-2 top-12 z-30 flex flex-col gap-2 rounded-lg border border-black/10 bg-[#0c111b] p-3 shadow-xl sm:hidden">
-          <select
-            value={locale}
-            onChange={(e) => { setLocale(e.target.value as Locale); setSettingsOpen(false); }}
-            className="h-8 cursor-pointer appearance-none rounded border border-white/[0.08] bg-[#0c111b] py-0 pr-5 pl-2 text-[13px] font-medium text-gray-200 focus:outline-none [&_option]:bg-[#0c111b] [&_option]:text-gray-200"
-            style={selectStyle}
-          >
-            {LOCALES.map((l) => (
-              <option key={l.code} value={l.code}>{l.label}</option>
-            ))}
-          </select>
-          <select
-            value={currency}
-            onChange={(e) => { setCurrency(e.target.value as Currency); setSettingsOpen(false); }}
-            className="h-8 cursor-pointer appearance-none rounded border border-white/[0.08] bg-[#0c111b] py-0 pr-5 pl-2 text-[13px] font-medium text-gray-200 focus:outline-none [&_option]:bg-[#0c111b] [&_option]:text-gray-200"
-            style={selectStyle}
-          >
-            {CURRENCIES.map((c) => (
-              <option key={c.code} value={c.code}>{c.symbol} {c.code}</option>
-            ))}
-          </select>
-          <button
-            onClick={() => { toggleTheme(); setSettingsOpen(false); }}
-            className="flex h-8 items-center gap-2 rounded border border-white/[0.08] bg-[#0c111b] px-2 text-[13px] font-medium text-gray-200"
-          >
-            {theme === "light" ? (
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
-              </svg>
-            ) : (
-              <svg className="h-3.5 w-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
-              </svg>
-            )}
-            {theme === "light" ? "Dark" : "Light"}
-          </button>
-        </div>
-      )}
+      {legalPage && <LegalModal page={legalPage} onClose={() => setLegalPage(null)} />}
     </>
   );
 }

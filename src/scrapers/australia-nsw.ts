@@ -102,7 +102,7 @@ export class AustraliaNSWScraper extends BaseScraper {
       headers: {
         Authorization: `Bearer ${token}`,
         apikey: apiKey,
-        transactionid: `propel_${Date.now()}`,
+        transactionid: `pumperly_${Date.now()}`,
         requesttimestamp: ts,
         "Content-Type": "application/json",
       },
