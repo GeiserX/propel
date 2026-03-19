@@ -15,7 +15,8 @@ export type FuelType =
   | "CNG"
   | "LNG"
   | "H2"
-  | "ADBLUE";
+  | "ADBLUE"
+  | "EV";
 
 export interface Station {
   id: string;

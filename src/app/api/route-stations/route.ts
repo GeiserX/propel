@@ -6,7 +6,7 @@ import type { StationsGeoJSONCollection, StationGeoJSON } from "@/types/station"
 const VALID_FUEL_TYPES = [
   "E5", "E5_PREMIUM", "E10", "E5_98", "E98_E10",
   "B7", "B7_PREMIUM", "B10", "B_AGRICULTURAL", "HVO",
-  "LPG", "CNG", "LNG", "H2", "ADBLUE",
+  "LPG", "CNG", "LNG", "H2", "ADBLUE", "EV",
 ] as const;
 
 const bodySchema = z.object({
@@ -57,41 +57,71 @@ export async function POST(request: NextRequest) {
 
   try {
     const routeGeom = `ST_GeomFromText($1, 4326)`;
-    const rows: StationRow[] = await prisma.$queryRawUnsafe(
-      `
-      SELECT
-        s.id,
-        s.name,
-        s.brand,
-        s.address,
-        s.city,
-        ST_X(s.geom) AS longitude,
-        ST_Y(s.geom) AS latitude,
-        fp.price::float AS price,
-        COALESCE(fp.currency, 'EUR') AS currency,
-        fp.reported_at,
-        ST_LineLocatePoint(${routeGeom}, s.geom)::float AS route_fraction,
-        ST_Distance(s.geom::geography, ${routeGeom}::geography)::float AS distance_m
-      FROM stations s
-      JOIN LATERAL (
-        SELECT price, currency, reported_at
-        FROM fuel_prices
-        WHERE station_id = s.id
-          AND fuel_type = $3
-        ORDER BY reported_at DESC NULLS LAST
-        LIMIT 1
-      ) fp ON true
-      WHERE ST_DWithin(
-        s.geom::geography,
-        ${routeGeom}::geography,
-        $2
-      )
-      ORDER BY route_fraction
-      `,
-      wkt,
-      corridorMeters,
-      fuel,
-    );
+    const isEV = fuel === "EV";
+
+    const rows: StationRow[] = isEV
+      ? await prisma.$queryRawUnsafe(
+          `
+          SELECT
+            s.id,
+            s.name,
+            s.brand,
+            s.address,
+            s.city,
+            ST_X(s.geom) AS longitude,
+            ST_Y(s.geom) AS latitude,
+            NULL::float AS price,
+            'EUR' AS currency,
+            NULL::timestamptz AS reported_at,
+            ST_LineLocatePoint(${routeGeom}, s.geom)::float AS route_fraction,
+            ST_Distance(s.geom::geography, ${routeGeom}::geography)::float AS distance_m
+          FROM stations s
+          WHERE s.station_type IN ('ev_charger', 'both')
+            AND ST_DWithin(
+              s.geom::geography,
+              ${routeGeom}::geography,
+              $2
+            )
+          ORDER BY route_fraction
+          `,
+          wkt,
+          corridorMeters,
+        )
+      : await prisma.$queryRawUnsafe(
+          `
+          SELECT
+            s.id,
+            s.name,
+            s.brand,
+            s.address,
+            s.city,
+            ST_X(s.geom) AS longitude,
+            ST_Y(s.geom) AS latitude,
+            fp.price::float AS price,
+            COALESCE(fp.currency, 'EUR') AS currency,
+            fp.reported_at,
+            ST_LineLocatePoint(${routeGeom}, s.geom)::float AS route_fraction,
+            ST_Distance(s.geom::geography, ${routeGeom}::geography)::float AS distance_m
+          FROM stations s
+          JOIN LATERAL (
+            SELECT price, currency, reported_at
+            FROM fuel_prices
+            WHERE station_id = s.id
+              AND fuel_type = $3
+            ORDER BY reported_at DESC NULLS LAST
+            LIMIT 1
+          ) fp ON true
+          WHERE ST_DWithin(
+            s.geom::geography,
+            ${routeGeom}::geography,
+            $2
+          )
+          ORDER BY route_fraction
+          `,
+          wkt,
+          corridorMeters,
+          fuel,
+        );
 
     const features: StationGeoJSON[] = rows.map((row) => {
       // Estimate detour: round trip off-route, 1.3x road winding factor, 40 km/h avg

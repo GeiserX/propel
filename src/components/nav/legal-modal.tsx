@@ -152,6 +152,11 @@ function SourcesContent() {
         <li><strong>ANWB</strong> &mdash; Netherlands, Belgium, Luxembourg</li>
       </ul>
 
+      <h3>EV charging data</h3>
+      <ul>
+        <li><strong>Open Charge Map</strong> &mdash; EV charging station locations across all supported countries. Community-maintained, Open Data Commons Open Database License (ODbL). <a href="https://openchargemap.org" target="_blank" rel="noopener noreferrer">openchargemap.org</a></li>
+      </ul>
+
       <h3>Map and routing</h3>
       <ul>
         <li><strong>OpenStreetMap</strong> &mdash; Map data &copy; OpenStreetMap contributors, ODbL license</li>

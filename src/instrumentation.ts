@@ -35,6 +35,13 @@ const DEFAULT_INTERVALS: Record<string, number> = {
   LT: 12,   // Lithuania Fuelo.net — community-sourced, scrape every 12h
   BA: 12,   // Bosnia Fuelo.net — community-sourced, scrape every 12h
   MK: 12,   // North Macedonia Fuelo.net — community-sourced, scrape every 12h
+  // EV charger scrapers (OpenChargeMap) — all countries, daily
+  EV_ES: 24, EV_FR: 24, EV_PT: 24, EV_IT: 24, EV_AT: 24, EV_DE: 24,
+  EV_GB: 24, EV_SI: 24, EV_NL: 24, EV_BE: 24, EV_LU: 24, EV_RO: 24,
+  EV_GR: 24, EV_IE: 24, EV_HR: 24, EV_CH: 24, EV_PL: 24, EV_CZ: 24,
+  EV_HU: 24, EV_BG: 24, EV_SK: 24, EV_DK: 24, EV_SE: 24, EV_NO: 24,
+  EV_RS: 24, EV_FI: 24, EV_EE: 24, EV_LV: 24, EV_LT: 24, EV_BA: 24,
+  EV_MK: 24,
 };
 
 export async function register() {
@@ -79,6 +86,7 @@ export async function register() {
   const { LithuaniaScraper } = await import("./scrapers/lithuania");
   const { BosniasScraper } = await import("./scrapers/bosnia");
   const { NorthMacedoniaScraper } = await import("./scrapers/north-macedonia");
+  const { OCMScraper } = await import("./scrapers/ocm");
 
   const scraperFactories: Record<string, () => BaseScraper> = {
     ES: () => new SpainScraper(),
@@ -112,13 +120,61 @@ export async function register() {
     LT: () => new LithuaniaScraper(),
     BA: () => new BosniasScraper(),
     MK: () => new NorthMacedoniaScraper(),
+    // EV charger scrapers (OpenChargeMap) — keyed as EV_XX
+    EV_ES: () => new OCMScraper("ES"),
+    EV_FR: () => new OCMScraper("FR"),
+    EV_PT: () => new OCMScraper("PT"),
+    EV_IT: () => new OCMScraper("IT"),
+    EV_AT: () => new OCMScraper("AT"),
+    EV_DE: () => new OCMScraper("DE"),
+    EV_GB: () => new OCMScraper("GB"),
+    EV_SI: () => new OCMScraper("SI"),
+    EV_NL: () => new OCMScraper("NL"),
+    EV_BE: () => new OCMScraper("BE"),
+    EV_LU: () => new OCMScraper("LU"),
+    EV_RO: () => new OCMScraper("RO"),
+    EV_GR: () => new OCMScraper("GR"),
+    EV_IE: () => new OCMScraper("IE"),
+    EV_HR: () => new OCMScraper("HR"),
+    EV_CH: () => new OCMScraper("CH"),
+    EV_PL: () => new OCMScraper("PL"),
+    EV_CZ: () => new OCMScraper("CZ"),
+    EV_HU: () => new OCMScraper("HU"),
+    EV_BG: () => new OCMScraper("BG"),
+    EV_SK: () => new OCMScraper("SK"),
+    EV_DK: () => new OCMScraper("DK"),
+    EV_SE: () => new OCMScraper("SE"),
+    EV_NO: () => new OCMScraper("NO"),
+    EV_RS: () => new OCMScraper("RS"),
+    EV_FI: () => new OCMScraper("FI"),
+    EV_EE: () => new OCMScraper("EE"),
+    EV_LV: () => new OCMScraper("LV"),
+    EV_LT: () => new OCMScraper("LT"),
+    EV_BA: () => new OCMScraper("BA"),
+    EV_MK: () => new OCMScraper("MK"),
   };
 
   // Determine which countries to scrape
+  // Enabling "ES" auto-enables "EV_ES" too (unless PUMPERLY_EV_ENABLED=0)
   const enabledRaw = process.env.PUMPERLY_ENABLED_COUNTRIES;
-  const countries = enabledRaw
-    ? enabledRaw.split(",").map((c) => c.trim().toUpperCase()).filter((c) => c in scraperFactories)
-    : Object.keys(scraperFactories);
+  const evEnabled = process.env.PUMPERLY_EV_ENABLED !== "0";
+  let countries: string[];
+  if (enabledRaw) {
+    const explicit = enabledRaw.split(",").map((c) => c.trim().toUpperCase()).filter((c) => c in scraperFactories);
+    if (evEnabled) {
+      const evCodes = explicit
+        .filter((c) => !c.startsWith("EV_"))
+        .map((c) => `EV_${c}`)
+        .filter((c) => c in scraperFactories);
+      countries = [...new Set([...explicit, ...evCodes])];
+    } else {
+      countries = explicit.filter((c) => !c.startsWith("EV_"));
+    }
+  } else {
+    countries = evEnabled
+      ? Object.keys(scraperFactories)
+      : Object.keys(scraperFactories).filter((c) => !c.startsWith("EV_"));
+  }
 
   // Resolve per-country intervals
   for (const code of countries) {

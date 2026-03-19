@@ -52,6 +52,13 @@ function CategoryIcon({ category }: { category: string }) {
       </svg>
     );
   }
+  if (category === "electric") {
+    return (
+      <svg viewBox="0 0 16 16" className={cls} fill="currentColor">
+        <path d="M9.5 1L4 9h4l-1.5 6L13 7H9l.5-6z" />
+      </svg>
+    );
+  }
   return (
     <svg viewBox="0 0 16 16" className={cls} fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
       <path d="M8 2c0 0-3.5 3-3.5 5.5a3.5 3.5 0 007 0C11.5 5 8 2 8 2z" />

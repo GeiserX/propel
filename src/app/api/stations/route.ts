@@ -19,6 +19,7 @@ const VALID_FUEL_TYPES = [
   "LNG",
   "H2",
   "ADBLUE",
+  "EV",
 ] as const;
 
 const querySchema = z.object({
@@ -74,43 +75,71 @@ export async function GET(request: NextRequest) {
   const [minLon, minLat, maxLon, maxLat] = bbox;
 
   try {
-    // Query stations within the bounding box with the latest price for the selected fuel type.
-    // Uses PostGIS ST_Within + ST_MakeEnvelope for the spatial filter,
-    // and a lateral join to get only the most recent price per station.
-    const rows: StationRow[] = await prisma.$queryRawUnsafe(
-      `
-      SELECT
-        s.id,
-        s.name,
-        s.brand,
-        s.address,
-        s.city,
-        ST_X(s.geom) AS longitude,
-        ST_Y(s.geom) AS latitude,
-        fp.price::float AS price,
-        COALESCE(fp.currency, 'EUR') AS currency,
-        fp.reported_at
-      FROM stations s
-      JOIN LATERAL (
-        SELECT price, currency, reported_at
-        FROM fuel_prices
-        WHERE station_id = s.id
-          AND fuel_type = $5
-        ORDER BY reported_at DESC NULLS LAST
-        LIMIT 1
-      ) fp ON true
-      WHERE ST_Within(
-        s.geom,
-        ST_MakeEnvelope($1, $2, $3, $4, 4326)
-      )
-      LIMIT 20000
-      `,
-      minLon,
-      minLat,
-      maxLon,
-      maxLat,
-      fuel,
-    );
+    // EV fuel type: query by station_type instead of price join
+    const isEV = fuel === "EV";
+
+    const rows: StationRow[] = isEV
+      ? await prisma.$queryRawUnsafe(
+          `
+          SELECT
+            s.id,
+            s.name,
+            s.brand,
+            s.address,
+            s.city,
+            ST_X(s.geom) AS longitude,
+            ST_Y(s.geom) AS latitude,
+            NULL::float AS price,
+            'EUR' AS currency,
+            NULL::timestamptz AS reported_at
+          FROM stations s
+          WHERE s.station_type IN ('ev_charger', 'both')
+            AND ST_Within(
+              s.geom,
+              ST_MakeEnvelope($1, $2, $3, $4, 4326)
+            )
+          LIMIT 20000
+          `,
+          minLon,
+          minLat,
+          maxLon,
+          maxLat,
+        )
+      : // Standard fuel query with price join
+        await prisma.$queryRawUnsafe(
+          `
+          SELECT
+            s.id,
+            s.name,
+            s.brand,
+            s.address,
+            s.city,
+            ST_X(s.geom) AS longitude,
+            ST_Y(s.geom) AS latitude,
+            fp.price::float AS price,
+            COALESCE(fp.currency, 'EUR') AS currency,
+            fp.reported_at
+          FROM stations s
+          JOIN LATERAL (
+            SELECT price, currency, reported_at
+            FROM fuel_prices
+            WHERE station_id = s.id
+              AND fuel_type = $5
+            ORDER BY reported_at DESC NULLS LAST
+            LIMIT 1
+          ) fp ON true
+          WHERE ST_Within(
+            s.geom,
+            ST_MakeEnvelope($1, $2, $3, $4, 4326)
+          )
+          LIMIT 20000
+          `,
+          minLon,
+          minLat,
+          maxLon,
+          maxLat,
+          fuel,
+        );
 
     const features: StationGeoJSON[] = rows.map((row) => ({
       type: "Feature",

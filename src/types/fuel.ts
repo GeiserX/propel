@@ -3,7 +3,7 @@ import type { FuelType } from "./station";
 export interface FuelTypeInfo {
   code: FuelType;
   label: string;
-  category: "gasoline" | "diesel" | "gas" | "hydrogen" | "other";
+  category: "gasoline" | "diesel" | "gas" | "hydrogen" | "electric" | "other";
 }
 
 export const FUEL_TYPES: FuelTypeInfo[] = [
@@ -24,6 +24,8 @@ export const FUEL_TYPES: FuelTypeInfo[] = [
   { code: "LNG", label: "GNL", category: "gas" },
   // Hydrogen
   { code: "H2", label: "Hidrógeno", category: "hydrogen" },
+  // Electric
+  { code: "EV", label: "EV Charging", category: "electric" },
   // Other
   { code: "ADBLUE", label: "AdBlue", category: "other" },
 ];
@@ -35,5 +37,6 @@ export const FUEL_CATEGORIES: { key: FuelTypeInfo["category"]; label: string }[]
   { key: "gasoline", label: "Gasolina" },
   { key: "gas", label: "Gas" },
   { key: "hydrogen", label: "Hidrógeno" },
+  { key: "electric", label: "Eléctrico" },
   { key: "other", label: "Otros" },
 ];
