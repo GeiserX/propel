@@ -17,7 +17,8 @@ export type Currency =
   | "CNY" | "HKD" | "KRW"
   | "SGD" | "MYR" | "THB" | "IDR" | "PHP"
   | "INR" | "ILS"
-  | "ZAR" | "BRL" | "MXN";
+  | "ZAR" | "BRL" | "MXN"
+  | "ARS" | "MDL";
 
 export interface CurrencyInfo {
   code: Currency;
@@ -63,6 +64,8 @@ export const CURRENCIES: CurrencyInfo[] = [
   { code: "ZAR", symbol: "R", label: "South African Rand", decimals: 2 },
   { code: "BRL", symbol: "R$", label: "Brazilian Real", decimals: 2 },
   { code: "MXN", symbol: "MX$", label: "Mexican Peso", decimals: 2 },
+  { code: "ARS", symbol: "AR$", label: "Argentine Peso", decimals: 0 },
+  { code: "MDL", symbol: "L", label: "Moldovan Leu", decimals: 2 },
 ];
 
 const CURRENCY_MAP = new Map(CURRENCIES.map((c) => [c.code, c]));
@@ -82,6 +85,8 @@ const REGION_TO_CURRENCY: Record<string, Currency> = {
   SG: "SGD", MY: "MYR", TH: "THB", ID: "IDR", PH: "PHP",
   IN: "INR", IL: "ILS",
   ZA: "ZAR",
+  AR: "ARS",
+  MD: "MDL",
   AU: "AUD", NZ: "NZD",
 };
 

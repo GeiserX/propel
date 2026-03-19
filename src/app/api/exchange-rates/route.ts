@@ -27,6 +27,8 @@ async function fetchRates(): Promise<{ rates: Record<string, number>; date: stri
   if (!rates.BAM) rates.BAM = 1.95583; // Bosnia — pegged to EUR via currency board
   if (!rates.MKD) rates.MKD = 61.5;    // North Macedonia — approximate, managed float
   if (!rates.RSD) rates.RSD = 117.0;   // Serbia — approximate, managed float
+  if (!rates.ARS) rates.ARS = 1200;    // Argentina — approximate, high inflation
+  if (!rates.MDL) rates.MDL = 19.5;    // Moldova — approximate
 
   return { rates, date };
 }
