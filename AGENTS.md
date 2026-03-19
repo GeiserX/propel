@@ -89,7 +89,7 @@ The closest analog is **A Better Route Planner (ABRP)** for EVs — Pumperly doe
 | Valhalla 3.5.1 | Self-hosted routing engine (`ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1`). 8-country merged PBF (17GB) built with osmium-tool. Multiple PBFs cause SIGABRT — always merge first. Needs 24GB RAM limit for tile build. |
 | Protomaps PMTiles | Self-hosted vector map tiles on NVMe |
 | OpenFreeMap | Primary tile provider (free, no API key, no rate limits) |
-| Photon 1.0.1 | Geocoding / address autocomplete. Runs on `eclipse-temurin:21-jre` with official JAR. Uses OpenSearch backend (NOT old Elasticsearch). Data imported from **per-country JSONL dumps** (31 countries). **Currently using public photon.komoot.io as fallback** while private Photon imports all 31 country dumps. Public API only supports `default,de,en,fr` languages (no `lang=es`). |
+| Photon 1.0.1 | Geocoding / address autocomplete. Runs on `eclipse-temurin:21-jre` with official JAR. Uses OpenSearch backend (NOT old Elasticsearch). Data imported from **per-country JSONL dumps** (26 regions covering 31 scraper countries). Two-phase import: Spain first (search works immediately), then remaining 25 countries in background. |
 | Caddy | Reverse proxy (existing on watchtower) |
 | Docker | Multi-stage builds, images on Docker Hub |
 | Portainer | Container management with GitOps |
@@ -280,8 +280,9 @@ These env vars allow self-hosters to scope the app to their country/region. For 
 
 ### Infrastructure
 - **Valhalla**: 8-country merged PBF (17GB, merged with `osmium merge`). Image: `ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1`. **Needs 24GB RAM limit**. No `tile_urls` env var — uses local PBF in `/custom_files/`. **CRITICAL: Valhalla crashes (SIGABRT `vector::_M_range_check`) when building from multiple PBFs** — always merge with osmium first. To add a country: download new PBF, re-merge all PBFs, delete old tiles, restart.
-- **Photon**: No official Docker image. Uses `eclipse-temurin:21-jre` with custom entrypoint that downloads Photon 1.0.1 JAR + per-country JSONL dumps from `download1.graphhopper.com/public/europe/{country}/photon-dump-{country}-1.0-latest.jsonl.zst`. Downloads 8 dumps, concatenates (first file keeps header, rest skip line 1), imports as one file. Must bind to `0.0.0.0` (`-listen-ip 0.0.0.0`). To add a country: add its dump URL to the DUMPS list, delete `.import_done` + `photon_data/`, restart.
-- **CRITICAL Photon notes**: (1) **Do NOT use planet dump with `-country-codes` flag** — Photon 1.0.1 crashes with NPE on entries lacking `country_code`. (2) **Do NOT use `grep`/`awk` to filter planet dump** — the JSONL header line must be preserved and gets stripped by naive filtering. (3) **Country-specific dumps are the reliable approach** — they avoid both issues. (4) France is listed as `france-monacco` (sic) on the download server. (5) Docker Compose `$$` escaping required for shell variables in the command block. (6) Old `lehrenfried/photon` image is incompatible (Elasticsearch 5.5.0 vs OpenSearch).
+- **Photon**: No official Docker image. Uses `eclipse-temurin:21-jre` (do NOT use JRE 25 — causes issues) with custom entrypoint. Downloads Photon 1.0.1 JAR + per-country JSONL dumps from `download1.graphhopper.com/public/europe/{country}/photon-dump-{country}-1.0-latest.jsonl.zst`. **Two-phase import**: Phase 1 imports Spain so search works quickly, then the server starts. Phase 2 imports the remaining 25 regions in a background process while serving. Each import creates a `.imported_{region}` marker file for resume capability. Must bind to `0.0.0.0` (`-listen-ip 0.0.0.0`). To add a country: add it to the COUNTRIES list in the compose entrypoint and restart. To reimport all: delete all `.imported_*` files + `.import_done` + `photon_data/` directory, restart.
+- **Photon regions vs scraper countries**: 26 Photon geocoding regions cover 31 scraper countries. Some regions bundle multiple countries (e.g. `british-islands` = UK+IE, `france-monacco` = FR+MC). Baltic/Balkan scraper countries (EE, LV, LT, BA, MK) lack dedicated Photon dumps but are covered by neighboring region data.
+- **CRITICAL Photon notes**: (1) **Each `import` call is ADDITIVE** — it adds to the existing OpenSearch index, not replaces. This is why per-country sequential import works. (2) **Do NOT use planet dump with `-country-codes` flag** — Photon 1.0.1 crashes with NPE on entries lacking `country_code`. (3) **Do NOT use `grep`/`awk` to filter planet dump** — the JSONL header line must be preserved and gets stripped by naive filtering. (4) **Country-specific dumps are the reliable approach** — they avoid both issues. (5) France is listed as `france-monacco` (sic) on the download server. (6) Docker Compose `$$` escaping required for shell variables in the command block. (7) Old `lehrenfried/photon` image is incompatible (Elasticsearch 5.5.0 vs OpenSearch).
 
 ## Core Features & Algorithms
 
@@ -395,7 +396,7 @@ pumperly/
 | app | `drumsergio/pumperly:x.y.z` | 512 MB | 3200 | Next.js app |
 | db | `postgis/postgis:17-3.4` | 2 GB | 5432 | PostGIS spatial DB |
 | valhalla | `ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1` | 24 GB (build), 1-2 GB (serve) | 8002 | Uses local 17GB merged PBF (8 countries). No `tile_urls`. First build ~2-4 hours. Steady-state ~1-2GB. |
-| photon | `eclipse-temurin:21-jre` | 4 GB (import), 2-3 GB (serve) | 2322 | First start downloads Photon 1.0.1 JAR + 8 country dumps. Concatenates and imports. Steady-state ~2-3GB. |
+| photon | `eclipse-temurin:21-jre` | 8 GB limit (import), 2-3 GB (serve) | 2322 | Two-phase: imports Spain first → starts serving → imports 25 more regions in background. Uses `.imported_{country}` markers for resume. Full 26-region import takes 20+ hours. Steady-state ~3GB. |
 | scraper | Built into the app via `instrumentation.ts` | — | — | Runs on startup + `PUMPERLY_SCRAPE_INTERVAL_HOURS` interval. No separate container needed. |
 
 ### CI/CD
@@ -406,6 +407,17 @@ pumperly/
 - Docker Hub secrets (`DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`) are configured in GitHub repo settings
 - **Deployment flow**: commit → push → **wait for GitHub Actions Docker Publish workflow to finish** → then `docker pull` and redeploy on watchtower. Never pull before the workflow completes
 - **Never restart Caddy** — always use `caddy reload` (Unraid FUSE causes stale file handles on restart)
+
+### Infrastructure & Backups
+
+- **Portainer stack**: ID 223 ("propel"), endpoint 2 on watchtower. Auto-update every 5 minutes from Gitea. Config path: `propel/docker-compose.yml` (symlink to `pumperly/docker-compose.yml`). The Gitea repo (`giteaer/watchtower`) is private — manual redeploy via API may fail with auth errors; auto-update handles it.
+- **Data volumes** (all under `/mnt/user/appdata/propel/`):
+  - `pgdata/` (~600 MB) — PostGIS database. Quick to rebuild via scrapers.
+  - `valhalla/` (~59 GB) — Pre-built routing tiles + source PBF. Self-healing: Valhalla rebuilds tiles from PBF on start if missing. Rebuild takes 3-6 hours.
+  - `photon/` (~250 GB when complete) — OpenSearch index + JAR. Most expensive to rebuild (20+ hours for 26 regions). Has `.imported_{country}` markers for resume.
+- **Backups**: All Pumperly data is covered by the existing Duplicacy appdata backup (daily at 1 AM to geiserback Garage, encrypted, deduplicated). No additional backup config needed.
+- **Caddy**: Site block serves `propel.geiser.cloud, pumperly.com, www.pumperly.com`. Uses `dynamic_dns` for `pumperly.com`. Always `caddy reload`, never restart (Unraid FUSE stale file handle issue).
+- **DB credentials**: DB user/name kept as `propel` (not renamed — avoids data migration). Only env vars and container names use `pumperly`.
 
 ### Git Workflow
 

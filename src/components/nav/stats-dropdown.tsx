@@ -108,23 +108,27 @@ export function StatsDropdown() {
               </div>
 
               {/* Per-country breakdown */}
-              <div className="mb-3 max-h-[240px] space-y-0.5 overflow-y-auto">
-                <p className="mb-1 text-[10px] font-medium uppercase tracking-wider text-gray-400">By country</p>
-                {stats.countries.map((c) => (
-                  <div key={c.code} className="flex items-center justify-between rounded-md px-2 py-1 text-sm hover:bg-gray-50 dark:hover:bg-gray-800">
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-5 text-center text-xs">{FLAG[c.code] ?? "🏳️"}</span>
-                      <span className="w-7 text-center text-[10px] font-medium text-gray-400 dark:text-gray-500">{c.code}</span>
-                      <span className="text-gray-700 dark:text-gray-300">{c.name}</span>
-                    </span>
-                    <span className="flex items-center gap-2">
-                      <span className="tabular-nums text-gray-500">{formatNumber(c.stations)}</span>
-                      {c.lastUpdate && (
-                        <span className="text-[10px] text-gray-400">{timeAgo(c.lastUpdate)}</span>
-                      )}
-                    </span>
-                  </div>
-                ))}
+              <div className="mb-3 max-h-[240px] overflow-y-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+                      <th className="pb-1 pl-2 text-left" colSpan={3}>Country</th>
+                      <th className="pb-1 pr-2 text-right">Stations</th>
+                      <th className="pb-1 pr-2 text-right">Updated</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stats.countries.map((c) => (
+                      <tr key={c.code} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <td className="w-5 py-0.5 pl-2 text-center text-xs">{FLAG[c.code] ?? "🏳️"}</td>
+                        <td className="w-7 py-0.5 text-center text-[10px] font-medium text-gray-400 dark:text-gray-500">{c.code}</td>
+                        <td className="py-0.5 text-gray-700 dark:text-gray-300">{c.name}</td>
+                        <td className="py-0.5 pr-2 text-right tabular-nums text-gray-500">{formatNumber(c.stations)}</td>
+                        <td className="py-0.5 pr-2 text-right text-[10px] text-gray-400">{c.lastUpdate ? timeAgo(c.lastUpdate) : "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
 
               {/* Divider */}

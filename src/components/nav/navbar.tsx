@@ -135,8 +135,8 @@ export function Navbar({ selectedFuel, onFuelChange, geoState, onGeolocate }: Na
 
         {/* Right: Controls */}
         <div className="flex items-center gap-1.5">
-          {/* Language + Currency — hidden on mobile, shown on sm+ */}
-          <div className="hidden items-center gap-1.5 sm:flex">
+          {/* Language + Currency — hidden on mobile, shown on md+ */}
+          <div className="hidden items-center gap-1.5 md:flex">
             <select
               value={locale}
               onChange={(e) => setLocale(e.target.value as Locale)}
@@ -173,7 +173,7 @@ export function Navbar({ selectedFuel, onFuelChange, geoState, onGeolocate }: Na
             className="h-7 max-w-[140px] cursor-pointer appearance-none rounded border border-white/[0.08] bg-[#0c111b] py-0 pr-6 pl-2 text-[13px] font-medium text-gray-200 transition-all hover:border-white/15 hover:bg-white/10 focus:border-emerald-400/40 focus:bg-white/10 focus:ring-1 focus:ring-emerald-400/20 focus:outline-none sm:max-w-none [&_option]:bg-[#0c111b] [&_option]:text-gray-200 [&_optgroup]:bg-[#0c111b] [&_optgroup]:text-gray-400"
           />
 
-          <div className="hidden h-4 w-px bg-white/[0.08] sm:block" />
+          <div className="hidden h-4 w-px bg-white/[0.08] md:block" />
 
           {/* Geolocate button */}
           <button
@@ -202,7 +202,7 @@ export function Navbar({ selectedFuel, onFuelChange, geoState, onGeolocate }: Na
           </button>
 
           {/* Theme toggle — hidden on mobile, in settings dropdown instead */}
-          <button onClick={toggleTheme} className={`${navBtnCls} hidden text-gray-400 hover:text-gray-200 sm:flex`}>
+          <button onClick={toggleTheme} className={`${navBtnCls} hidden text-gray-400 hover:text-gray-200 md:flex`}>
             {theme === "light" ? (
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
@@ -215,7 +215,7 @@ export function Navbar({ selectedFuel, onFuelChange, geoState, onGeolocate }: Na
           </button>
 
           {/* Stats — hidden on mobile */}
-          <div className="hidden sm:block">
+          <div className="hidden md:block">
             <StatsDropdown />
           </div>
 
@@ -233,7 +233,7 @@ export function Navbar({ selectedFuel, onFuelChange, geoState, onGeolocate }: Na
             {menuOpen && (
               <div className="absolute right-0 top-9 z-30 w-56 rounded-lg border border-white/10 bg-[#0c111b] py-1 shadow-xl">
                 {/* Language + Currency — mobile only */}
-                <div className="flex flex-col gap-2 border-b border-white/[0.06] px-3 py-2 sm:hidden">
+                <div className="flex flex-col gap-2 border-b border-white/[0.06] px-3 py-2 md:hidden">
                   <select
                     value={locale}
                     onChange={(e) => { setLocale(e.target.value as Locale); closeMenu(); }}
@@ -259,7 +259,7 @@ export function Navbar({ selectedFuel, onFuelChange, geoState, onGeolocate }: Na
                 {/* Theme toggle */}
                 <button
                   onClick={() => { toggleTheme(); closeMenu(); }}
-                  className="flex w-full items-center gap-3 px-3 py-2 text-[13px] text-gray-300 hover:bg-white/5 sm:hidden"
+                  className="flex w-full items-center gap-3 px-3 py-2 text-[13px] text-gray-300 hover:bg-white/5 md:hidden"
                 >
                   {theme === "light" ? (
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" /></svg>
@@ -269,7 +269,7 @@ export function Navbar({ selectedFuel, onFuelChange, geoState, onGeolocate }: Na
                   {theme === "light" ? "Dark mode" : "Light mode"}
                 </button>
 
-                <div className="border-t border-white/[0.06] sm:border-t-0" />
+                <div className="border-t border-white/[0.06] md:border-t-0" />
 
                 {/* Legal + contact links */}
                 <a
