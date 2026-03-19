@@ -485,9 +485,15 @@ export function SearchPanel({
         {isRouteMobile && (
           <button
             onClick={() => setCollapsed((v) => !v)}
-            className="flex w-full items-center justify-center border-t border-gray-100 py-1 text-gray-400 dark:border-gray-700 sm:hidden"
+            className="flex w-full items-center justify-between border-t border-gray-100 bg-gray-50 px-4 py-2 dark:border-gray-700 dark:bg-gray-800/60 sm:hidden"
           >
-            <svg className={`h-4 w-4 transition-transform ${collapsed ? "" : "rotate-180"}`} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <div className="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-300">
+              <div className="h-2 w-2 rounded-full bg-blue-500" />
+              <span>{formatDistance(primaryRoute!.distance)}</span>
+              <span className="text-gray-400">·</span>
+              <span>{formatDuration(primaryRoute!.duration)}</span>
+            </div>
+            <svg className={`h-4 w-4 text-gray-400 transition-transform ${collapsed ? "" : "rotate-180"}`} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
             </svg>
           </button>
@@ -602,7 +608,7 @@ export function SearchPanel({
               return (
                 <button
                   key={sid}
-                  onClick={() => onFlyTo(station.geometry.coordinates, sid)}
+                  onClick={() => { onFlyTo(station.geometry.coordinates, sid); setCollapsed(true); }}
                   className={`flex w-full items-center justify-between border-b border-gray-50 px-4 py-2 text-left last:border-b-0 dark:border-gray-800 ${highlight || "hover:bg-gray-50 dark:hover:bg-gray-800"}`}
                 >
                   <div className="min-w-0 flex-1">

@@ -156,7 +156,7 @@ export function Navbar({ selectedFuel, onFuelChange, geoState, onGeolocate }: Na
             className="h-7 max-w-[140px] cursor-pointer appearance-none rounded border border-white/[0.08] bg-[#0c111b] py-0 pr-6 pl-2 text-[13px] font-medium text-gray-200 transition-all hover:border-white/15 hover:bg-white/10 focus:border-emerald-400/40 focus:bg-white/10 focus:ring-1 focus:ring-emerald-400/20 focus:outline-none sm:max-w-none [&_option]:bg-[#0c111b] [&_option]:text-gray-200 [&_optgroup]:bg-[#0c111b] [&_optgroup]:text-gray-400"
           />
 
-          <div className="h-4 w-px bg-white/[0.08]" />
+          <div className="hidden h-4 w-px bg-white/[0.08] sm:block" />
 
           {/* Geolocate button */}
           <button
@@ -184,8 +184,8 @@ export function Navbar({ selectedFuel, onFuelChange, geoState, onGeolocate }: Na
             )}
           </button>
 
-          {/* Theme toggle */}
-          <button onClick={toggleTheme} className={`${navBtnCls} text-gray-400 hover:text-gray-200`}>
+          {/* Theme toggle — hidden on mobile, in settings dropdown instead */}
+          <button onClick={toggleTheme} className={`${navBtnCls} hidden text-gray-400 hover:text-gray-200 sm:flex`}>
             {theme === "light" ? (
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
@@ -197,8 +197,10 @@ export function Navbar({ selectedFuel, onFuelChange, geoState, onGeolocate }: Na
             )}
           </button>
 
-          {/* Stats */}
-          <StatsDropdown />
+          {/* Stats — hidden on mobile */}
+          <div className="hidden sm:block">
+            <StatsDropdown />
+          </div>
 
           {/* Settings gear — mobile only */}
           <button
@@ -236,6 +238,21 @@ export function Navbar({ selectedFuel, onFuelChange, geoState, onGeolocate }: Na
               <option key={c.code} value={c.code}>{c.symbol} {c.code}</option>
             ))}
           </select>
+          <button
+            onClick={() => { toggleTheme(); setSettingsOpen(false); }}
+            className="flex h-8 items-center gap-2 rounded border border-white/[0.08] bg-[#0c111b] px-2 text-[13px] font-medium text-gray-200"
+          >
+            {theme === "light" ? (
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
+              </svg>
+            ) : (
+              <svg className="h-3.5 w-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
+              </svg>
+            )}
+            {theme === "light" ? "Dark" : "Light"}
+          </button>
         </div>
       )}
     </>
