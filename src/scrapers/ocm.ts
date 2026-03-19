@@ -11,7 +11,7 @@ import { BaseScraper, type RawFuelPrice, type RawStation } from "./base";
 
 const BASE_URL = "https://api.openchargemap.io/v3/poi/";
 const API_KEY = process.env.PUMPERLY_OCM_API_KEY ?? "";
-const MAX_RESULTS = 10000; // OCM max per request
+const MAX_RESULTS = 5000; // Keep moderate to avoid OCM timeouts
 
 interface OCMConnection {
   ConnectionTypeID: number;
@@ -81,7 +81,7 @@ export class OCMScraper extends BaseScraper {
         Accept: "application/json",
         "User-Agent": "Pumperly/1.0",
       },
-      signal: AbortSignal.timeout(60_000),
+      signal: AbortSignal.timeout(120_000),
     });
 
     if (!res.ok) {
