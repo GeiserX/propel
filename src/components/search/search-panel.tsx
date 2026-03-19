@@ -608,7 +608,7 @@ export function SearchPanel({
               return (
                 <button
                   key={sid}
-                  onClick={() => { onFlyTo(station.geometry.coordinates, sid); setCollapsed(true); }}
+                  onClick={() => { onFlyTo(station.geometry.coordinates, sid); if (window.matchMedia("(max-width: 639px)").matches) setCollapsed(true); }}
                   className={`flex w-full items-center justify-between border-b border-gray-50 px-4 py-2 text-left last:border-b-0 dark:border-gray-800 ${highlight || "hover:bg-gray-50 dark:hover:bg-gray-800"}`}
                 >
                   <div className="min-w-0 flex-1">
