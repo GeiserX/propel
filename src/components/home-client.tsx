@@ -163,7 +163,7 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations }: Props
     <ThemeProvider>
     <I18nProvider>
     <CurrencyProvider>
-    <main className="flex h-screen w-screen flex-col overflow-hidden">
+    <main className="flex h-dvh w-screen flex-col overflow-hidden">
       <Navbar
         selectedFuel={selectedFuel}
         onFuelChange={handleFuelChange}
