@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { StationsGeoJSONCollection } from "@/types/station";
 import { PRICE_COLORS } from "./price-legend";
 import { useI18n } from "@/lib/i18n";
@@ -23,7 +23,17 @@ export function PriceFilter({
   legendMax,
 }: PriceFilterProps) {
   const { t } = useI18n();
-  const { symbol: currencySymbol, formatPrice, decimals } = useCurrency();
+  const { symbol: currencySymbol, formatPrice, decimals, currency } = useCurrency();
+
+  // Reset filter when currency changes (old value is meaningless in new currency)
+  const prevCurrencyRef = useRef(currency);
+  useEffect(() => {
+    if (prevCurrencyRef.current !== currency) {
+      prevCurrencyRef.current = currency;
+      onMaxPriceChange(null);
+    }
+  }, [currency, onMaxPriceChange]);
+
   const { min, max, pricedCount } = useMemo(() => {
     const prices: number[] = [];
     for (const f of stations.features) {
