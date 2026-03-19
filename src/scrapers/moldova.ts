@@ -75,7 +75,7 @@ export class MoldovaScraper extends BaseScraper {
       // Moldova bounding box sanity check
       if (lat < 45.4 || lat > 48.5 || lon < 26.6 || lon > 30.2) continue;
 
-      const externalId = `anre_${s.idno}`;
+      const externalId = `anre_${s.idno}_${lat.toFixed(4)}_${lon.toFixed(4)}`;
       const address = [s.fullstreet, s.addrnum].filter(Boolean).join(" ") || "";
       const city = s.bua || s.lev1 || "";
 
