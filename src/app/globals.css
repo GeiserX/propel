@@ -10,10 +10,12 @@ body {
   background-color: #0c111b;
 }
 
-/* Chevron color pulse: alternates between gray and blue */
+/* Chevron bounce + color pulse: bounces while alternating gray↔blue */
 @keyframes chevron-pulse {
-  0%, 100% { color: #9ca3af; }
-  50% { color: #3b82f6; }
+  0%, 100% { color: #9ca3af; transform: translateY(0); }
+  25% { color: #3b82f6; transform: translateY(-25%); }
+  50% { color: #3b82f6; transform: translateY(0); }
+  75% { color: #9ca3af; transform: translateY(0); }
 }
 
 /* Map fills the viewport */
