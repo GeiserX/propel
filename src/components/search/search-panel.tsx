@@ -491,7 +491,7 @@ export function SearchPanel({
               <span>{formatDuration(primaryRoute!.duration)}</span>
               {collapsed && <span className="text-[10px] text-blue-500">▾</span>}
             </div>
-            <svg className={`h-4 w-4 animate-bounce ${collapsed ? "text-blue-500" : "rotate-180 text-gray-400"}`} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <svg className={`h-4 w-4 ${collapsed ? "text-blue-500" : "rotate-180 animate-bounce text-gray-400"}`} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
             </svg>
           </button>
