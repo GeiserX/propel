@@ -71,7 +71,7 @@ export function PriceFilter({
     : pricedCount;
 
   return (
-    <div className="absolute bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-3 z-10 flex w-[184px] flex-col gap-2 rounded-lg border border-black/10 bg-white/75 px-3 py-2.5 shadow-md backdrop-blur-md dark:border-white/10 dark:bg-gray-900/75">
+    <div className="absolute bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-3 z-10 flex w-[184px] flex-col gap-2 rounded-lg border border-black/10 bg-white/60 px-3 py-2.5 shadow-md backdrop-blur-md dark:border-white/10 dark:bg-gray-900/60">
       {/* Color legend gradient */}
       {hasLegend && (
         <div>
