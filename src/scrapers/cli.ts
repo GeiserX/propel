@@ -34,6 +34,8 @@ import { NorthMacedoniaScraper } from "./north-macedonia";
 import { TurkeyScraper } from "./turkey";
 import { MoldovaScraper } from "./moldova";
 import { AustraliaScraper } from "./australia";
+import { ArgentinaScraper } from "./argentina";
+import { MexicoScraper } from "./mexico";
 
 // ---------------------------------------------------------------------------
 // Scraper CLI
@@ -83,6 +85,8 @@ const SCRAPERS: Record<string, () => BaseScraper> = {
   TR: () => new TurkeyScraper(),
   MD: () => new MoldovaScraper(),
   AU: () => new AustraliaScraper(),
+  AR: () => new ArgentinaScraper(),
+  MX: () => new MexicoScraper(),
 };
 
 function usage(): never {

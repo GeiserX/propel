@@ -37,6 +37,7 @@ const FLAG: Record<string, string> = {
   DK: "🇩🇰", SE: "🇸🇪", NO: "🇳🇴", RS: "🇷🇸", FI: "🇫🇮",
   EE: "🇪🇪", LV: "🇱🇻", LT: "🇱🇹", BA: "🇧🇦", MK: "🇲🇰",
   TR: "🇹🇷", MD: "🇲🇩", AU: "🇦🇺", KR: "🇰🇷",
+  AR: "🇦🇷", MX: "🇲🇽",
 };
 
 export function StatsDropdown() {
