@@ -1,10 +1,22 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Propel - Energy Route Planner",
   description:
     "Find the cheapest fuel and EV charging stations along your route. Real-time prices, smart detour calculations, and range-aware recommendations.",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Propel",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#0c111b",
 };
 
 export default function RootLayout({

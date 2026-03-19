@@ -96,7 +96,7 @@ export function Navbar({ selectedFuel, onFuelChange, geoState, onGeolocate }: Na
 
   return (
     <>
-      <nav className="relative z-20 flex h-11 shrink-0 items-center justify-between bg-[#0c111b] px-3.5">
+      <nav className="relative z-20 flex shrink-0 items-center justify-between bg-[#0c111b] px-3.5 pt-[env(safe-area-inset-top)] h-[calc(2.75rem+env(safe-area-inset-top))]">
         {/* Left: Logo */}
         <div className="flex items-center gap-1">
           <a href="/" className="flex items-center gap-0">
