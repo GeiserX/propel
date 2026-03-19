@@ -95,11 +95,11 @@ export abstract class BaseScraper {
 
       // ------------------------------------------------------------------
       // 0a. Reject obviously bad prices (placeholders, wrong units)
-      //     Bounds configurable via PROPEL_PRICE_MIN / PROPEL_PRICE_MAX
+      //     Bounds configurable via PUMPERLY_PRICE_MIN / PUMPERLY_PRICE_MAX
       //     (applied to EUR/GBP/CHF; other currencies use 10x wider range)
       // ------------------------------------------------------------------
-      const priceMin = parseFloat(process.env.PROPEL_PRICE_MIN ?? "0.30");
-      const priceMax = parseFloat(process.env.PROPEL_PRICE_MAX ?? "4.00");
+      const priceMin = parseFloat(process.env.PUMPERLY_PRICE_MIN ?? "0.30");
+      const priceMax = parseFloat(process.env.PUMPERLY_PRICE_MAX ?? "4.00");
       const ALT_FUELS = new Set(["H2", "CNG", "LNG", "ADBLUE"]);
       const badPriceBefore = prices.length;
       const validPrices = prices.filter((p) => {

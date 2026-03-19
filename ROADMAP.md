@@ -1,4 +1,4 @@
-# Propel — Roadmap
+# Pumperly — Roadmap
 
 ## Vision
 
@@ -30,7 +30,7 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 - [ ] Seed script for development
 
 ### 0.3 — Map View (Default Page)
-- [x] Map centered on configurable country on first load (env vars: `PROPEL_DEFAULT_COUNTRY`)
+- [x] Map centered on configurable country on first load (env vars: `PUMPERLY_DEFAULT_COUNTRY`)
 - [x] Station markers from PostGIS via bbox API: `GET /api/stations?bbox=...&fuel=B7`
 - [x] MapLibre GeoJSON source with `cluster: true` (GPU clustering, clusterMaxZoom=9, clusterRadius=45)
 - [x] Color-coded markers: P5/P95 percentile-based 7-color rainbow gradient (green→red→purple) with dynamic price legend
@@ -39,18 +39,18 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 - [x] Price filter: max price slider (bottom-right, real-time filtering, shows station count)
 
 ### 0.3b — Navbar & Stats (bonus, not in original plan)
-- [x] Dark navbar (#0c111b, 44px) with Propel logo (emerald-to-cyan gradient bolt + wordmark)
+- [x] Dark navbar (#0c111b, 44px) with Pumperly logo (emerald-to-cyan gradient bolt + wordmark)
 - [x] Stats dropdown: station/price totals, per-country breakdown with flags, last update timestamps
 - [x] "Made with ♥ by Sergio Fernández" footer + GitHub Sponsors button
-- [x] GitHub Actions CI/CD: lint, typecheck, Docker build+push to Docker Hub (`drumsergio/propel`)
+- [x] GitHub Actions CI/CD: lint, typecheck, Docker build+push to Docker Hub (`drumsergio/pumperly`)
 
 ### 0.4 — Geolocation + Nearby
 - [x] Browser geolocation API (with consent prompt)
 - [x] "Center on me" button (top-right, flies to location at zoom 12)
 - [x] Auto-zoom to user area if geolocation granted
-- [x] Fallback: env-var-based country center (configurable via `PROPEL_DEFAULT_COUNTRY`)
+- [x] Fallback: env-var-based country center (configurable via `PUMPERLY_DEFAULT_COUNTRY`)
 
-**Deliverable**: A working map at `propel.geiser.cloud` showing all ~12,000 Spanish fuel stations with real prices for 15 fuel types, P5/P95 color scale, clustered map, dark navbar with stats.
+**Deliverable**: A working map at `pumperly.geiser.cloud` showing all ~12,000 Spanish fuel stations with real prices for 15 fuel types, P5/P95 color scale, clustered map, dark navbar with stats.
 
 ---
 
@@ -128,7 +128,7 @@ The world's first open-source energy route planner that works for ALL vehicle ty
   - "Cheapest overall: Plenoil Bonete — 1.359 EUR/L, 7 min detour"
 - [ ] Visual: highlight sweet zone on route as green segment, danger as red
 
-**Deliverable**: Full smart refueling system — the feature that makes Propel unique worldwide.
+**Deliverable**: Full smart refueling system — the feature that makes Pumperly unique worldwide.
 
 ---
 
@@ -139,8 +139,8 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 ### 3.1 — Scraper Framework
 - [x] Abstract base scraper with shared logic (upsert, dedup, error handling) — `BaseScraper` class
 - [x] Scraper CLI: `npx tsx src/scrapers/cli.ts --country=all`
-- [x] Automatic scraping via `instrumentation.ts` (configurable interval via `PROPEL_SCRAPE_INTERVAL_HOURS`)
-- [x] Per-country enable/disable via `PROPEL_ENABLED_COUNTRIES` env var
+- [x] Automatic scraping via `instrumentation.ts` (configurable interval via `PUMPERLY_SCRAPE_INTERVAL_HOURS`)
+- [x] Per-country enable/disable via `PUMPERLY_ENABLED_COUNTRIES` env var
 - [ ] Scraper health monitoring (last successful run, station count, error rate)
 
 ### 3.2 — Country Scrapers
@@ -234,7 +234,7 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 
 ## Phase 5: EV Charging Integration
 
-**Goal**: Extend Propel to electric vehicles — the ABRP killer.
+**Goal**: Extend Pumperly to electric vehicles — the ABRP killer.
 
 ### 5.1 — EV Data Sources (Researched)
 
@@ -247,7 +247,7 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 - **No real-time availability** — `StatusType` is editorial/crowdsourced, not live OCPP
 - **No structured pricing** — only `UsageCost` free-text field (e.g. "0.39 EUR/kWh")
 - Rate limits: no published numbers, but auto-banning for abuse. Use 100ms+ delay between pages.
-- Robot user-agents are blocked (set proper `User-Agent: Propel/1.0`)
+- Robot user-agents are blocked (set proper `User-Agent: Pumperly/1.0`)
 
 **National registries (supplement OCM with authoritative data):**
 - **France IRVE** — daily CSV/GeoJSON, ~50K+ charging points, Licence Ouverte v1.0. Structured connector types, power, pricing, EVSE IDs. URL: `data.gouv.fr` dataset `eb76d20a-8501-400e-b336-d85724de5435`
@@ -286,7 +286,7 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 - [ ] Combined route planning for PHEVs (plug-in hybrids)
 - [ ] Hydrogen station layer (for FCEV support)
 
-**Deliverable**: Propel becomes the first app that optimizes energy stops for ANY vehicle type.
+**Deliverable**: Pumperly becomes the first app that optimizes energy stops for ANY vehicle type.
 
 ---
 
@@ -397,7 +397,7 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 
 ## Competitive Position
 
-| Feature | Propel | GasBuddy | Waze | ViaMichelin | ABRP |
+| Feature | Pumperly | GasBuddy | Waze | ViaMichelin | ABRP |
 |---|---|---|---|---|---|
 | Route planning | Yes | Yes | Yes (nav) | Yes | Yes |
 | Real-time prices along route | Yes | Yes | Limited | No (estimates) | N/A (EV) |

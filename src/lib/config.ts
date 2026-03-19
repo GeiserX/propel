@@ -48,20 +48,20 @@ export const COUNTRIES: Record<string, CountryConfig> = {
 
 /**
  * Get runtime config from environment variables.
- * - PROPEL_DEFAULT_COUNTRY: ISO code for initial map view (default: ES)
- * - PROPEL_ENABLED_COUNTRIES: Comma-separated list of enabled countries (default: all with scrapers)
- * - PROPEL_DEFAULT_FUEL: Override default fuel type (default: per-country)
- * - PROPEL_SCRAPE_INTERVAL_HOURS: Global scrape interval override (default: per-country defaults)
- * - PROPEL_SCRAPE_INTERVAL_XX: Per-country interval in hours, e.g. PROPEL_SCRAPE_INTERVAL_FR=0.5
+ * - PUMPERLY_DEFAULT_COUNTRY: ISO code for initial map view (default: ES)
+ * - PUMPERLY_ENABLED_COUNTRIES: Comma-separated list of enabled countries (default: all with scrapers)
+ * - PUMPERLY_DEFAULT_FUEL: Override default fuel type (default: per-country)
+ * - PUMPERLY_SCRAPE_INTERVAL_HOURS: Global scrape interval override (default: per-country defaults)
+ * - PUMPERLY_SCRAPE_INTERVAL_XX: Per-country interval in hours, e.g. PUMPERLY_SCRAPE_INTERVAL_FR=0.5
  */
 export function getConfig() {
-  const defaultCountry = process.env.PROPEL_DEFAULT_COUNTRY || "ES";
-  const enabledRaw = process.env.PROPEL_ENABLED_COUNTRIES;
+  const defaultCountry = process.env.PUMPERLY_DEFAULT_COUNTRY || "ES";
+  const enabledRaw = process.env.PUMPERLY_ENABLED_COUNTRIES;
   const enabledCountries = enabledRaw
     ? enabledRaw.split(",").map((c) => c.trim().toUpperCase()).filter((c) => c in COUNTRIES)
     : Object.keys(COUNTRIES);
-  const defaultFuelOverride = process.env.PROPEL_DEFAULT_FUEL || null;
-  const clusterStations = (process.env.PROPEL_CLUSTER_STATIONS ?? "true").toLowerCase() === "true";
+  const defaultFuelOverride = process.env.PUMPERLY_DEFAULT_FUEL || null;
+  const clusterStations = (process.env.PUMPERLY_CLUSTER_STATIONS ?? "true").toLowerCase() === "true";
 
   const country = COUNTRIES[defaultCountry] ?? COUNTRIES.ES;
   const defaultFuel = defaultFuelOverride ?? country.defaultFuel;

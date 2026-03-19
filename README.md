@@ -1,25 +1,25 @@
 <p align="center">
-  <img src="docs/images/banner.svg" alt="Propel banner" width="900"/>
+  <img src="docs/images/banner.svg" alt="Pumperly banner" width="900"/>
 </p>
 
-<h1 align="center">Propel</h1>
+<h1 align="center">Pumperly</h1>
 
 <p align="center">
   <strong>Open-source energy route planner for fuel and electric vehicles. Self-hostable.</strong>
 </p>
 
 <p align="center">
-  <a href="https://propel.geiser.cloud"><img src="https://img.shields.io/badge/🌐_Website-propel.geiser.cloud-22c55e?style=flat-square" alt="Website"></a>
+  <a href="https://pumperly.com"><img src="https://img.shields.io/badge/🌐_Website-pumperly.com-22c55e?style=flat-square" alt="Website"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/📜_License-GPL--3.0-blue?style=flat-square" alt="License"></a>
-  <a href="https://github.com/GeiserX/propel"><img src="https://img.shields.io/github/stars/GeiserX/propel?style=flat-square&logo=github" alt="GitHub Stars"></a>
-  <a href="https://hub.docker.com/r/drumsergio/propel"><img src="https://img.shields.io/docker/pulls/drumsergio/propel?style=flat-square&logo=docker&label=Docker%20Pulls" alt="Docker Pulls"></a>
+  <a href="https://github.com/GeiserX/pumperly"><img src="https://img.shields.io/github/stars/GeiserX/pumperly?style=flat-square&logo=github" alt="GitHub Stars"></a>
+  <a href="https://hub.docker.com/r/drumsergio/pumperly"><img src="https://img.shields.io/docker/pulls/drumsergio/pumperly?style=flat-square&logo=docker&label=Docker%20Pulls" alt="Docker Pulls"></a>
 </p>
 
 <br>
 
 ---
 
-**No app in the world combines route planning with real-time energy prices, detour time calculation, and smart refueling recommendations. Propel does.**
+**No app in the world combines route planning with real-time energy prices, detour time calculation, and smart refueling recommendations. Pumperly does.**
 
 ## Features
 
@@ -50,10 +50,10 @@
 1. Clone and configure:
 
 ```bash
-git clone https://github.com/GeiserX/propel.git
-cd propel
+git clone https://github.com/GeiserX/pumperly.git
+cd pumperly
 cp .env.example .env
-# Edit .env — set DATABASE_URL and optionally PROPEL_DEFAULT_COUNTRY
+# Edit .env — set DATABASE_URL and optionally PUMPERLY_DEFAULT_COUNTRY
 ```
 
 2. Start the stack:
@@ -66,10 +66,10 @@ docker compose up -d
 
 ```bash
 # Watch Valhalla build routing tiles (~20 min)
-docker logs -f propel-valhalla
+docker logs -f pumperly-valhalla
 
 # Watch Photon download geocoding data (~30 min)
-docker logs -f propel-photon
+docker logs -f pumperly-photon
 ```
 
 4. Seed station data:
@@ -95,7 +95,7 @@ npm run scraper:run -- --country=ES --once
 
 | Service | Image | Steady-state RAM | Internal Port |
 |---|---|---|---|
-| app | `drumsergio/propel` | 512 MB | 3000 (exposed as 3200) |
+| app | `drumsergio/pumperly` | 512 MB | 3000 (exposed as 3200) |
 | db | `postgis/postgis:17-3.4` | 2 GB | 5432 |
 | valhalla | `ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1` | 512 MB | 8002 |
 | photon | `eclipse-temurin:21-jre` + Photon 1.0.1 JAR | 1 GB | 2322 |
@@ -114,13 +114,13 @@ npm run scraper:run -- --country=ES --once
 | Variable | Description | Default |
 |---|---|---|
 | `DATABASE_URL` | PostGIS connection string | Required |
-| `PROPEL_DEFAULT_COUNTRY` | ISO code for initial map view | `ES` |
-| `PROPEL_ENABLED_COUNTRIES` | Comma-separated ISO codes | All |
-| `PROPEL_DEFAULT_FUEL` | Override default fuel type | Per-country |
-| `PROPEL_CLUSTER_STATIONS` | Enable map marker clustering | `true` |
-| `PROPEL_CORRIDOR_KM` | Route corridor width in km (0.5–50) | `5` |
-| `VALHALLA_URL` | Valhalla routing endpoint | `http://propel-valhalla:8002` |
-| `PHOTON_URL` | Photon geocoding endpoint | `http://propel-photon:2322` |
+| `PUMPERLY_DEFAULT_COUNTRY` | ISO code for initial map view | `ES` |
+| `PUMPERLY_ENABLED_COUNTRIES` | Comma-separated ISO codes | All |
+| `PUMPERLY_DEFAULT_FUEL` | Override default fuel type | Per-country |
+| `PUMPERLY_CLUSTER_STATIONS` | Enable map marker clustering | `true` |
+| `PUMPERLY_CORRIDOR_KM` | Route corridor width in km (0.5–50) | `5` |
+| `VALHALLA_URL` | Valhalla routing endpoint | `http://pumperly-valhalla:8002` |
+| `PHOTON_URL` | Photon geocoding endpoint | `http://pumperly-photon:2322` |
 
 ### Using a Different Country
 
@@ -128,7 +128,7 @@ Valhalla and Photon can be configured for any country:
 
 1. **Valhalla**: Change `tile_urls` to the country PBF from [Geofabrik](https://download.geofabrik.de/)
 2. **Photon**: Change `-country-codes es` to your country code in the docker-compose entrypoint
-3. **App**: Set `PROPEL_DEFAULT_COUNTRY` and `PROPEL_ENABLED_COUNTRIES`
+3. **App**: Set `PUMPERLY_DEFAULT_COUNTRY` and `PUMPERLY_ENABLED_COUNTRIES`
 
 ## Data Sources
 

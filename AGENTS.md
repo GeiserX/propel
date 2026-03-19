@@ -1,10 +1,10 @@
-# AGENTS.md - AI Agent Instructions for Propel
+# AGENTS.md - AI Agent Instructions for Pumperly
 
 > **PLAN MODE**: Use Plan Mode frequently! Before implementing complex features, multi-step tasks, or making significant changes, switch to Plan Mode to think through the approach, consider edge cases, and outline the implementation strategy.
 
 > **IMPORTANT**: Do NOT update this file unless the user explicitly says to. Only the user can authorize changes to AGENTS.md.
 
-> **SECURITY WARNING**: This repository is PUBLIC at [github.com/GeiserX/propel](https://github.com/GeiserX/propel). **NEVER commit secrets, API keys, passwords, tokens, or any sensitive data.** All secrets must be stored in:
+> **SECURITY WARNING**: This repository is PUBLIC at [github.com/GeiserX/pumperly](https://github.com/GeiserX/pumperly). **NEVER commit secrets, API keys, passwords, tokens, or any sensitive data.** All secrets must be stored in:
 > - GitHub Secrets (for CI/CD)
 > - Private GitOps repositories (for docker-compose)
 > - Local `.env` files (gitignored)
@@ -13,10 +13,10 @@
 
 ## Project Overview
 
-**Propel** is an open-source, self-hostable web application that combines real-time energy price comparison with intelligent route planning — for both fuel and electric vehicles. It answers the question no other app in the world currently answers: *"What's the cheapest place to refuel or recharge along my route, and is the detour worth it?"*
+**Pumperly** is an open-source, self-hostable web application that combines real-time energy price comparison with intelligent route planning — for both fuel and electric vehicles. It answers the question no other app in the world currently answers: *"What's the cheapest place to refuel or recharge along my route, and is the detour worth it?"*
 
-- **Live URL**: https://propel.geiser.cloud
-- **Repository**: https://github.com/GeiserX/propel
+- **Live URL**: https://pumperly.com
+- **Repository**: https://github.com/GeiserX/pumperly
 - **License**: GPL-3.0
 
 ### What Makes This Different
@@ -27,7 +27,7 @@ No product worldwide combines all four capabilities:
 3. Detour time/cost calculation
 4. Smart refueling/recharging recommendations based on remaining range
 
-The closest analog is **A Better Route Planner (ABRP)** for EVs — Propel does this for ALL vehicle types, with real-time pricing.
+The closest analog is **A Better Route Planner (ABRP)** for EVs — Pumperly does this for ALL vehicle types, with real-time pricing.
 
 ---
 
@@ -49,7 +49,7 @@ The closest analog is **A Better Route Planner (ABRP)** for EVs — Propel does 
 - Privacy-focused (cookieless analytics, minimal data collection)
 - Semver versioning for Docker images (never `:latest`)
 - GitOps with Portainer for infrastructure
-- Docker Hub for images (`drumsergio/propel`)
+- Docker Hub for images (`drumsergio/pumperly`)
 - Tailwind CSS for styling
 - TypeScript strict mode
 - Do NOT add Co-Authored-By lines to commits
@@ -147,7 +147,7 @@ Two-phase HTML scraping: POST for station list → GET per-station info windows.
 ### System Architecture
 
 ```
-propel.geiser.cloud (Caddy reverse proxy on watchtower)
+pumperly.com (Caddy reverse proxy on watchtower)
     |
     +-- Next.js App (SSR + API routes)         [Port 3200, ~512MB RAM]
     |       |
@@ -229,32 +229,32 @@ Internal canonical IDs — display localized names per country/language:
 | Variable | Description | Default |
 |---|---|---|
 | `DATABASE_URL` | PostGIS connection string | Required |
-| `PROPEL_DEFAULT_COUNTRY` | ISO code for initial map view | `ES` |
-| `PROPEL_ENABLED_COUNTRIES` | Comma-separated ISO codes to enable (e.g. `ES,FR,DE`) | All countries with scrapers |
-| `PROPEL_DEFAULT_FUEL` | Override default fuel type | Per-country default |
-| `PROPEL_CLUSTER_STATIONS` | Enable station clustering at low zoom (`true`/`false`) | `true` |
-| ~~`PROPEL_CORRIDOR_KM`~~ | **REMOVED** — now a dynamic UI slider (1-25km, default 5km) | — |
-| `PROPEL_SCRAPE_INTERVAL_HOURS` | Global scrape interval override (0 = disabled) | Per-country defaults |
-| `PROPEL_SCRAPE_INTERVAL_XX` | Per-country interval, e.g. `PROPEL_SCRAPE_INTERVAL_FR=0.5` | See defaults below |
+| `PUMPERLY_DEFAULT_COUNTRY` | ISO code for initial map view | `ES` |
+| `PUMPERLY_ENABLED_COUNTRIES` | Comma-separated ISO codes to enable (e.g. `ES,FR,DE`) | All countries with scrapers |
+| `PUMPERLY_DEFAULT_FUEL` | Override default fuel type | Per-country default |
+| `PUMPERLY_CLUSTER_STATIONS` | Enable station clustering at low zoom (`true`/`false`) | `true` |
+| ~~`PUMPERLY_CORRIDOR_KM`~~ | **REMOVED** — now a dynamic UI slider (1-25km, default 5km) | — |
+| `PUMPERLY_SCRAPE_INTERVAL_HOURS` | Global scrape interval override (0 = disabled) | Per-country defaults |
+| `PUMPERLY_SCRAPE_INTERVAL_XX` | Per-country interval, e.g. `PUMPERLY_SCRAPE_INTERVAL_FR=0.5` | See defaults below |
 | `TANKERKOENIG_API_KEY` | Germany Tankerkoenig API key (free registration) | — |
 | `VALHALLA_URL` | Valhalla routing engine URL | — |
 | `PHOTON_URL` | Photon geocoding service URL | — |
 
 **Per-country default scrape intervals**: ES=12h, FR=1h, PT=12h, IT=12h, AT=2h, DE=1h, GB=4h, SI=6h, DK=6h, all Fuelo countries=12h. Real-time sources (FR/DE/AT) scrape more frequently; daily sources (ES/PT/IT) scrape every 12h. Each country runs on its own timer with staggered startup (5s apart).
 
-These env vars allow self-hosters to scope the app to their country/region. For example, a French self-hoster can set `PROPEL_DEFAULT_COUNTRY=FR` and `PROPEL_ENABLED_COUNTRIES=FR` to show only France.
+These env vars allow self-hosters to scope the app to their country/region. For example, a French self-hoster can set `PUMPERLY_DEFAULT_COUNTRY=FR` and `PUMPERLY_ENABLED_COUNTRIES=FR` to show only France.
 
 ### Design Decisions
 
 - **No timezone-based country detection** — use env vars for country config, not client TZ
-- **Navbar is dark** (`#0c111b`) — minimal height (44px), Propel logo on left, fuel selector on right
-- **Logo**: Emerald-to-cyan gradient rounded square with lightning bolt cutout. "Propel" wordmark in bold white
+- **Navbar is dark** (`#0c111b`) — minimal height (44px), Pumperly logo on left, fuel selector on right
+- **Logo**: Emerald-to-cyan gradient rounded square with lightning bolt cutout. "Pumperly" wordmark in bold white
 - **Stats dropdown** in navbar (right side, icon buttons) — shows station/price totals, per-country breakdown with flags, last update timestamp. Footer: "Made with ♥ by Sergio Fernández" + GitHub Sponsors button
 - **Navbar right-side buttons**: geolocate, theme toggle (dark/light), stats, settings gear (mobile). All icon buttons with `border-white/[0.08]` styling matching the navbar
 - **Dark mode**: ThemeProvider in `src/lib/theme.tsx`. Uses Tailwind `@custom-variant dark` with class strategy. Map switches between OpenFreeMap `liberty` (light) and `dark` styles. Persists to localStorage, defaults to system preference
 - **Fuel selector** has optgroup categories (Diésel, Gasolina, Gas, Hidrógeno, Otros) with category icon
 - **Station popup layout** (top to bottom): brand name (bold, primary heading) → address + city (small gray) → price card (large 22px price + EUR/L, fuel type label + "· Actualizado hace Xh" below). "Sin precio para [fuel]" if no data. Brand comes from MITECO "Rótulo" field; `name` = brand + city (internal, not shown in popup)
-- **Map clustering**: Controlled by `PROPEL_CLUSTER_STATIONS` env var. When enabled, clusters only at zoom ≤7, radius 40px. Production instance has it disabled. 12K stations renders fine in MapLibre without clustering.
+- **Map clustering**: Controlled by `PUMPERLY_CLUSTER_STATIONS` env var. When enabled, clusters only at zoom ≤7, radius 40px. Production instance has it disabled. 12K stations renders fine in MapLibre without clustering.
 - **Map default center/zoom** comes from server config (env vars), not hardcoded
 - **Auto-geolocation on load**: Uses Permissions API to check state first — if `granted`, flies directly (no wasted default fetch); if `denied`, loads default country view; if `prompt`, loads default view then asks (re-fetches if accepted). This avoids double fetches for returning users.
 - **Station fetch**: No min-zoom gate — stations load at all zoom levels (API returns 12K stations in ~100ms). 100ms debounce on pan/zoom.
@@ -358,7 +358,7 @@ interface Scraper {
 ## Project Structure
 
 ```
-propel/
+pumperly/
 ├── .github/workflows/
 ├── prisma/schema.prisma
 ├── public/locales/{es,en,fr,de,it,pt}.json
@@ -385,18 +385,18 @@ propel/
 
 | Environment | URL | Server |
 |---|---|---|
-| Production | propel.geiser.cloud | watchtower |
+| Production | pumperly.com | watchtower |
 | Development | localhost:3000 | Mac |
 
 ### Docker Compose Services
 
 | Service | Image | RAM | Port | Notes |
 |---|---|---|---|---|
-| app | `drumsergio/propel:x.y.z` | 512 MB | 3200 | Next.js app |
+| app | `drumsergio/pumperly:x.y.z` | 512 MB | 3200 | Next.js app |
 | db | `postgis/postgis:17-3.4` | 2 GB | 5432 | PostGIS spatial DB |
 | valhalla | `ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1` | 24 GB (build), 1-2 GB (serve) | 8002 | Uses local 17GB merged PBF (8 countries). No `tile_urls`. First build ~2-4 hours. Steady-state ~1-2GB. |
 | photon | `eclipse-temurin:21-jre` | 4 GB (import), 2-3 GB (serve) | 2322 | First start downloads Photon 1.0.1 JAR + 8 country dumps. Concatenates and imports. Steady-state ~2-3GB. |
-| scraper | Built into the app via `instrumentation.ts` | — | — | Runs on startup + `PROPEL_SCRAPE_INTERVAL_HOURS` interval. No separate container needed. |
+| scraper | Built into the app via `instrumentation.ts` | — | — | Runs on startup + `PUMPERLY_SCRAPE_INTERVAL_HOURS` interval. No separate container needed. |
 
 ### CI/CD
 
