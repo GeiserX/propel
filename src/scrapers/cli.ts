@@ -34,6 +34,7 @@ import { NorthMacedoniaScraper } from "./north-macedonia";
 import { TurkeyScraper } from "./turkey";
 import { MoldovaScraper } from "./moldova";
 import { AustraliaScraper } from "./australia";
+import { AustraliaNSWScraper } from "./australia-nsw";
 import { ArgentinaScraper } from "./argentina";
 import { MexicoScraper } from "./mexico";
 
@@ -50,43 +51,43 @@ import { MexicoScraper } from "./mexico";
 //   --once         Run once and exit (default). Reserved for future cron mode.
 // ---------------------------------------------------------------------------
 
-const SCRAPERS: Record<string, () => BaseScraper> = {
-  ES: () => new SpainScraper(),
-  FR: () => new FranceScraper(),
-  PT: () => new PortugalScraper(),
-  IT: () => new ItalyScraper(),
-  AT: () => new AustriaScraper(),
-  DE: () => new GermanyScraper(),
-  GB: () => new UKScraper(),
-  SI: () => new SloveniaScraper(),
-  NL: () => new NetherlandsScraper(),
-  BE: () => new BelgiumScraper(),
-  LU: () => new LuxembourgScraper(),
-  RO: () => new RomaniaScraper(),
-  GR: () => new GreeceScraper(),
-  IE: () => new IrelandScraper(),
-  HR: () => new CroatiaScraper(),
-  HU: () => new HungaryScraper(),
-  BG: () => new BulgariaScraper(),
-  SK: () => new SlovakiaScraper(),
-  CH: () => new SwitzerlandScraper(),
-  PL: () => new PolandScraper(),
-  CZ: () => new CzechScraper(),
-  DK: () => new DenmarkScraper(),
-  SE: () => new SwedenScraper(),
-  NO: () => new NorwayScraper(),
-  RS: () => new SerbiaScraper(),
-  FI: () => new FinlandScraper(),
-  EE: () => new EstoniaScraper(),
-  LV: () => new LatviaScraper(),
-  LT: () => new LithuaniaScraper(),
-  BA: () => new BosniasScraper(),
-  MK: () => new NorthMacedoniaScraper(),
-  TR: () => new TurkeyScraper(),
-  MD: () => new MoldovaScraper(),
-  AU: () => new AustraliaScraper(),
-  AR: () => new ArgentinaScraper(),
-  MX: () => new MexicoScraper(),
+const SCRAPERS: Record<string, Array<() => BaseScraper>> = {
+  ES: [() => new SpainScraper()],
+  FR: [() => new FranceScraper()],
+  PT: [() => new PortugalScraper()],
+  IT: [() => new ItalyScraper()],
+  AT: [() => new AustriaScraper()],
+  DE: [() => new GermanyScraper()],
+  GB: [() => new UKScraper()],
+  SI: [() => new SloveniaScraper()],
+  NL: [() => new NetherlandsScraper()],
+  BE: [() => new BelgiumScraper()],
+  LU: [() => new LuxembourgScraper()],
+  RO: [() => new RomaniaScraper()],
+  GR: [() => new GreeceScraper()],
+  IE: [() => new IrelandScraper()],
+  HR: [() => new CroatiaScraper()],
+  HU: [() => new HungaryScraper()],
+  BG: [() => new BulgariaScraper()],
+  SK: [() => new SlovakiaScraper()],
+  CH: [() => new SwitzerlandScraper()],
+  PL: [() => new PolandScraper()],
+  CZ: [() => new CzechScraper()],
+  DK: [() => new DenmarkScraper()],
+  SE: [() => new SwedenScraper()],
+  NO: [() => new NorwayScraper()],
+  RS: [() => new SerbiaScraper()],
+  FI: [() => new FinlandScraper()],
+  EE: [() => new EstoniaScraper()],
+  LV: [() => new LatviaScraper()],
+  LT: [() => new LithuaniaScraper()],
+  BA: [() => new BosniasScraper()],
+  MK: [() => new NorthMacedoniaScraper()],
+  TR: [() => new TurkeyScraper()],
+  MD: [() => new MoldovaScraper()],
+  AU: [() => new AustraliaScraper(), () => new AustraliaNSWScraper()],
+  AR: [() => new ArgentinaScraper()],
+  MX: [() => new MexicoScraper()],
 };
 
 function usage(): never {
@@ -153,9 +154,11 @@ async function main(): Promise<void> {
 
   // Run scrapers sequentially to avoid hammering the DB
   for (const code of countries) {
-    const scraper = SCRAPERS[code]();
-    const result = await scraper.run();
-    results.push(result);
+    for (const factory of SCRAPERS[code]) {
+      const scraper = factory();
+      const result = await scraper.run();
+      results.push(result);
+    }
   }
 
   console.log("\n=== Summary ===");

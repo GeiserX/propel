@@ -11,6 +11,7 @@ import { Marker } from "react-map-gl/maplibre";
 import { StationLayer } from "./station-layer";
 import { PriceFilter } from "./price-filter";
 import { RouteLayer } from "./route-layer";
+import { CountryMarkers } from "./country-markers";
 import { useConvertedStations } from "@/lib/currency";
 import { useTheme } from "@/lib/theme";
 const DEBOUNCE_MS = 100;
@@ -55,6 +56,10 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
   const [corridorPerRoute, setCorridorPerRoute] = useState<StationsGeoJSONCollection[]>([]);
   // Bbox stations (no route active)
   const [bboxStations, setBboxStations] = useState<StationsGeoJSONCollection>(EMPTY_COLLECTION);
+
+  // Track current zoom to toggle between country markers and station dots
+  const [currentZoom, setCurrentZoom] = useState(zoom);
+  const showCountryMarkers = currentZoom < 5 && !routes;
 
   const [legendRange, setLegendRange] = useState<{ min: number | null; max: number | null }>({ min: null, max: null });
 
@@ -186,13 +191,14 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
 
   const handleMoveEnd = useCallback(
     (_e: ViewStateChangeEvent) => {
-      if (!routes) {
-        debouncedFetch(selectedFuel);
-      }
       const map = mapRef.current;
       if (map) {
+        setCurrentZoom(map.getZoom());
         const c = map.getCenter();
         onMapMove?.([c.lng, c.lat]);
+      }
+      if (!routes) {
+        debouncedFetch(selectedFuel);
       }
     },
     [debouncedFetch, selectedFuel, routes, onMapMove],
@@ -276,7 +282,7 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
         latitude: center[1],
         zoom,
       }}
-      minZoom={5}
+      minZoom={2}
       mapStyle={mapStyle}
       onLoad={handleLoad}
       onMoveEnd={handleMoveEnd}
@@ -284,6 +290,7 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
       attributionControl={{ compact: true }}
       style={{ width: "100%", height: "100%" }}
     >
+      {showCountryMarkers && <CountryMarkers />}
       {routes && routes.length > 0 && (
         <RouteLayer
           routes={routes}
@@ -292,7 +299,9 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
           beforeLayerId={stationBeforeId}
         />
       )}
-      <StationLayer stations={filteredStations} onPriceRange={handlePriceRange} cluster={effectiveCluster} selectedStationId={selectedStationId} onSelectStation={onSelectStation} />
+      {!showCountryMarkers && (
+        <StationLayer stations={filteredStations} onPriceRange={handlePriceRange} cluster={effectiveCluster} selectedStationId={selectedStationId} onSelectStation={onSelectStation} />
+      )}
       {userLocation && (
         <Marker longitude={userLocation[0]} latitude={userLocation[1]} anchor="center">
           <div className="relative flex items-center justify-center">
@@ -301,13 +310,15 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
           </div>
         </Marker>
       )}
-      <PriceFilter
-        stations={displayStations}
-        maxPrice={maxPrice}
-        onMaxPriceChange={onMaxPriceChange}
-        legendMin={legendRange.min}
-        legendMax={legendRange.max}
-      />
+      {!showCountryMarkers && (
+        <PriceFilter
+          stations={displayStations}
+          maxPrice={maxPrice}
+          onMaxPriceChange={onMaxPriceChange}
+          legendMin={legendRange.min}
+          legendMax={legendRange.max}
+        />
+      )}
     </Map>
   );
 });
