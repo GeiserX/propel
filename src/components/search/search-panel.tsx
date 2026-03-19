@@ -574,7 +574,7 @@ export function SearchPanel({
                 const v = parseInt(e.target.value);
                 onMaxDetourChange?.(v >= 30 ? null : v);
               }}
-              className="mt-1 h-1 w-full cursor-pointer accent-emerald-500"
+              className="mt-1 h-1 w-full cursor-pointer touch-none accent-emerald-500"
             />
             <div className="mt-2 flex items-center justify-between">
               <span className="text-[11px] text-gray-500 dark:text-gray-400">{t("stations.corridor")}</span>
@@ -587,10 +587,10 @@ export function SearchPanel({
               step={1}
               value={corridorKm}
               onChange={(e) => onCorridorKmChange?.(parseInt(e.target.value))}
-              className="mt-1 h-1 w-full cursor-pointer accent-emerald-500"
+              className="mt-1 h-1 w-full cursor-pointer touch-none accent-emerald-500"
             />
           </div>
-          <div className="max-h-[240px] overflow-y-auto">
+          <div className="max-h-[144px] overflow-y-auto sm:max-h-[192px]">
             {stationList.length === 0 ? (
               <div className="px-4 py-4 text-center text-xs text-gray-400">
                 {t("stations.empty")}

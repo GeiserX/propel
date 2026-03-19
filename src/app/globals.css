@@ -6,6 +6,8 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   /* Ensure content can extend behind notch/home indicator on iOS */
   -webkit-text-size-adjust: 100%;
+  /* Match Safari top/bottom chrome — prevents white overscroll flash */
+  background-color: #0c111b;
 }
 
 /* Map fills the viewport */
@@ -37,6 +39,23 @@ body {
 
 .dark .maplibregl-popup-close-button {
   color: #9ca3af;
+}
+
+/* MapLibre attribution — tuck behind price filter on mobile */
+.maplibregl-ctrl-attrib {
+  font-size: 10px !important;
+  opacity: 0.6;
+}
+
+/* Compact attribution: move to bottom-left to sit under price filter card */
+@media (max-width: 639px) {
+  .maplibregl-ctrl-bottom-right {
+    left: 0 !important;
+    right: auto !important;
+  }
+  .maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib {
+    border-radius: 0 6px 0 0 !important;
+  }
 }
 
 /* MapLibre attribution dark mode */

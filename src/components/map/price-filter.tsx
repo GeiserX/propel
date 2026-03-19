@@ -111,7 +111,7 @@ export function PriceFilter({
               const v = parseFloat(e.target.value);
               onMaxPriceChange(v >= sliderMax ? null : v);
             }}
-            className="mt-1 h-1.5 w-full cursor-pointer appearance-none rounded-full bg-gray-200 accent-emerald-500 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-emerald-500 [&::-webkit-slider-thumb]:shadow-sm"
+            className="mt-1 h-1.5 w-full cursor-pointer touch-none appearance-none rounded-full bg-gray-200 accent-emerald-500 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-emerald-500 [&::-webkit-slider-thumb]:shadow-sm sm:[&::-webkit-slider-thumb]:h-3.5 sm:[&::-webkit-slider-thumb]:w-3.5"
           />
 
           <div className="mt-0.5 flex items-center justify-between">
