@@ -32,7 +32,7 @@ model FuelPrice {
   id         BigInt   @id @default(autoincrement())
   stationId  String   @map("station_id") @db.Uuid
   fuelType   String   @map("fuel_type") @db.VarChar(20)
-  price      Decimal  @db.Decimal(6, 3)
+  price      Decimal  @db.Decimal(10, 3)
   currency   String   @default("EUR") @db.VarChar(3)
   reportedAt DateTime @default(now()) @map("reported_at") @db.Timestamptz
   source     String   @db.VarChar(50)

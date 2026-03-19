@@ -107,7 +107,7 @@ export abstract class BaseScraper {
         if (ALT_FUELS.has(p.fuelType)) return p.price >= 0.05 && p.price < 100;
         if (p.currency === "EUR" || p.currency === "GBP" || p.currency === "CHF")
           return p.price >= priceMin && p.price <= priceMax;
-        return p.price >= priceMin && p.price <= priceMax * 250;
+        return p.price >= priceMin && p.price <= priceMax * 1000;
       });
       const badPrices = badPriceBefore - validPrices.length;
       if (badPrices > 0) {
