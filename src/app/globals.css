@@ -41,21 +41,10 @@ body {
   color: #9ca3af;
 }
 
-/* MapLibre attribution — tuck behind price filter on mobile */
+/* MapLibre attribution — subtle, stays bottom-right */
 .maplibregl-ctrl-attrib {
   font-size: 10px !important;
-  opacity: 0.6;
-}
-
-/* Compact attribution: move to bottom-left to sit under price filter card */
-@media (max-width: 639px) {
-  .maplibregl-ctrl-bottom-right {
-    left: 0 !important;
-    right: auto !important;
-  }
-  .maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib {
-    border-radius: 0 6px 0 0 !important;
-  }
+  opacity: 0.5;
 }
 
 /* MapLibre attribution dark mode */

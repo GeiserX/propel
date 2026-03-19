@@ -590,7 +590,7 @@ export function SearchPanel({
               className="mt-1 h-1 w-full cursor-pointer touch-none accent-emerald-500"
             />
           </div>
-          <div className="max-h-[144px] overflow-y-auto sm:max-h-[192px]">
+          <div className="max-h-[30dvh] overflow-y-auto sm:max-h-[35dvh]">
             {stationList.length === 0 ? (
               <div className="px-4 py-4 text-center text-xs text-gray-400">
                 {t("stations.empty")}
