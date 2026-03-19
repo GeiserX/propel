@@ -15,6 +15,28 @@ import type { FuelType } from "../types/station";
 // Prices are embedded in title="FuelName: 1,234 CUR/l" attributes.
 // ---------------------------------------------------------------------------
 
+/** Currency symbols/abbreviations used by Fuelo → ISO 4217 codes */
+const FUELO_CURRENCY_MAP: Record<string, string> = {
+  "€": "EUR",
+  "₺": "TRY",
+  "£": "GBP",
+  HUF: "HUF",
+  CZK: "CZK",
+  PLN: "PLN",
+  BAM: "BAM",
+  MKD: "MKD",
+  RSD: "RSD",
+  BGN: "BGN",
+  RON: "RON",
+  EUR: "EUR",
+  TRY: "TRY",
+  GBP: "GBP",
+  CHF: "CHF",
+  SEK: "SEK",
+  NOK: "NOK",
+  DKK: "DKK",
+};
+
 /** Image filename → harmonised EU fuel type */
 const IMG_FUEL_MAP: ReadonlyMap<string, FuelType> = new Map([
   ["gasoline.png", "E5"],          // Super 95 / Unleaded 95
@@ -143,16 +165,17 @@ async function fetchStationList(
 
 /**
  * Parse the info window HTML to extract station name, address, and prices.
+ * Each price includes its own currency parsed from the title (e.g. "563,8 HUF/l" or "1,42 €/l").
  */
 function parseInfoWindow(
   html: string,
-  currency: string,
+  fallbackCurrency: string,
 ): {
   name: string;
   country: string;
   address: string;
   city: string;
-  prices: Array<{ fuelType: FuelType; price: number }>;
+  prices: Array<{ fuelType: FuelType; price: number; currency: string }>;
 } | null {
   // Extract name from <h4>...</h4>
   const nameMatch = html.match(/<h4>([^<]+)<\/h4>/);
@@ -169,7 +192,8 @@ function parseInfoWindow(
 
   // Extract prices from <img> tags
   // Pattern: src="/img/fuels/default/gasoline.png" ... title="Super 95: 563,8 HUF/l"
-  const prices: Array<{ fuelType: FuelType; price: number }> = [];
+  // Currency may be an ISO code (HUF, CZK, PLN) or a symbol (€, ₺)
+  const prices: Array<{ fuelType: FuelType; price: number; currency: string }> = [];
   const imgRegex = /src="\/img\/fuels\/default\/([^"]+)"[^>]*title="([^"]+)"/g;
   let match: RegExpExecArray | null;
 
@@ -180,14 +204,17 @@ function parseInfoWindow(
     const fuelType = IMG_FUEL_MAP.get(imgFile);
     if (!fuelType) continue;
 
-    // Parse price from title: "FuelName: 1,234 CUR/l"
-    const priceMatch = titleText.match(/:\s*([\d.,]+)\s/);
+    // Parse price + currency from title: "FuelName: 1,234 CUR/l" or "FuelName: 1,42 €/l"
+    const priceMatch = titleText.match(/:\s*([\d.,]+)\s+(\S+)\/[lk]/);
     if (!priceMatch) continue;
 
     const price = parsePrice(priceMatch[1]);
     if (isNaN(price) || price <= 0) continue;
 
-    prices.push({ fuelType, price });
+    const rawCurrency = priceMatch[2];
+    const currency = FUELO_CURRENCY_MAP[rawCurrency] ?? fallbackCurrency;
+
+    prices.push({ fuelType, price, currency });
   }
 
   return { name, country, address, city, prices };
@@ -331,7 +358,7 @@ export async function fetchFueloCountry(
           stationExternalId: externalId,
           fuelType: p.fuelType,
           price: p.price,
-          currency: config.currency,
+          currency: p.currency,
         });
       }
     } catch {
