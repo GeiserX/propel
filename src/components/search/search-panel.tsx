@@ -482,16 +482,15 @@ export function SearchPanel({
         {phase === "route" && primaryRoute && (
           <button
             onClick={() => setCollapsed((v) => !v)}
-            className={`flex w-full items-center justify-between rounded-b-xl border-t border-gray-100 px-4 py-2 transition-colors dark:border-gray-700 ${collapsed ? "bg-blue-50 dark:bg-blue-950/40" : "bg-gray-50 dark:bg-gray-800/60"}`}
+            className="flex w-full items-center justify-between rounded-b-xl border-t border-gray-100 bg-gray-50 px-4 py-2 dark:border-gray-700 dark:bg-gray-800/60"
           >
             <div className="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-300">
               <div className="h-2 w-2 rounded-full bg-blue-500" />
               <span>{formatDistance(primaryRoute!.distance)}</span>
               <span className="text-gray-400">·</span>
               <span>{formatDuration(primaryRoute!.duration)}</span>
-              {collapsed && <span className="text-[10px] text-blue-500">▾</span>}
             </div>
-            <svg className={`h-4 w-4 ${collapsed ? "text-blue-500" : "rotate-180 animate-bounce text-gray-400"}`} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <svg className={`h-4 w-4 animate-[chevron-pulse_2s_ease-in-out_infinite] ${collapsed ? "" : "rotate-180"}`} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
             </svg>
           </button>

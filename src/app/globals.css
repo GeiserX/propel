@@ -10,6 +10,12 @@ body {
   background-color: #0c111b;
 }
 
+/* Chevron color pulse: alternates between gray and blue */
+@keyframes chevron-pulse {
+  0%, 100% { color: #9ca3af; }
+  50% { color: #3b82f6; }
+}
+
 /* Map fills the viewport */
 .map-container {
   position: absolute;
