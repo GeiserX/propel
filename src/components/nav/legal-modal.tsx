@@ -123,12 +123,12 @@ function SourcesContent() {
       <h3>Government open data</h3>
       <ul>
         <li><strong>Spain</strong> &mdash; Ministerio para la Transicion Ecologica (MITECO), Geoportal Gasolineras</li>
-        <li><strong>France</strong> &mdash; data.gouv.fr, Licence Ouverte v2.0</li>
-        <li><strong>Italy</strong> &mdash; Ministero delle Imprese e del Made in Italy (MIMIT), Open Data</li>
-        <li><strong>Portugal</strong> &mdash; Direcao-Geral de Energia e Geologia (DGEG)</li>
-        <li><strong>Austria</strong> &mdash; E-Control Spritpreisrechner</li>
-        <li><strong>Germany</strong> &mdash; Tankerkoenig.de (MTS-K / Bundeskartellamt Markttransparenzstelle)</li>
-        <li><strong>United Kingdom</strong> &mdash; Competition and Markets Authority (CMA), Open Government Licence</li>
+        <li><strong>France</strong> &mdash; Ministere de l&apos;Economie, data.economie.gouv.fr (Licence Ouverte v2.0)</li>
+        <li><strong>Italy</strong> &mdash; Ministero delle Imprese e del Made in Italy (MIMIT), Italian Open Data License v2.0</li>
+        <li><strong>Portugal</strong> &mdash; Direcao-Geral de Energia e Geologia (DGEG). Non-commercial use only.</li>
+        <li><strong>Austria</strong> &mdash; E-Control GmbH, Spritpreisrechner</li>
+        <li><strong>Germany</strong> &mdash; Tankerkoenig.de (CC BY 4.0), data from Markttransparenzstelle fur Kraftstoffe (MTS-K) des Bundeskartellamtes</li>
+        <li><strong>United Kingdom</strong> &mdash; Competition and Markets Authority (CMA), Open Government Licence v3.0</li>
         <li><strong>Ireland</strong> &mdash; PickAPump.ie</li>
         <li><strong>Croatia</strong> &mdash; Ministarstvo zastite okolisa i energetike (MZOE)</li>
         <li><strong>Slovenia</strong> &mdash; Goriva.si, Ministry of Infrastructure</li>
