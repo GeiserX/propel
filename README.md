@@ -18,7 +18,11 @@
 <br>
 
 <p align="center">
-  <img src="docs/images/screenshot.png" alt="Pumperly screenshot" width="900"/>
+  <img src="docs/images/screenshot-route.png" alt="Route planning — Huelva to Girona with fuel stations along the corridor" width="900"/>
+</p>
+
+<p align="center">
+  <img src="docs/images/screenshot-map.png" alt="Map view — color-coded fuel stations by price in Murcia" width="900"/>
 </p>
 
 ---
