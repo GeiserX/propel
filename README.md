@@ -2,10 +2,12 @@
   <img src="docs/images/banner.svg" alt="Pumperly banner" width="900"/>
 </p>
 
+<br>
+
 <h1 align="center">Pumperly</h1>
 
 <p align="center">
-  <strong>Open-source fuel &amp; EV route planner. Real-time prices across 31 European countries. Self-hostable.</strong>
+  <strong>Open-source fuel &amp; EV route planner. Real-time prices across 36 countries. Self-hostable.</strong>
 </p>
 
 <p align="center">
@@ -36,7 +38,7 @@ Pumperly combines route planning with real-time fuel prices and EV charging stat
 - Plan a route from A to B with autocomplete and alternative routes
 - See every fuel station and EV charger within a corridor along your route
 - Filter by "cheapest within N minutes detour" — the feature no competitor has
-- Covers 31 European countries with 100,000+ stations
+- Covers 36 countries across Europe, Latin America, and Oceania
 - 16 languages, multi-currency, fully self-hostable
 - 100% open source (GPL-3.0), no tracking, no cookies, no accounts
 
@@ -44,7 +46,7 @@ Pumperly combines route planning with real-time fuel prices and EV charging stat
 
 - **Route planning** — Geocoding via [Photon](https://github.com/komoot/photon), routing via [Valhalla](https://github.com/valhalla/valhalla), with alternative routes
 - **Real-time fuel prices** — From government open data APIs and community sources
-- **EV charging stations** — Via [Open Charge Map](https://openchargemap.org) across all 31 countries
+- **EV charging stations** — Via [Open Charge Map](https://openchargemap.org) across all supported countries
 - **Detour calculation** — Each station shows estimated detour time from your route
 - **"Cheapest within N min"** — Slider filters stations by maximum detour, highlights the best deal
 - **Corridor station list** — Sorted by position along route, with price deltas vs average
@@ -82,12 +84,17 @@ Pumperly combines route planning with real-time fuel prices and EV charging stat
 | Serbia | NIS / cenagoriva | Brand-level | Every 12h |
 | Finland | polttoaine.net | Community | Every 12h |
 | Switzerland, Poland, Czech Republic, Hungary, Bulgaria, Slovakia, Estonia, Latvia, Lithuania, Bosnia, North Macedonia | [Fuelo.net](https://fuelo.net) | Community | Every 12h |
+| Turkey | [Fuelo.net](https://fuelo.net) | Community | Every 12h |
+| Moldova | ANRE | Government | Every 12h |
+| Australia (WA + NSW) | FuelWatch / FuelCheck | Government API | Every 12h |
+| Argentina | Secretaria de Energia | Government API | Every 12h |
+| Mexico | CRE | Government API | Every 12h |
 
 ### EV charging stations
 
 | Source | Coverage | License |
 |---|---|---|
-| [Open Charge Map](https://openchargemap.org) | All 31 countries | ODbL |
+| [Open Charge Map](https://openchargemap.org) | All supported countries | ODbL |
 
 ### Map & routing
 
@@ -410,9 +417,11 @@ Most countries work without any API key — they use open government data.
 ### Supported Countries
 
 <details>
-<summary><strong>All 31 countries with ISO codes</strong></summary>
+<summary><strong>All 36 supported countries</strong></summary>
 
-ES (Spain), FR (France), DE (Germany), IT (Italy), GB (United Kingdom), AT (Austria), PT (Portugal), SI (Slovenia), NL (Netherlands), BE (Belgium), LU (Luxembourg), RO (Romania), GR (Greece), IE (Ireland), HR (Croatia), CH (Switzerland), PL (Poland), CZ (Czech Republic), HU (Hungary), BG (Bulgaria), SK (Slovakia), DK (Denmark), SE (Sweden), NO (Norway), RS (Serbia), FI (Finland), EE (Estonia), LV (Latvia), LT (Lithuania), BA (Bosnia and Herzegovina), MK (North Macedonia)
+**Europe (31):** ES (Spain), FR (France), DE (Germany), IT (Italy), GB (United Kingdom), AT (Austria), PT (Portugal), SI (Slovenia), NL (Netherlands), BE (Belgium), LU (Luxembourg), RO (Romania), GR (Greece), IE (Ireland), HR (Croatia), CH (Switzerland), PL (Poland), CZ (Czech Republic), HU (Hungary), BG (Bulgaria), SK (Slovakia), DK (Denmark), SE (Sweden), NO (Norway), RS (Serbia), FI (Finland), EE (Estonia), LV (Latvia), LT (Lithuania), BA (Bosnia and Herzegovina), MK (North Macedonia)
+
+**Other regions (5):** TR (Turkey), MD (Moldova), AU (Australia), AR (Argentina), MX (Mexico)
 
 </details>
 
