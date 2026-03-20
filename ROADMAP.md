@@ -134,7 +134,7 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 
 ## Phase 3: Multi-Country Expansion
 
-**Goal**: Cover 5+ European countries with ~50,000 stations.
+**Goal**: Cover 31 European countries with 100,000+ stations.
 
 ### 3.1 — Scraper Framework
 - [x] Abstract base scraper with shared logic (upsert, dedup, error handling) — `BaseScraper` class
@@ -143,7 +143,7 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 - [x] Per-country enable/disable via `PUMPERLY_ENABLED_COUNTRIES` env var
 - [ ] Scraper health monitoring (last successful run, station count, error rate)
 
-### 3.2 — Country Scrapers
+### 3.2 — Country Scrapers (31 countries)
 - [x] France scraper (`data.economie.gouv.fr` OpenDataSoft API, ~9,800 stations)
 - [x] Portugal scraper (DGEG API, ~3,200 stations, paginated per fuel type)
 - [x] Italy scraper (MIMIT CSV, ~23,600 stations, pipe-delimited)
@@ -158,15 +158,21 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 - [x] Greece scraper (FuelGR/deixto.gr XML API, ~2,500+ stations, EUR, grid-based)
 - [x] Ireland scraper (Pick A Pump API, ~1,345 stations, EUR, grid-based nearby queries)
 - [x] Croatia scraper (MZOE government API, ~911 stations, EUR, single JSON dump)
+- [x] Switzerland, Poland, Czech Republic, Hungary, Bulgaria, Slovakia, Estonia, Latvia, Lithuania, Bosnia, North Macedonia scrapers (Fuelo.net, community-sourced)
+- [x] Denmark scraper (FuelPrices.dk API)
+- [x] Sweden scraper (Drivstoffappen, community-sourced)
+- [x] Norway scraper (DrivstoffAppen, government-mandated)
+- [x] Serbia scraper (NIS + cenagoriva, brand-level)
+- [x] Finland scraper (polttoaine.net, community-sourced)
 
 ### 3.3 — Valhalla Multi-Country Tiles
-- [x] Valhalla configured with 15-country merged PBF (ES, FR, PT, IT, AT, DE, GB, SI, NL, BE, LU, RO, GR, IE, HR)
+- [x] Valhalla configured with 31-country merged PBF
 - [x] PBFs merged with osmium-tool to avoid Valhalla multi-PBF SIGABRT bug
 - [ ] Automated monthly tile rebuild (cron or triggered by Geofabrik update)
 
 ### 3.4 — Internationalization
 - [x] Lightweight i18n system (`src/lib/i18n.tsx`) — React context + localStorage
-- [x] 6 locales: es, en, fr, de, it, pt
+- [x] 16 locales: es, en, fr, de, it, pt, pl, cs, hu, bg, sk, da, sv, no, sr, fi
 - [x] Language selector in navbar
 - [x] Translated: search panel, station list, badges, detour slider
 - [x] Auto-detect locale from browser `navigator.languages`
@@ -175,8 +181,8 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 - [ ] Fuel type names localized per country
 
 ### 3.5 — Photon Multi-Country Geocoding
-- [x] Photon configured to import ES, FR, PT, IT, AT, DE, GB, SI, NL, BE, LU, RO, GR, IE, HR from per-country dumps
-- [x] Serves all 12 languages (es, en, fr, de, it, pt, sl, nl, ro, el, ga, hr)
+- [x] Photon configured to import 31 countries from per-country dumps
+- [x] Serves all 22 languages (es, en, fr, de, it, pt, sl, nl, ro, el, ga, hr, pl, cs, hu, bg, sk, da, sv, no, sr, fi)
 - [x] Cross-border routing works (e.g., Madrid → Paris)
 
 ### 3.6 — Cross-Border Features (future)
@@ -184,7 +190,7 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 - [ ] Currency conversion for comparison (always show in user's preferred currency)
 - [ ] Border-crossing fuel strategy recommendations
 
-**Deliverable**: 15 countries, ~84K+ stations, 12 languages, cross-border routing.
+**Deliverable**: 31 countries, 100K+ stations, 16 languages, cross-border routing.
 
 ---
 
@@ -265,11 +271,16 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 
 **Implementation strategy:** OCM bulk import per country → supplement with France IRVE + Germany BNetzA → OSM for validation/enrichment → accept that real-time availability needs commercial APIs or direct OCPI integrations.
 
-- [ ] OCM scraper: bulk import per country with `greaterthanid` pagination
-- [ ] France IRVE scraper: daily CSV download
-- [ ] Germany BNetzA scraper: monthly XLSX download
-- [ ] `ev_chargers` table: connector type, power (kW), price per kWh (free-text parsed), network, status
-- [ ] Station type: `fuel`, `ev_charger`, or `both`
+- [x] OCM scraper: per-country import for all 31 countries (5000 POIs per country, 24h interval)
+- [x] Station type field: `fuel`, `ev_charger`, or `both` — stored in stations table
+- [x] EV fuel type (`EV`) with electric category in UI, lightning bolt icon
+- [x] Stations API: separate query path for EV (no price join)
+- [x] Route stations API: EV corridor query support
+- [x] Legal modal: OCM attribution (ODbL)
+- [ ] France IRVE scraper: daily CSV download (209K stations, no auth needed)
+- [ ] Germany BNetzA scraper: monthly XLSX download (128K facilities)
+- [ ] Netherlands NDW OCPI scraper (53K stations, real-time status)
+- [ ] Connector type, power (kW), price per kWh (structured), network metadata
 
 ### 5.2 — EV Route Planning
 - [ ] Battery level input (% or kWh remaining)
@@ -403,11 +414,11 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 | Real-time prices along route | Yes | Yes | Limited | No (estimates) | N/A (EV) |
 | **Detour time calculation** | **Yes** | No | No | No | N/A |
 | **Smart refuel by range** | **Yes** | No | No | No | Yes (EV) |
-| Multi-country Europe | Yes (16) | No (US/CA) | Partial | Partial | Yes (EV) |
+| Multi-country Europe | Yes (31) | No (US/CA) | Partial | Partial | Yes (EV) |
 | Fuel + EV support | Yes | No | No | No | EV only |
 | Open source | Yes | No | No | No | No |
 | Self-hostable | Yes | No | No | No | No |
 
 ---
 
-*Last updated: March 2026*
+*Last updated: March 2026 — v1.0.0*
