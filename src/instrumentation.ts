@@ -35,13 +35,19 @@ const DEFAULT_INTERVALS: Record<string, number> = {
   LT: 12,   // Lithuania Fuelo.net — community-sourced, scrape every 12h
   BA: 12,   // Bosnia Fuelo.net — community-sourced, scrape every 12h
   MK: 12,   // North Macedonia Fuelo.net — community-sourced, scrape every 12h
+  TR: 12,   // Turkey Fuelo.net — community-sourced, scrape every 12h
+  MD: 12,   // Moldova ANRE — government, scrape every 12h
+  AU: 12,   // Australia FuelWatch (WA) — government, scrape every 12h
+  AU_NSW: 12, // Australia FuelCheck (NSW) — government, scrape every 12h
+  AR: 12,   // Argentina Secretaría de Energía — government CSV, scrape every 12h
+  MX: 12,   // Mexico CRE — government API, scrape every 12h
   // EV charger scrapers (OpenChargeMap) — all countries, daily
   EV_ES: 24, EV_FR: 24, EV_PT: 24, EV_IT: 24, EV_AT: 24, EV_DE: 24,
   EV_GB: 24, EV_SI: 24, EV_NL: 24, EV_BE: 24, EV_LU: 24, EV_RO: 24,
   EV_GR: 24, EV_IE: 24, EV_HR: 24, EV_CH: 24, EV_PL: 24, EV_CZ: 24,
   EV_HU: 24, EV_BG: 24, EV_SK: 24, EV_DK: 24, EV_SE: 24, EV_NO: 24,
   EV_RS: 24, EV_FI: 24, EV_EE: 24, EV_LV: 24, EV_LT: 24, EV_BA: 24,
-  EV_MK: 24,
+  EV_MK: 24, EV_TR: 24, EV_MD: 24, EV_AU: 24, EV_AR: 24, EV_MX: 24,
 };
 
 export async function register() {
@@ -86,6 +92,12 @@ export async function register() {
   const { LithuaniaScraper } = await import("./scrapers/lithuania");
   const { BosniasScraper } = await import("./scrapers/bosnia");
   const { NorthMacedoniaScraper } = await import("./scrapers/north-macedonia");
+  const { TurkeyScraper } = await import("./scrapers/turkey");
+  const { MoldovaScraper } = await import("./scrapers/moldova");
+  const { AustraliaScraper } = await import("./scrapers/australia");
+  const { AustraliaNSWScraper } = await import("./scrapers/australia-nsw");
+  const { ArgentinaScraper } = await import("./scrapers/argentina");
+  const { MexicoScraper } = await import("./scrapers/mexico");
   const { OCMScraper } = await import("./scrapers/ocm");
 
   const scraperFactories: Record<string, () => BaseScraper> = {
@@ -120,6 +132,12 @@ export async function register() {
     LT: () => new LithuaniaScraper(),
     BA: () => new BosniasScraper(),
     MK: () => new NorthMacedoniaScraper(),
+    TR: () => new TurkeyScraper(),
+    MD: () => new MoldovaScraper(),
+    AU: () => new AustraliaScraper(),
+    AU_NSW: () => new AustraliaNSWScraper(),
+    AR: () => new ArgentinaScraper(),
+    MX: () => new MexicoScraper(),
     // EV charger scrapers (OpenChargeMap) — keyed as EV_XX
     EV_ES: () => new OCMScraper("ES"),
     EV_FR: () => new OCMScraper("FR"),

@@ -86,17 +86,17 @@ The closest analog is **A Better Route Planner (ABRP)** for EVs — Pumperly doe
 | Component | Details |
 |---|---|
 | PostGIS 17 | Spatial database for stations + prices (`postgis/postgis:17-3.4`) |
-| Valhalla 3.5.1 | Self-hosted routing engine (`ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1`). 8-country merged PBF (17GB) built with osmium-tool. Multiple PBFs cause SIGABRT — always merge first. Needs 24GB RAM limit for tile build. |
+| Valhalla 3.5.1 | Self-hosted routing engine (`ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1`). 31-country merged PBF (~25GB) built with osmium-tool. Multiple PBFs cause SIGABRT — always merge first. Needs 24GB RAM limit for tile build. Tile count TBD after rebuild. |
 | Protomaps PMTiles | Self-hosted vector map tiles on NVMe |
 | OpenFreeMap | Primary tile provider (free, no API key, no rate limits) |
-| Photon 1.0.1 | Geocoding / address autocomplete. Runs on `eclipse-temurin:21-jre` with official JAR. Uses OpenSearch backend (NOT old Elasticsearch). Data imported from **per-country JSONL dumps** (26 regions covering 31 scraper countries). Two-phase import: Spain first (search works immediately), then remaining 25 countries in background. |
+| Photon 1.0.1 | Geocoding / address autocomplete. Runs on `eclipse-temurin:21-jre` with official JAR. Uses OpenSearch backend (NOT old Elasticsearch). Data imported from **per-country JSONL dumps** (31 regions covering 32+ countries, ~132.7M documents). Single-pass concatenated import: all dumps downloaded in parallel, decompressed and concatenated into one file, then imported in a single `java -jar photon.jar import` invocation. |
 | Caddy | Reverse proxy (existing on watchtower) |
 | Docker | Multi-stage builds, images on Docker Hub |
 | Portainer | Container management with GitOps |
 
 ### External Data Sources (All Free, No Auth Unless Noted)
 
-**Government / Official APIs (8 countries):**
+**Government / Official APIs (9 countries):**
 | Country | Source | Update Freq | Stations | Auth | Scraper Status |
 |---|---|---|---|---|---|
 | Spain | MITECO REST API | Daily | ~12,215 | None | ✅ Running |
@@ -109,34 +109,43 @@ The closest analog is **A Better Route Planner (ABRP)** for EVs — Pumperly doe
 | Slovenia | goriva.si REST API | Real-time | ~551 | None | ✅ Running |
 | Denmark | fuelprices.dk API | Real-time | ~3,000+ | Free API key | ✅ Running |
 
-**Fuelo.net Scrapers (22 countries):**
-Two-phase HTML scraping: POST for station list → GET per-station info windows. Shared module in `src/scrapers/fuelo.ts`.
-| Country | Subdomain | Currency | Stations | Scraper Status |
+**Community / Commercial APIs (22 countries):**
+Mix of Fuelo.net scrapers (`src/scrapers/fuelo.ts`), dedicated scrapers (ANWB, Peco Online, FuelGR, etc.), and other sources.
+| Country | Source | Currency | Stations | Scraper Status |
 |---|---|---|---|---|
-| Netherlands | nl | EUR | ~4,154 | ✅ Running |
-| Belgium | be | EUR | ~3,000+ | ✅ Running |
-| Luxembourg | lu | EUR | ~200+ | ✅ Running |
-| Romania | ro | RON | ~3,000+ | ✅ Running |
-| Greece | gr | EUR | ~6,000+ | ✅ Running |
-| Ireland | ie | EUR | ~1,500+ | ✅ Running |
-| Croatia | hr | EUR | ~800+ | ✅ Running |
-| Switzerland | ch | CHF | ~3,000+ | ✅ Running |
-| Poland | pl | PLN | ~7,000+ | ✅ Running |
-| Czech Republic | cz | CZK | ~4,000+ | ✅ Running |
-| Hungary | hu | HUF | ~2,000+ | ✅ Running |
-| Bulgaria | bg | BGN | ~3,000+ | ✅ Running |
-| Slovakia | sk | EUR | ~1,500+ | ✅ Running |
-| Sweden | se | SEK | ~3,000+ | ✅ Running |
-| Norway | no | NOK | ~2,000+ | ✅ Running |
-| Serbia | rs | RSD | ~2,000+ | ✅ Running |
-| Finland | fi | EUR | ~2,000+ | ✅ Running |
-| Estonia | ee | EUR | ~522 | ✅ Running |
-| Latvia | lv | EUR | ~809 | ✅ Running |
-| Lithuania | lt | EUR | ~854 | ✅ Running |
-| Bosnia & Herzegovina | ba | BAM | ~436 | ✅ Running |
-| North Macedonia | mk | MKD | ~353 | ✅ Running |
+| Netherlands | ANWB | EUR | ~4,154 | ✅ Running |
+| Belgium | ANWB | EUR | ~3,000+ | ✅ Running |
+| Luxembourg | ANWB | EUR | ~200+ | ✅ Running |
+| Romania | Peco Online | RON | ~3,000+ | ✅ Running |
+| Greece | FuelGR | EUR | ~6,000+ | ✅ Running |
+| Ireland | Pick A Pump | EUR | ~1,500+ | ✅ Running |
+| Croatia | MZOE | EUR | ~800+ | ✅ Running |
+| Switzerland | Fuelo.net | CHF | ~3,000+ | ✅ Running |
+| Poland | Fuelo.net | PLN | ~7,000+ | ✅ Running |
+| Czech Republic | Fuelo.net | CZK | ~4,000+ | ✅ Running |
+| Hungary | Fuelo.net | HUF | ~2,000+ | ✅ Running |
+| Bulgaria | Fuelo.net | BGN | ~3,000+ | ✅ Running |
+| Slovakia | Fuelo.net | EUR | ~1,500+ | ✅ Running |
+| Sweden | bensinpriser.nu | SEK | ~3,000+ | ✅ Running |
+| Norway | DrivstoffAppen | NOK | ~2,000+ | ✅ Running |
+| Serbia | NIS / cenagoriva | RSD | ~2,000+ | ✅ Running |
+| Finland | polttoaine.net | EUR | ~2,000+ | ✅ Running |
+| Estonia | Fuelo.net | EUR | ~522 | ✅ Running |
+| Latvia | Fuelo.net | EUR | ~809 | ✅ Running |
+| Lithuania | Fuelo.net | EUR | ~854 | ✅ Running |
+| Bosnia & Herzegovina | Fuelo.net | BAM | ~436 | ✅ Running |
+| North Macedonia | Fuelo.net | MKD | ~353 | ✅ Running |
 
-**Total: 31 countries, ~120K+ stations**
+**Non-European (5 countries):**
+| Country | Source | Currency | Stations | Scraper Status |
+|---|---|---|---|---|
+| Turkey | Fuelo.net | TRY | ~5,000+ | ✅ Running |
+| Moldova | ANRE | MDL | ~300+ | ✅ Running |
+| Australia (WA + NSW) | FuelWatch / FuelCheck | AUD | ~4,000+ | ✅ Running |
+| Argentina | Secretaría de Energía | ARS | ~4,600+ | ✅ Running |
+| Mexico | CRE | MXN | ~13,500+ | ✅ Running |
+
+**Total: 36 countries, ~145K+ stations**
 
 **Fuelo Dependency Note**: Research (Mar 2026) confirmed no viable government API alternatives exist for most Fuelo countries. Only DE, ES, AT, FR, DK, IT, GB, PT, SI have true government/official APIs. The EU AFIR Delegated Regulation 2024/1557 should eventually require station-level price data from EU member states, but implementation is incomplete as of 2026. Bosnia's FMT EOPC API (`fmteopc.azurewebsites.net`) has full station-level data but requires authentication.
 
@@ -162,9 +171,9 @@ pumperly.com (Caddy reverse proxy on watchtower)
     +-- Photon (geocoding)                     [Port 2322, ~1GB RAM]
 ```
 
-**Steady-state: ~8-10GB RAM, ~60GB disk (31 countries).**
-**First-time build: needs ~24GB RAM limit** (Valhalla tile build from 17GB merged PBF). Run Valhalla and Photon builds sequentially to avoid memory pressure.
-**Disk breakdown**: Merged PBF ~17GB, Valhalla tiles ~10-15GB, Photon data ~15-20GB (8-country index), PostGIS ~3GB (~68K stations), app ~50MB.
+**Steady-state: ~8-10GB RAM, ~60GB disk (36 countries).**
+**First-time build: needs ~24GB RAM limit** (Valhalla tile build from ~25GB merged PBF). Run Valhalla and Photon builds sequentially to avoid memory pressure.
+**Disk breakdown**: Merged PBF ~25GB, Valhalla tiles ~15-20GB, Photon data ~20-25GB (31-region index, 132.7M docs), PostGIS ~3GB (~120K stations), app ~50MB.
 
 ### Database Schema (PostGIS)
 
@@ -279,10 +288,19 @@ These env vars allow self-hosters to scope the app to their country/region. For 
 - **`src/components/map/map-view.tsx`** — Uses `forwardRef` to expose MapRef. Switches between bbox station fetch and corridor station fetch based on active route.
 
 ### Infrastructure
-- **Valhalla**: 8-country merged PBF (17GB, merged with `osmium merge`). Image: `ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1`. **Needs 24GB RAM limit**. No `tile_urls` env var — uses local PBF in `/custom_files/`. **CRITICAL: Valhalla crashes (SIGABRT `vector::_M_range_check`) when building from multiple PBFs** — always merge with osmium first. To add a country: download new PBF, re-merge all PBFs, delete old tiles, restart.
-- **Photon**: No official Docker image. Uses `eclipse-temurin:21-jre` (do NOT use JRE 25 — causes issues) with custom entrypoint. Downloads Photon 1.0.1 JAR + per-country JSONL dumps from `download1.graphhopper.com/public/europe/{country}/photon-dump-{country}-1.0-latest.jsonl.zst`. **Two-phase import**: Phase 1 imports Spain so search works quickly, then the server starts. Phase 2 imports the remaining 25 regions in a background process while serving. Each import creates a `.imported_{region}` marker file for resume capability. Must bind to `0.0.0.0` (`-listen-ip 0.0.0.0`). To add a country: add it to the COUNTRIES list in the compose entrypoint and restart. To reimport all: delete all `.imported_*` files + `.import_done` + `photon_data/` directory, restart.
-- **Photon regions vs scraper countries**: 26 Photon geocoding regions cover 31 scraper countries. Some regions bundle multiple countries (e.g. `british-islands` = UK+IE, `france-monacco` = FR+MC). Baltic/Balkan scraper countries (EE, LV, LT, BA, MK) lack dedicated Photon dumps but are covered by neighboring region data.
-- **CRITICAL Photon notes**: (1) **Each `import` call is ADDITIVE** — it adds to the existing OpenSearch index, not replaces. This is why per-country sequential import works. (2) **Do NOT use planet dump with `-country-codes` flag** — Photon 1.0.1 crashes with NPE on entries lacking `country_code`. (3) **Do NOT use `grep`/`awk` to filter planet dump** — the JSONL header line must be preserved and gets stripped by naive filtering. (4) **Country-specific dumps are the reliable approach** — they avoid both issues. (5) France is listed as `france-monacco` (sic) on the download server. (6) Docker Compose `$$` escaping required for shell variables in the command block. (7) Old `lehrenfried/photon` image is incompatible (Elasticsearch 5.5.0 vs OpenSearch).
+- **Valhalla**: 31 European countries merged PBF (~25GB, merged with `osmium merge`). Image: `ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1`. **Needs 24GB RAM limit**. No `tile_urls` env var — uses local PBF in `/custom_files/`. **CRITICAL: Valhalla crashes (SIGABRT `vector::_M_range_check`) when building from multiple PBFs** — always merge with osmium first. To add a country: download new PBF from Geofabrik, re-merge all PBFs, delete `valhalla_tiles.tar` + `file_hashes.txt` + `admin_data/` + `timezone_data/`, restart. Also delete old PBF before restart (Valhalla auto-discovers ALL `.pbf` files in `/custom_files/` and tries to build from all of them). **Warmup**: After container restart, Valhalla needs time to load tiles into memory. Short routes work quickly; cross-continent routes may fail for ~30-60s after start. Steady-state ~2GB RAM. **Osmium merge on watchtower**: `docker run --rm -v /mnt/user/appdata/propel/valhalla:/data stefda/osmium-tool osmium merge /data/*.osm.pbf -o /data/merged.osm.pbf` (osmium 1.7.1, uses ~4.4GB RAM for 25GB merge).
+- **Photon**: No official Docker image. Uses `eclipse-temurin:21-jre` (do NOT use JRE 25 — causes issues) with custom entrypoint. Downloads Photon 1.0.1 JAR + per-country JSONL dumps from `download1.graphhopper.com/public/europe/{country}/photon-dump-{country}-1.0-latest.jsonl.zst`. **Single-pass concatenated import**: All 31 country dumps are downloaded in parallel, verified, decompressed and concatenated into a single `all.jsonl` file, then imported in ONE `java -jar photon.jar import` invocation. Uses `.import_complete` sentinel file — if present, skips straight to serving. Must bind to `0.0.0.0` (`-listen-ip 0.0.0.0`). To add a country: add it to the COUNTRIES list in the compose entrypoint, increment EXPECTED count, delete `.import_complete` + `photon_data/`, restart. 12GB container memory limit, 4GB Java heap (`-Xmx4g`).
+- **Photon regions vs scraper countries**: 31 Photon geocoding regions cover 32+ European countries. Some regions bundle multiple countries (e.g. `british-islands` = UK+IE, `france-monacco` = FR+MC, `baltics` = EE+LV+LT, `switzerland-liechtenstein` = CH+LI). All 31 active European scraper countries have geocoding coverage. Non-European countries (AR, AU, MX) would need Photon dumps from other continents.
+- **CRITICAL Photon lessons learned**:
+  - (1) **Sequential per-country imports FAIL** — after the first import creates a 5-shard OpenSearch index, subsequent imports start new OpenSearch instances that must recover existing shards. Shards 3-4 get `deciders_throttled`, `ensureYellow` times out, container crash-loops. **Always use single concatenated import.**
+  - (2) **FIFO pipes silently lose data** — `mkfifo` approach seems elegant but the feeder subshell dies from SIGPIPE when Java closes the reader. Java processes what it has and exits 0. No error propagation. **Always use real files on disk.**
+  - (3) **OpenSearch node locking** — Only ONE OpenSearch instance can access the data directory at a time. Running `import` in background while `serve` runs causes `failed to obtain node locks`. **Import must complete before serve starts.**
+  - (4) **Country-specific dumps are the reliable approach** — Do NOT use planet dump with `-country-codes` flag (NPE on entries lacking `country_code`). Do NOT use `grep`/`awk` to filter (strips JSONL header).
+  - (5) **Graphhopper country naming quirks**: `france-monacco` (sic), `switzerland-liechtenstein` (not just `switzerland`), `baltics` (EE+LV+LT combined, not individual), `british-islands` (UK+IE), `luxemburg` (not `luxembourg`).
+  - (6) Docker Compose `$$` escaping required for shell variables in the command block.
+  - (7) Old `lehrenfried/photon` image is incompatible (Elasticsearch 5.5.0 vs OpenSearch).
+  - (8) **`wait` without args only returns last child's exit code** — track individual PIDs for parallel downloads to catch failures.
+  - (9) **Verification must check country codes** — `curl "api?q=Tallinn"` returns fuzzy French matches (Tallans, Tallone). Always verify with `countrycode` field matching expected ISO code.
 
 ## Core Features & Algorithms
 
@@ -395,8 +413,8 @@ pumperly/
 |---|---|---|---|---|
 | app | `drumsergio/pumperly:x.y.z` | 512 MB | 3200 | Next.js app |
 | db | `postgis/postgis:17-3.4` | 2 GB | 5432 | PostGIS spatial DB |
-| valhalla | `ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1` | 24 GB (build), 1-2 GB (serve) | 8002 | Uses local 17GB merged PBF (8 countries). No `tile_urls`. First build ~2-4 hours. Steady-state ~1-2GB. |
-| photon | `eclipse-temurin:21-jre` | 8 GB limit (import), 2-3 GB (serve) | 2322 | Two-phase: imports Spain first → starts serving → imports 25 more regions in background. Uses `.imported_{country}` markers for resume. Full 26-region import takes 20+ hours. Steady-state ~3GB. |
+| valhalla | `ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1` | 24 GB (build), ~2 GB (serve) | 8002 | Uses local ~25GB merged PBF (31 European countries). No `tile_urls`. First build ~3-6 hours. Steady-state ~2GB. Non-European countries (AR, AU, MX) would need separate PBFs added. |
+| photon | `eclipse-temurin:21-jre` | 12 GB limit, 4GB heap (import+serve) | 2322 | Single-pass: parallel download of 31 country dumps → concatenate → single import. Uses `.import_complete` sentinel. Full import ~12-20 hours. 132.7M documents. Steady-state ~4-6GB. |
 | scraper | Built into the app via `instrumentation.ts` | — | — | Runs on startup + `PUMPERLY_SCRAPE_INTERVAL_HOURS` interval. No separate container needed. |
 
 ### CI/CD
@@ -413,8 +431,8 @@ pumperly/
 - **Portainer stack**: ID 223 ("propel"), endpoint 2 on watchtower. Auto-update every 5 minutes from Gitea. Config path: `propel/docker-compose.yml` (symlink to `pumperly/docker-compose.yml`). The Gitea repo (`giteaer/watchtower`) is private — manual redeploy via API may fail with auth errors; auto-update handles it.
 - **Data volumes** (all under `/mnt/user/appdata/propel/`):
   - `pgdata/` (~600 MB) — PostGIS database. Quick to rebuild via scrapers.
-  - `valhalla/` (~59 GB) — Pre-built routing tiles + source PBF. Self-healing: Valhalla rebuilds tiles from PBF on start if missing. Rebuild takes 3-6 hours.
-  - `photon/` (~250 GB when complete) — OpenSearch index + JAR. Most expensive to rebuild (20+ hours for 26 regions). Has `.imported_{country}` markers for resume.
+  - `valhalla/` (~60+ GB) — Pre-built routing tiles + source PBF (~25GB, 31 European countries). Self-healing: Valhalla rebuilds tiles from PBF on start if missing. Rebuild takes 3-6 hours.
+  - `photon/` — OpenSearch index + JAR. Most expensive to rebuild (12-20 hours for 31 regions, 132.7M docs). Uses `.import_complete` sentinel for skip-on-restart.
 - **Backups**: All Pumperly data is covered by the existing Duplicacy appdata backup (daily at 1 AM to geiserback Garage, encrypted, deduplicated). No additional backup config needed.
 - **Caddy**: Site block serves `propel.geiser.cloud, pumperly.com, www.pumperly.com`. Uses `dynamic_dns` for `pumperly.com`. Always `caddy reload`, never restart (Unraid FUSE stale file handle issue).
 - **DB credentials**: DB user/name kept as `propel` (not renamed — avoids data migration). Only env vars and container names use `pumperly`.
@@ -435,7 +453,8 @@ pumperly/
 4. **UK has 13 separate feeds** — Shell excluded (returns HTML not JSON). Prices in GBP pence.
 5. **Germany Tankerkoenig v4**: 25km radius search limit, needs ~340 grid queries to cover country. HTTP 503 rate limiting.
 6. **Valhalla multi-PBF bug**: SIGABRT with `vector::_M_range_check` when building from multiple PBFs. Must merge with `osmium merge` first.
-6. **Valhalla tiles need monthly rebuilds** from OSM data
+7. **Valhalla tiles need monthly rebuilds** from OSM data
+8. **Valhalla warmup after restart**: Cross-continent routes may fail for ~30-60s after container restart while tiles load into memory.
 
 ---
 
