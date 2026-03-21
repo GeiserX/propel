@@ -310,7 +310,7 @@ export function SearchPanel({
   return (
     <div className="absolute left-2 right-2 top-2 z-10 flex max-h-[calc(100dvh-4rem)] flex-col sm:left-3 sm:right-auto sm:top-3 sm:w-[340px]">
       {/* Search card */}
-      <div className="shrink-0 rounded-xl border border-black/[0.08] bg-white/60 shadow-lg backdrop-blur-md dark:border-white/[0.08] dark:bg-gray-900/60">
+      <div className="shrink-0 rounded-xl border border-black/[0.08] bg-white/70 shadow-lg backdrop-blur-md dark:border-white/[0.08] dark:bg-gray-900/70">
         {/* Origin row */}
         <div className="flex items-center">
           <div className="flex w-10 shrink-0 items-center justify-center">
@@ -482,7 +482,7 @@ export function SearchPanel({
         {phase === "route" && primaryRoute && (
           <button
             onClick={() => setCollapsed((v) => !v)}
-            className="flex w-full items-center justify-between rounded-b-xl border-t border-gray-100 bg-gray-50 px-4 py-2 dark:border-gray-700 dark:bg-gray-800/60"
+            className="flex w-full items-center justify-between rounded-b-xl border-t border-gray-100 bg-gray-50 px-4 py-2 dark:border-gray-700 dark:bg-gray-800/70"
           >
             <div className="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-300">
               <div className="h-2 w-2 rounded-full bg-blue-500" />
@@ -501,7 +501,7 @@ export function SearchPanel({
 
       {/* Route info + alternatives — hidden when collapsed */}
       {primaryRoute && !collapsed && (
-        <div className="mt-2 shrink-0 rounded-xl border border-black/[0.08] bg-white/60 shadow-lg backdrop-blur-md dark:border-white/[0.08] dark:bg-gray-900/60">
+        <div className="mt-2 shrink-0 rounded-xl border border-black/[0.08] bg-white/70 shadow-lg backdrop-blur-md dark:border-white/[0.08] dark:bg-gray-900/70">
           {/* All routes — selected one is bold, others are clickable */}
           {routes && routes.map((route, i) => {
             const color = ROUTE_COLORS[i % ROUTE_COLORS.length];
@@ -529,7 +529,7 @@ export function SearchPanel({
 
       {/* Station list along route — hidden when collapsed */}
       {phase === "route" && allStationsWithPrice.length > 0 && !collapsed && (
-        <div className="mt-2 flex min-h-0 flex-1 flex-col rounded-xl border border-black/[0.08] bg-white/60 shadow-lg backdrop-blur-md dark:border-white/[0.08] dark:bg-gray-900/60">
+        <div className="mt-2 flex min-h-0 flex-1 flex-col rounded-xl border border-black/[0.08] bg-white/70 shadow-lg backdrop-blur-md dark:border-white/[0.08] dark:bg-gray-900/70">
           <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-2 dark:border-gray-700">
             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
               {t("stations.title")} ({stationList.length})
