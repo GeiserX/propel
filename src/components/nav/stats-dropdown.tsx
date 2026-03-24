@@ -88,7 +88,7 @@ export function StatsDropdown() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 w-72 rounded-xl border border-black/[0.08] bg-white/95 p-4 shadow-2xl backdrop-blur-sm dark:border-white/[0.08] dark:bg-gray-900/95">
+        <div className="absolute right-0 top-full mt-1.5 w-80 overflow-x-hidden rounded-xl border border-black/[0.08] bg-white/95 p-4 shadow-2xl backdrop-blur-sm dark:border-white/[0.08] dark:bg-gray-900/95">
           {loading && !stats ? (
             <div className="flex justify-center py-6">
               <div className="h-5 w-5 animate-spin rounded-full border-2 border-emerald-500/30 border-t-emerald-500" />
